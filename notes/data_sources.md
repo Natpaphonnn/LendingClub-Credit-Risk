@@ -69,7 +69,11 @@ cd034186345fda83e4cf6c9d657ed15effbfc8bd5da7c7f7a2df50f3b2a1a71b  bls_laus_b2_20
 | data/interim/accepted_2007_to_2018Q4.parquet | 2,260,701 (incl. 33 footer rows) | 277 MB | all columns VARCHAR, zstd |
 | data/interim/rejected_2007_to_2018Q4.parquet | 27,648,741 | 168 MB | all columns VARCHAR, zstd |
 
-## Checksum manifest (gate R1-5)
-`raw_inputs.sha256` (repo root) lists sha256 of every raw input (Kaggle files, dictionary, 6 BLS JSON responses). `scripts/run_all.sh` verifies it
-before and after `fetch_bls.py`; a fresh BLS download returns the *current revised* LAUS series and will fail this check — the byte-identical claim
-holds only for the archived responses with these checksums.
+## Checksum manifests (gate R1-5; revised after gate round 2 R1-3 / R10-4)
+- `raw_inputs.sha256` (repo root): sha256 of the LendingClub raw inputs (accepted / rejected .csv.gz, dictionary). `scripts/run_all.sh` verifies
+  it first, then deletes `data/interim` and rebuilds everything from raw.
+- `bls_values.sha256`: sha256 of the *parsed* BLS table (state, month, rate), checked inside `src/phase2/fetch_bls.py`. Byte hashes of the API
+  responses cannot be used: each response carries per-request fields (e.g. `responseTime`), so a fresh download differs even when the values are
+  identical (the sha256 of the archived responses are listed in §4 for reference). If BLS has since revised LAUS values, fetch_bls stops with a
+  message; `ALLOW_REVISED_BLS=1 bash scripts/run_all.sh` continues with a warning (results then differ slightly from the reports).
+- The BLS responses are public domain, but they are raw files and the project rule is never to commit raw data, so they are not in git.

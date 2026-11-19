@@ -78,7 +78,7 @@ ax.set_ylabel("loans issued (thousands)")
 ax.grid(axis="x", visible=False)
 ax.legend(loc="upper left")
 finish(fig, "Two traps before any model: 2007–08 is tiny, 2016–18 is unfinished",
-       "Accepted loans by issue year. The 2008 crisis cohort is ~3k loans; most 2016–18 loans had no final outcome yet.",
+       "Accepted loans by issue year. The 2007–08 crisis cohort is ~3k loans; most 2016–18 loans had no final outcome yet.",
        "fig1_data_traps.png")
 
 # ------------------------------------------------------------------ Fig 2: champion vs LC grade (OOT Gini with CI)
@@ -126,7 +126,7 @@ thresh(ax, 1.10, "1.10 amber")
 thresh(ax, 1.25, "1.25 red")
 ax.set_title("Level: actual / expected defaults by month 12")
 finish(fig, "The model kept ranking borrowers well — its default level drifted",
-       f"Champion (LightGBM) by issue quarter. KS never breached its alarm; actual/expected defaults climbed to {m4.AE12_M2.max():.2f}.",
+       f"Champion (LightGBM) by issue quarter. KS never breached its alarm on quarters with complete outcomes (2014Q1–2015Q3); A/E by month 12 later climbed to {m4.AE12_M2.max():.2f}.",
        "fig3_ranking_vs_level.png")
 
 # ------------------------------------------------------------------ Fig 4: PSI is the wrong alarm (calendar time)
@@ -154,7 +154,7 @@ ax.set_title("Population stability index of the champion score (no labels needed
 ax = axes[1]
 k12 = mon[mon.AE12_M2.notna()]
 ax.plot(k12.k12, k12.AE12_M2, color=BLUE, marker="o", markersize=4, label="defaults by month 12 (pre-registered)")
-ax.plot(ae6.known, ae6.ae6, color=AQUA, marker="o", markersize=4, linestyle=":", label="defaults by month 6 (exploratory, not pre-registered)")
+ax.plot(ae6.known, ae6.ae6, color=AQUA, marker="o", markersize=4, linestyle=":", label="defaults by month 6 (exploratory; failed its 60m confirmatory test)")
 ax.axhline(1.0, color=BASE, linewidth=1)
 thresh(ax, 1.10, "1.10 amber", x_text=pd.Timestamp("2014-01-01"))
 thresh(ax, 1.25, "1.25 red", x_text=pd.Timestamp("2014-01-01"))
@@ -239,23 +239,25 @@ ax.set_ylim(0, q["realised $m"].max() * 1.25)
 ax.grid(axis="x", visible=False)
 ax.legend(loc="upper left", fontsize=9)
 tot = ov["total"]
-finish(fig, f"Realised loss came in at {tot['realised/pred']:.2f}× expected; an in-sample month-12 overlay closes {100*tot['gap closed MOB12']:.0f}% (illustrative)",
+finish(fig, f"Realised loss came in at {tot['realised/pred']:.2f}× expected; in-sample month-12 overlay closes {100*tot['gap closed MOB12']:.0f}%",
        f"2015 loans; lifetime EL at origination, not an allowance. Overlay = EL × month-12 A/E "
        f"(month-6: {100*tot['gap closed MOB6']:.0f}%). Illustrative.",
        "fig7_ecl_backtest_overlay.png")
 
 # ------------------------------------------------------------------ Fig 8: simple cutoff ≈ MILP
-pc = json.loads((REP2 / "policy_C.json").read_text())["0.05"]["table"]
-pc = pd.DataFrame(pc)
+pcj = json.loads((REP2 / "policy_C.json").read_text())["0.05"]
+pc = pd.DataFrame(pcj["table"])
+dfx = pd.DataFrame(pcj["diffs"])
+dC = dfx[(dfx["difference ($m, OOT 2015)"] == "C−M2 NPV") & (dfx.bootstrap == "loan")].iloc[0]
 pc = pc[pc.set == "OOT 2015"].reset_index(drop=True)
 name = {"C: MILP cells": "MILP-optimised policy", "approve all": "approve everyone",
-        "M2": "simple PD cutoff (champion)", "M1": "scorecard cutoff"}
-key = lambda p: "M2" if p.startswith("Phase 1 M2") else "M1" if p.startswith("Phase 1 M1") else p  # noqa: E731
+        "M2": "simple PD cutoff (champion)", "M1": "scorecard cutoff", "S": "single PD threshold tuned to NPV"}
+key = lambda p: "M2" if p.startswith("Phase 1 M2") else "M1" if p.startswith("Phase 1 M1") else "S" if p.startswith("single") else p  # noqa: E731
 pc["lab"] = [f"{name.get(key(p), p)}  ({a:.0f}% approved)" for p, a in zip(pc.policy, pc["approval %"])]
 appr = dict(zip(pc.policy.map(key), pc["approval %"]))
-order = [2, 0, 3, 1]
+order = [2, 0, 4, 3, 1]
 pc = pc.iloc[order].reset_index(drop=True)
-fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(11, 4.6), sharey=True)
 for ax, col, ttl in ((axes[0], "realised profit $m", "Pre-registered (wrong: no funding cost)"),
                      (axes[1], "EXPLORATORY realised NPV $m", "Exploratory: NPV at 5% funding cost")):
     cols = [ORANGE if "MILP" in lb else (BLUE if "simple" in lb else MUTED) for lb in pc.lab]
@@ -267,6 +269,7 @@ for ax, col, ttl in ((axes[0], "realised profit $m", "Pre-registered (wrong: no 
     ax.set_xlabel("$ million, 2015 loans")
     ax.grid(axis="y", visible=False)
 axes[0].invert_yaxis()
-finish(fig, "A good PD cutoff is enough: the optimiser adds nothing (exploratory metric)",
-       f"Without funding cost, 'approve everyone' looks best. With it, the MILP ({appr['C: MILP cells']:.0f}% approved) ≈ the simple champion cutoff ({appr['M2']:.0f}%).",
+finish(fig, "The optimiser adds nothing over one PD threshold (exploratory metric)",
+       f"Without funding cost, 'approve everyone' looks best. At 5%: MILP − cutoff = −${-dC['point']:.1f}m, 95% CI {dC['95% CI']}. "
+       "Levels depend on cash timing.",
        "fig8_policy_cutoff_vs_milp.png")

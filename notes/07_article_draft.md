@@ -15,7 +15,8 @@ Every credit model is trained on the past and used in the future. The question a
 "if the world shifts after I deploy this, will my model still make the right decisions — and will my monitoring tell me before the losses do?"
 
 I tried to answer that with LendingClub's public loan book (2.26 million accepted loans, 2007–2018). I wrote the decision rules down and
-committed them to git before fitting anything, used time-based splits only, and published only aggregates. Several things I expected to work did
+committed them to git before fitting anything (local commits for the first two phases, so that order is self-attested;
+the later confirmatory tests were pushed to a private remote before computing), used time-based splits only, and published only aggregates. Several things I expected to work did
 not, and I report those too.
 
 ## 1. Two traps before any model
@@ -42,8 +43,7 @@ I built two models from application data only: a classic weight-of-evidence scor
 LightGBM model with monotonic constraints, so that, for example, a higher FICO can never increase the predicted risk.
 
 On unseen 2015 loans the LightGBM model reached a **Gini of 36.7 [36.3, 37.3]** against **33.7** for the scorecard — a paired difference of
-+3.1 [2.8, 3.3], above the +2.0 bar I had committed to in advance. It also edges out LendingClub's own sub-grade (35.7), which uses more
-information than I had. All twelve hyper-parameter configurations I tried land between 36.5 and 36.8, so the conclusion does not hinge on a
++3.1 [2.8, 3.3], above the +2.0 bar I had committed to in advance. It also edges out LendingClub's own sub-grade (35.7). All twelve hyper-parameter configurations I tried land between 36.5 and 36.8, so the conclusion does not hinge on a
 lucky setting. At the same bad-rate target the better model approves 82.1% of applicants instead of 77.4% — about 3 points of that gap
 survive when the scorecard's integer points are not allowed to round the comparison in the champion's favour.
 
@@ -52,12 +52,14 @@ were only complete around 2017. No lender could have had it in January 2015. So 
 knew on 31 December 2014 — a 12-month bad definition, outcomes up to June 2014. It scores **33.0**: 3.8 points lower. Part of the reference
 model's edge is information from the future.
 
-## 3. Ranking survived. Calibration did not.
+## 3. Ranking held — at first. Calibration did not.
 
 *[Figure 3 — fig3_ranking_vs_level.png]*
 
-On every matured quarter of 2014–15, the champion's KS stayed between 25.8 and 27.2 — it never came near its alarm line. The model kept putting
-borrowers in the right order.
+On the three 2015 quarters whose outcomes are complete (2014 is the reference year), the champion's KS stayed between 25.8 and 27.2 — it never
+came near its alarm line. The model kept putting borrowers in the right order. Later vintages cannot be judged on final outcomes yet, but against
+defaults by month 12 the ranking did soften on the worst ones: KS for loans issued in mid-to-late 2016 was about 0.87–0.89 of its 2014 level
+before recovering in 2017 (a descriptive check I added after review, not a pre-registered one).
 
 But the *level* broke. On 2015 loans it under-predicted default by 1.7 percentage points (13.2% predicted vs 14.9% observed), and the cutoff
 tuned to an 11% bad rate on 2014 delivered 11.9% on 2015. The ratio of actual to expected defaults by month 12 climbed from 0.93 for loans
@@ -117,7 +119,7 @@ The (b) pass is the interesting part. Between 2009 and 2014 unemployment fell wh
 unemployment, more defaults". That accident happens to fit 2015, so the macro model looked better out of time — for the wrong reason. Requiring
 all three tests is what stopped it.
 
-## 8. The provision question
+## 8. Expected vs realised loss
 
 *[Figure 7 — fig7_ecl_backtest_overlay.png]*
 
@@ -130,30 +132,34 @@ realised came in at 1.18× predicted.** A little of that is structural: on its o
 because a scheduled-balance exposure understates what is outstanding when a borrower defaults.
 
 Would recalibrating at the reporting date have saved it? I refitted the hazard at 31 December 2014 on outcomes a lender could see then.
-It made things **worse: 1.27×**. The only outcomes visible in 2014 came from loans that performed better than the 2015 vintage — a refit
+It made things **worse: 1.27×** — and that is the generous version, because the refit can only see 21 months on book and I borrowed the
+later months from the reference model; with those months also taken from data visible in 2014, it is 1.41×. The only outcomes visible in 2014 came from loans that performed better than the 2015 vintage — a refit
 cannot learn about drift that has not happened yet. (An earlier version of this analysis said the refit closed a third of the gap. An
 independent review showed that number came from extrapolating the hazard beyond the 21 months the refit could actually see; I withdrew it.)
 
 Scaling expected loss by the observed month-12 actual/expected — a crude, in-sample "management overlay" — closes 57% of the gap, but only
 once those month-12 outcomes are known.
 
-Two honest caveats: the data has no monthly delinquency history, so stage 2 and 3 can only be illustrated after the fact; and with the macro rule
+Two honest caveats: the data has no monthly delinquency history, so stage 2 and 3 can only be illustrated after the fact (and "three missed
+instalments" is closer to 60 than 90 days past due on the reporting date); and with the macro rule
 failed, there is no forward-looking component — a real TFRS 9 model would need one.
 
-## 9. A good cutoff is enough — if you set it with the cost of funds
+## 9. A good cutoff is enough — the hard part is where to put it
 
 *[Figure 8 — fig8_policy_cutoff_vs_milp.png]*
 
 Finally I let an optimiser choose which risk cells to approve to maximise profit under an approval floor and a bad-rate cap. My pre-registered
 profit measure was wrong — it ignored the cost of funds, so "approve everyone" looked best ($230 million). With a 5% funding cost, the simple
-PD cutoff makes $47.5 million and the optimiser $45.8 million — a difference of −$1.7 million with a bootstrap interval of −2.7 to −0.8, so the
-optimiser is genuinely worse here. At 3% the two are indistinguishable; at 8% the optimiser wins, but only because it approves fewer loans, and a
-single PD threshold tuned the same way matches it at every rate. The cell structure adds nothing; the threshold level, set with the cost of
-funds, is what matters.
+PD cutoff makes $47.5 million and the optimiser $45.8 million (these levels depend on how I timed the cash flows; the differences hold) — a difference of −$1.7 million with a bootstrap interval of −2.7 to −0.8, so on 2015
+the optimiser is no better — slightly worse (the interval holds the chosen policies fixed and covers one vintage). At 3% the two are indistinguishable; at 8% the optimiser wins, but only because it approves fewer loans, and a
+single PD threshold tuned the same way matches it at every rate. The cell structure adds nothing. Where to put the threshold is the hard
+part: tuned to maximise NPV on a PD that was already under-predicting, the single threshold approved too many loans and made only $44.9
+million — less than the plain risk-appetite cutoff. The level depends on the cost of funds *and* on how well calibrated the PD is.
 
 ## What I would tell a risk team
 
-1. **Monitor the level, not just the mix and the ranking.** PSI and KS both stayed green while defaults ran up to 46% above expectation.
+1. **Monitor the level, not just the mix and the ranking.** The champion's PSI stayed green throughout and its KS stayed green on every quarter
+   it could be measured, while defaults ran up to 46% above expectation.
    Track actual/expected by vintage and months on book, with statistical bounds.
 2. **Date your alarms by when they could have been known** — and build your monitoring model only from information available at the time.
    The realistic answer to "would you have noticed?" was "about two years later".

@@ -49,7 +49,7 @@ Expected = Σ PD × r (r from train). Observable only when quarter end + 18 mont
 | 2017Q2    |              5.34 |      1.38 | YES              |     1.48 | RED    |     1.45 | RED     | 2018-12    |
 | 2017Q3    |              5.27 |      1.37 | YES              |     1.46 | RED    |     1.41 | RED     | 2019-03    |
 
-## 3. Final-outcome KS (quarters ≥ 99% resolved)
+## 3. Final-outcome KS (quarters ≥ 99% resolved and knowable by the data cut)
 
 | issue_q   |   final bad % | KS M1 ×100        | flag   | KS M2 ×100        | flag    | known at   | role                               |
 |:----------|--------------:|:------------------|:-------|:------------------|:--------|:-----------|:-----------------------------------|
@@ -60,6 +60,28 @@ Expected = Σ PD × r (r from train). Observable only when quarter end + 18 mont
 | 2015Q1    |         14.83 | 23.7 [22.8, 25.0] | green  | 25.8 [25.0, 27.1] | green   | 2018-09    | monitoring                         |
 | 2015Q2    |         15.38 | 24.0 [23.2, 25.0] | green  | 26.0 [25.3, 27.1] | green   | 2018-12    | monitoring                         |
 | 2015Q3    |         14.58 | 25.2 [24.3, 26.2] | green  | 27.2 [26.4, 28.3] | green   | 2019-03    | monitoring                         |
+
+## 3b. DESCRIPTIVE (not pre-registered): ranking against the month-12 outcome by issue quarter (gate R2-1 / R6-1)
+
+Final-outcome KS is only observable to 2015Q3. Against defaults by month 12 the champion's ranking is visible to 2017Q3; KS12 ratio to the 2014 mean: min 0.87 (2016Q4).
+
+| issue_q   |     n |   Gini12_M1 |   KS12_M1 |   Gini12_M2 |   KS12_M2 |   KS12_M2 / 2014 mean |
+|:----------|------:|------------:|----------:|------------:|----------:|----------------------:|
+| 2014Q1    | 34074 |        32   |      23.6 |        36.5 |      27.3 |                  0.98 |
+| 2014Q2    | 37881 |        31.8 |      21.8 |        36.4 |      27   |                  0.97 |
+| 2014Q3    | 40595 |        32   |      23.4 |        38.4 |      27.7 |                  0.99 |
+| 2014Q4    | 50020 |        34.3 |      25.3 |        39.5 |      29.6 |                  1.06 |
+| 2015Q1    | 56569 |        33.3 |      24.8 |        37.3 |      28.5 |                  1.02 |
+| 2015Q2    | 64222 |        34.1 |      24.9 |        38.8 |      28.7 |                  1.03 |
+| 2015Q3    | 73572 |        35   |      25.6 |        39.9 |      29.3 |                  1.05 |
+| 2015Q4    | 88571 |        34.1 |      24.7 |        38.6 |      28.9 |                  1.04 |
+| 2016Q1    | 94592 |        33.5 |      24.2 |        38.6 |      28   |                  1    |
+| 2016Q2    | 73666 |        30.7 |      21.7 |        35.3 |      24.9 |                  0.89 |
+| 2016Q3    | 73579 |        29.5 |      20.5 |        34.6 |      24.8 |                  0.89 |
+| 2016Q4    | 76440 |        28.3 |      20.3 |        33.2 |      24.3 |                  0.87 |
+| 2017Q1    | 69778 |        32.5 |      22.9 |        36.2 |      26.6 |                  0.95 |
+| 2017Q2    | 73380 |        32.6 |      23.6 |        37.3 |      27.2 |                  0.97 |
+| 2017Q3    | 80528 |        31.4 |      22.7 |        36.1 |      26.5 |                  0.95 |
 
 ## 4. First flag per signal (detection timing)
 

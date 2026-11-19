@@ -5,44 +5,52 @@ default: k = 6 → 89.6%, **k = 12 → 90.4%**, k = 24 → 91.7%. Defaults known
 (4,773): 90.0% undiscounted, 91.4% discounted (recovery amounts are still final values — limitation).
 Realised net principal loss of the 2015 vintage: $273.8m.
 
-Refits (outcomes observed only up to reporting date − 6 months; identifiability asserted — every spline column has support):
+Refits (outcomes observed only up to reporting date − 6 months). Identifiability is asserted for every full-horizon fit; the (c) early model is
+fitted with check=False and used only for the MOB range it identifies:
 - at 2014-12-31 as pre-registered: issued 2012-09-01..2014-05-01,
   181,130 loans, max MOB observed **21**, 4,965 defaults
 - at 2015-12-31 (staging): issued 2012-09-01..2015-05-01, 384,980 loans,
-  max MOB observed 33 (all spline columns supported)
+  max MOB observed 33 (all spline columns supported; MOB 34–36 extrapolate the last cubic piece)
 - **Gate fix (R7-1 / R2-1):** the first version reported the 2014-12 refit over 36 months, but with max MOB 21 its last spline coefficient is
   unidentified and MOB 22–36 hazards were extrapolation (the reported 1.10× was an artefact; fit_mnl now refuses such a design). The
   pre-registered refit is therefore used only for MOB 1–21; MOB 22–36 hazards come from reference A — **a stated assumption, not
-  a pre-registered element** (bug-driven deviation, notes/10).
+  a pre-registered element** (bug-driven deviation, notes/10). Reference A was fitted on outcomes observed after the reporting date, so (c) is a
+  **lower bound** on the knowable-only gap; (c'') takes the tail from the 2009-start refit instead (all inputs knowable except the score and
+  final recovery amounts).
 - (c2) sensitivity: refit on vintages from 2009-01 (outcomes still only to 2014-06; 231,622 loans, max MOB
   36). Not the primary: M2 scores pre-2012-09 loans with several bureau fields missing, so their
   score is inflated relative to their outcomes, which flattens the fitted score slope (in-sample A/E by issue year below).
 - Scores: (c) uses the reference M2 score (trained on full 36-month labels → post-2014 information); (c') replaces it with the as-of model's PD12
-  (data to 2014-06) and uses LGD from defaults known by 2014-06. 90-DPD model: 14,557 defaults (horizon 36: defaults with d + 2 > 36
-  are censored — a slight bias against this definition).
+  (data to 2014-06) and uses LGD from defaults known by 2014-06. (d) 3rd-missed-instalment model: 14,557 defaults;
+  (d') 4th: 14,316 (horizon 36: defaults with d + k > 36 are censored — a slight bias against these definitions). Mapping: the
+  first missed instalment is due in month d, so at the k-th missed due date the loan is ≈ 30(k − 1) days past due (gate R8-1/R8-2).
 
 ## Scenarios
 
-| scenario                                                                                     |   mean 12m PD % |   mean lifetime PD % |   day-1 12m ECL $m |   lifetime ECL $m |   backtest: pred EL (undisc.) $m |   realised / predicted |
-|:---------------------------------------------------------------------------------------------|----------------:|---------------------:|-------------------:|------------------:|---------------------------------:|-----------------------:|
-| (a) reference A, undiscounted LGD                                                            |            4.24 |                13.42 |              99.58 |            200.57 |                           232.42 |                  1.178 |
-| (b) reference A, discounted LGD (k=12)                                                       |            4.24 |                13.42 |             101.34 |            204.1  |                                  |                        |
-| (c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12) |            3.97 |                12.92 |              92.44 |            188.34 |                           215.58 |                  1.27  |
-| (c') (c) with as-of score and LGD from defaults known by 2014-06                             |            3.89 |                12.64 |              91.31 |            188.2  |                           215.57 |                  1.27  |
-| (c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)     |            3.33 |                 9.21 |              77.52 |            143.15 |                           162.39 |                  1.686 |
-| (d) 90-DPD default definition, discounted LGD (k=12)                                         |            3.25 |                13.1  |              79.19 |            198.79 |                           231.18 |                  1.184 |
+| scenario                                                                                           |   mean 12m PD % |   mean lifetime PD % |   day-1 12m ECL $m |   lifetime ECL $m |   backtest: pred EL (undisc.) $m |   realised / predicted |
+|:---------------------------------------------------------------------------------------------------|----------------:|---------------------:|-------------------:|------------------:|---------------------------------:|-----------------------:|
+| (a) reference A, undiscounted LGD                                                                  |            4.24 |                13.42 |              99.58 |            200.57 |                           232.42 |                  1.178 |
+| (b) reference A, discounted LGD (k=12)                                                             |            4.24 |                13.42 |             101.34 |            204.1  |                                  |                        |
+| (c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)       |            3.97 |                12.92 |              92.44 |            188.34 |                           215.58 |                  1.27  |
+| (c') (c) with as-of score and LGD from defaults known by 2014-06                                   |            3.89 |                12.64 |              91.31 |            188.2  |                           215.57 |                  1.27  |
+| (c'') (c) with the MOB 22–36 tail from the 2009-start refit (knowable at 2014-12)                  |            3.97 |                10.68 |              92.44 |            171.81 |                           194.45 |                  1.408 |
+| (c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)           |            3.33 |                 9.21 |              77.52 |            143.15 |                           162.39 |                  1.686 |
+| (d) default at 3rd missed instalment (≈ 60 DPD; pre-registered as '90-DPD'), discounted LGD (k=12) |            3.25 |                13.1  |              79.19 |            198.79 |                           231.18 |                  1.184 |
+| (d') post-hoc: default at 4th missed instalment (≈ 90 DPD), discounted LGD (k=12)                  |            2.75 |                12.88 |              67.81 |            195.87 |                           230.14 |                  1.19  |
 
 Backtest columns use undiscounted LGD so they compare like-for-like with realised net principal loss.
 
 ## Decomposition of realised / predicted (gate R8-1): count × EAD per default × LGD
 
-| scenario                                                                                     |   count ratio |   EAD/default ratio |   LGD ratio |   mean default MOB pred |   mean default MOB actual |
-|:---------------------------------------------------------------------------------------------|--------------:|--------------------:|------------:|------------------------:|--------------------------:|
-| (a) reference A, undiscounted LGD                                                            |         1.108 |               1.057 |       1.005 |                  17.921 |                    17.933 |
-| (c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12) |         1.152 |               1.097 |       1.005 |                  18.451 |                    17.933 |
-| (c') (c) with as-of score and LGD from defaults known by 2014-06                             |         1.177 |               1.088 |       1.005 |                  18.446 |                    17.933 |
-| (c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)     |         1.615 |               1.039 |       1.005 |                  17.02  |                    17.933 |
-| (d) 90-DPD default definition, discounted LGD (k=12)                                         |         1.135 |               1.037 |       1.005 |                  19.53  |                    17.933 |
+| scenario                                                                                           |   count ratio |   EAD/default ratio |   LGD ratio |   mean default MOB pred |   mean default MOB actual |
+|:---------------------------------------------------------------------------------------------------|--------------:|--------------------:|------------:|------------------------:|--------------------------:|
+| (a) reference A, undiscounted LGD                                                                  |         1.108 |               1.057 |       1.005 |                  17.921 |                    17.933 |
+| (c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)       |         1.152 |               1.097 |       1.005 |                  18.451 |                    17.933 |
+| (c') (c) with as-of score and LGD from defaults known by 2014-06                                   |         1.177 |               1.088 |       1.005 |                  18.446 |                    17.933 |
+| (c'') (c) with the MOB 22–36 tail from the 2009-start refit (knowable at 2014-12)                  |         1.393 |               1.006 |       1.005 |                  16.515 |                    17.933 |
+| (c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)           |         1.615 |               1.039 |       1.005 |                  17.02  |                    17.933 |
+| (d) default at 3rd missed instalment (≈ 60 DPD; pre-registered as '90-DPD'), discounted LGD (k=12) |         1.135 |               1.037 |       1.005 |                  19.53  |                    17.933 |
+| (d') post-hoc: default at 4th missed instalment (≈ 90 DPD), discounted LGD (k=12)                  |         1.155 |               1.025 |       1.005 |                  20.263 |                    17.933 |
 
 In-sample backtest of A on its own development window (2012-09..2013-12): realised $92.4m vs predicted $89.8m
 (**×1.028**). Actual exposure at default (funded − principal received) is ×1.024 the scheduled balance at the default
@@ -50,13 +58,15 @@ month on train defaults: the scheduled-balance EAD understates exposure at defau
 
 ## Predicted vs realised by default-MOB window (gate R2-1)
 
-| scenario                                                                                     | MOB 1–21 pred / realised $m   | MOB 22–36+ pred / realised $m   |
-|:---------------------------------------------------------------------------------------------|:------------------------------|:--------------------------------|
-| (a) reference A, undiscounted LGD                                                            | 189.7 / 225.6 (×1.19)         | 42.7 / 48.2 (×1.13)             |
-| (c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12) | 169.1 / 225.6 (×1.33)         | 46.5 / 48.2 (×1.04)             |
-| (c') (c) with as-of score and LGD from defaults known by 2014-06                             | 169.4 / 225.6 (×1.33)         | 46.2 / 48.2 (×1.04)             |
-| (c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)     | 136.7 / 225.6 (×1.65)         | 25.7 / 48.2 (×1.88)             |
-| (d) 90-DPD default definition, discounted LGD (k=12)                                         | 174.3 / 225.6 (×1.29)         | 56.8 / 48.2 (×0.85)             |
+| scenario                                                                                           | MOB 1–21 pred / realised $m   | MOB 22–36+ pred / realised $m   |
+|:---------------------------------------------------------------------------------------------------|:------------------------------|:--------------------------------|
+| (a) reference A, undiscounted LGD                                                                  | 189.7 / 225.6 (×1.19)         | 42.7 / 48.2 (×1.13)             |
+| (c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)       | 169.1 / 225.6 (×1.33)         | 46.5 / 48.2 (×1.04)             |
+| (c') (c) with as-of score and LGD from defaults known by 2014-06                                   | 169.4 / 225.6 (×1.33)         | 46.2 / 48.2 (×1.04)             |
+| (c'') (c) with the MOB 22–36 tail from the 2009-start refit (knowable at 2014-12)                  | 169.1 / 225.6 (×1.33)         | 25.4 / 48.2 (×1.90)             |
+| (c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)           | 136.7 / 225.6 (×1.65)         | 25.7 / 48.2 (×1.88)             |
+| (d) default at 3rd missed instalment (≈ 60 DPD; pre-registered as '90-DPD'), discounted LGD (k=12) | 174.3 / 225.6 (×1.29)         | 56.8 / 48.2 (×0.85)             |
+| (d') post-hoc: default at 4th missed instalment (≈ 90 DPD), discounted LGD (k=12)                  | 165.9 / 225.6 (×1.36)         | 64.2 / 48.2 (×0.75)             |
 
 (c2) in-sample check — predicted vs actual defaults within each loan's observed window (fit data):
 
@@ -76,12 +86,13 @@ Day 1, reference A: undiscounted 12-month EL $108.1m vs realised loss of loans d
 
 ## Staging at 2015-12-31 under the refit-at-2015-12-31 model and discounted LGD — EX-POST ILLUSTRATION
 
-| stage                                                                                                       |   loans |   gross EAD $m |   allowance $m |   coverage % |
-|:------------------------------------------------------------------------------------------------------------|--------:|---------------:|---------------:|-------------:|
-| Stage 1 (performing, no missed instalment visible; 12-month ECL)                                            |  263610 |         2992.3 |          101.5 |         3.39 |
-| Stage 2 (1–2 missed instalments ≈ ≥ 30 DPD, ex-post proxy; lifetime ECL)                                    |    1571 |           17.1 |            1.4 |         8.46 |
-| Stage 3 (≥ 3 missed instalments ≈ 90 DPD; LGD × EAD at default)                                             |    2300 |           25.1 |           22.6 |        90.37 |
-| derecognised (prepaid by the report month)                                                                  |   15453 |            0   |            0   |       nan    |
-| memo: of stage 3, ≥ 6 missed instalments (likely already written off under LC's ~150-DPD charge-off policy) |     682 |            7.6 |            6.9 |        90.37 |
+| stage                                                                                                         |   loans |   gross EAD $m |   allowance $m |   coverage % |
+|:--------------------------------------------------------------------------------------------------------------|--------:|---------------:|---------------:|-------------:|
+| Stage 1 (performing or < 1 missed instalment(s) visible; 12-month ECL)                                        |  263610 |         2992.3 |          101.5 |         3.39 |
+| Stage 2 (1–2 missed instalments ≈ 0–60 DPD, ex-post proxy; lifetime ECL)                                      |    1571 |           17.1 |            1.4 |         8.46 |
+| Stage 3 (≥ 3 missed instalments ≈ ≥ 60 DPD; LGD × EAD at default)                                             |    2300 |           25.1 |           22.6 |        90.37 |
+| derecognised (prepaid by the report month)                                                                    |   15453 |            0   |            0   |       nan    |
+| memo: of stage 3, ≥ 6 missed instalments (≈ ≥ 150 DPD; likely already written off under LC's ~150-DPD policy) |     682 |            7.6 |            6.9 |        90.37 |
+| memo: of stage 3, exactly 5 missed (≈ 120–150 DPD; borderline write-off)                                      |     439 |            4.8 |            4.4 |        90.37 |
 
 Same definitions and caveats as reports/phase2/ecl.md (monthly DPD is not in the data; cured delinquencies are invisible; stage 2 understated).

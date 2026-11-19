@@ -51,8 +51,8 @@ def realised_loss(port):
 def fit_hazard_asof(loans, report_date, start="2012-09-01", lag_m=6, default_shift=0, lp=None, check=True):
     """Refit the A-spec hazard using only outcomes observable by report_date − lag (E5). default_shift=2 → 90-DPD events.
     start: pre-registered 2012-09. Gate fix R7-1 / R2-1: for R = 2014-12-31 that window observes at most MOB 21, so the late-MOB spline
-    terms are not identified (fit_mnl now refuses it); the benchmark passes start = 2009-01 (bug-driven deviation, notes/10) — older
-    vintages, still only outcomes observable by R − lag, identify the full 36-month shape. check=False only for the MOB ≤ 21 diagnostic.
+    terms are not identified (fit_mnl refuses it). The benchmark therefore fits it with check=False and uses it only for MOB 1–21, with a
+    separate tail (reference A, or a start = 2009-01 refit — older vintages, still only outcomes observable by R − lag).
     lp: optional replacement score column (e.g. logit of the as-of PD12) for the as-of sensitivity."""
     cut = pd.Timestamp(report_date).to_period("M").to_timestamp() - pd.DateOffset(months=lag_m)
     tr = loans[(loans.issue_dt >= start) & (loans.issue_dt <= pd.Timestamp(report_date))].copy()
@@ -77,11 +77,14 @@ def fit_on(tr, check=True):
             "prepays": int((y == 2).sum()), "iters": its}
 
 
-def staging_e4(port, model, LGD, report="2015-12-01"):
+def staging_e4(port, model, LGD, report="2015-12-01", s2=(1, 2), s3_min=3):
     """E4 staging at the reporting date (EX-POST; monthly DPD is not in the data).
     m = missed instalments by the report month (only visible for loans that ultimately charged off);
     stage 3: m >= 3 (~90 DPD) -> LGD x EAD at default; stage 2: m in {1, 2} (~30 DPD proxy) -> lifetime ECL;
-    stage 1: other performing -> 12-month ECL; prepaid by the report month -> derecognised."""
+    stage 1: other performing -> 12-month ECL; prepaid by the report month -> derecognised.
+    DPD mapping (gate R8-1): the first missed instalment is due in month d, so at the report date a loan with m missed due dates is
+    ≈ 30(m − 1) to 30m days past due: m = 1–2 ≈ 0–60 DPD, m ≥ 3 ≈ ≥ 60 DPD. s2 / s3_min allow the backstop-consistent variant
+    (stage 2 = m in {2, 3} ≈ > 30 DPD, stage 3 = m ≥ 4 ≈ ≥ 90 DPD) as a post-hoc sensitivity."""
     r, EAD, _ = schedule(port)
     hd, hp = hazards(model["scaler"].loan_cols(port), model["B"])
     s_prev, _, _ = cif(hd, hp)
@@ -90,10 +93,10 @@ def staging_e4(port, model, LGD, report="2015-12-01"):
     is_def = port.loan_status.isin(["Charged Off", "Default"]).to_numpy()
     m = np.where(is_def & (np.nan_to_num(d, nan=np.inf) <= due), due - np.nan_to_num(d, nan=0) + 1, 0)
     p = np.where(port.event.to_numpy() == 2, port["T"].to_numpy(), np.inf)
-    st3 = m >= 3
-    st2 = (m >= 1) & (m <= 2)
+    st3 = m >= s3_min
+    st2 = (m >= s2[0]) & (m <= s2[1])
     gone = (m == 0) & (p <= due)
-    st1 = (m == 0) & ~gone
+    st1 = ~st2 & ~st3 & ~gone
     n = len(port)
     ecl12, ecll = np.zeros(n), np.zeros(n)
     for i in np.where(st1 | st2)[0]:
@@ -105,15 +108,16 @@ def staging_e4(port, model, LGD, report="2015-12-01"):
     ead_def = EAD[np.arange(n), d_idx]                        # outstanding principal at first missed payment
     ead_perf = EAD[np.arange(n), np.minimum(due, H - 1)]
     ead_rep = np.where(st2 | st3, ead_def, ead_perf)
-    rows = [("Stage 1 (performing, no missed instalment visible; 12-month ECL)", st1, ecl12),
-            ("Stage 2 (1–2 missed instalments ≈ ≥ 30 DPD, ex-post proxy; lifetime ECL)", st2, ecll),
-            ("Stage 3 (≥ 3 missed instalments ≈ 90 DPD; LGD × EAD at default)", st3, LGD * ead_def),
+    lo, hi = 30 * (s2[0] - 1), 30 * s2[1]
+    rows = [(f"Stage 1 (performing or < {s2[0]} missed instalment(s) visible; 12-month ECL)", st1, ecl12),
+            (f"Stage 2 ({s2[0]}–{s2[1]} missed instalments ≈ {lo}–{hi} DPD, ex-post proxy; lifetime ECL)", st2, ecll),
+            (f"Stage 3 (≥ {s3_min} missed instalments ≈ ≥ {30 * (s3_min - 1)} DPD; LGD × EAD at default)", st3, LGD * ead_def),
             ("derecognised (prepaid by the report month)", gone, np.zeros(n))]
     t = pd.DataFrame([{"stage": nm, "loans": int(msk.sum()), "gross EAD $m": float(ead_rep[msk].sum() / 1e6) if "derecog" not in nm else 0.0,
                        "allowance $m": float(al[msk].sum() / 1e6)} for nm, msk, al in rows])
-    wo = m >= 6
-    t = pd.concat([t, pd.DataFrame([{"stage": "  memo: of stage 3, ≥ 6 missed instalments (likely already written off under LC's ~150-DPD charge-off policy)",
-                                     "loans": int(wo.sum()), "gross EAD $m": float(ead_rep[wo].sum() / 1e6),
-                                     "allowance $m": float((LGD * ead_def)[wo].sum() / 1e6)}])], ignore_index=True)
+    memo = [("  memo: of stage 3, ≥ 6 missed instalments (≈ ≥ 150 DPD; likely already written off under LC's ~150-DPD policy)", m >= 6),
+            ("  memo: of stage 3, exactly 5 missed (≈ 120–150 DPD; borderline write-off)", m == 5)]
+    t = pd.concat([t, pd.DataFrame([{"stage": nm, "loans": int(msk.sum()), "gross EAD $m": float(ead_rep[msk].sum() / 1e6),
+                                     "allowance $m": float((LGD * ead_def)[msk].sum() / 1e6)} for nm, msk in memo])], ignore_index=True)
     t["coverage %"] = (100 * t["allowance $m"] / t["gross EAD $m"].replace(0, np.nan)).round(2)
     return t

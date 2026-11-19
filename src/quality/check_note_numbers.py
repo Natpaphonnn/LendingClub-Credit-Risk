@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-NOTES = ["01_data_audit.md", "02_phase1_results.md", "03_phase2_results.md", "04_story.md", "05_claims_and_limitations.md", "07_article_draft.md",
+NOTES = ["01_data_audit.md", "02_phase1_results.md", "03_phase2_results.md", "04_story.md", "05_claims_and_limitations.md", "06_quality_report.md", "07_article_draft.md",
          "10_extensions_results.md", "STATUS.md", "../README.md"]
 NUM = re.compile(r"(?<![\w.])([−\-+]?\$?\d{1,3}(?:,\d{3})+(?:\.\d+)?|[−\-+]?\$?\d+(?:\.\d+)?)(?![\w])")
 
@@ -109,6 +109,9 @@ EXPLAINED = {("01_data_audit.md", t): why for t, why in [
     ("621,169", "Phase 0 ad-hoc query; independently re-derived by gate reviewer R1"), ("55,290", "Phase 0 ad-hoc query (60m to 2013)"),
     ("418", "Phase 0 ad-hoc query on rejected file (thousands)"), ("392.6", "file size MB (notes/data_sources.md bytes)"),
     ("255.5", "file size MB (notes/data_sources.md bytes)"), ("403", "HTTP status code")]}
+EXPLAINED.update({("06_quality_report.md", t): why for t, why in [
+    ("$45.6", "chronological record: pre-R5-1 policy value"), ("1.07497", "chronological record: earlier survival_A value"),
+    ("332.14", "unit-test fixture value (tests/test_riskutils.py)"), ("1,301", "chronological record: provenance count at that step")]})
 scales = np.array([1, 100, 0.01, 1e-6, 1e-3, -1, -100])
 rows, n_tok, verified, explained = [], 0, [], []
 for note in NOTES:
@@ -140,3 +143,6 @@ md += ["", "## Explained exceptions (not traceable to a generated report)", "", 
 md += [f"| {a} | {b} | `{c}` | {d} |" for a, b, c, d in explained]
 (ROOT / "reports" / "quality" / "note_numbers_check.md").write_text("\n".join(md) + "\n")
 print(md[0])
+
+import sys  # noqa: E402
+sys.exit(1 if rows else 0)

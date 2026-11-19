@@ -43,6 +43,17 @@ for bi, b in enumerate(batches):
 df = pd.DataFrame(rows).drop_duplicates(["state", "month"])
 df["month"] = pd.to_datetime(df["month"])
 df = df.sort_values(["state", "month"]).reset_index(drop=True)
+# value-level checksum (gate R1-3 / R10-4): API responses carry per-request fields (e.g. responseTime), so byte hashes of a fresh download
+# differ even when the values are identical. The pin is on the parsed (state, month, ur) table instead.
+import hashlib  # noqa: E402
+import os  # noqa: E402
+digest = hashlib.sha256(df.assign(month=df.month.dt.strftime("%Y-%m")).to_csv(index=False).encode()).hexdigest()
+pin = (ROOT / "bls_values.sha256").read_text().split()[0]
+if digest != pin:
+    msg = f"BLS values differ from the pinned table (got {digest[:12]}…, pinned {pin[:12]}…): likely revised LAUS data."
+    if os.environ.get("ALLOW_REVISED_BLS") != "1":
+        raise SystemExit(msg + " Set ALLOW_REVISED_BLS=1 to continue (results will not be byte-identical).")
+    print("WARNING:", msg)
 df.to_parquet(ROOT / "data" / "interim" / "state_unemployment.parquet")
 print(df.groupby("state").size().describe())
 print(df.month.min(), df.month.max(), df.state.nunique(), "states;", len(df), "rows")

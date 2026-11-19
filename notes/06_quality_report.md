@@ -1,4 +1,8 @@
-# 06 — Quality report (reproducibility, correctness audit, tests, independent review) — 2026-11-19
+# 06 — Quality report (reproducibility, correctness audit, tests, independent review) — 2026-11-19, updated 2026-11-20
+
+> **Chronological record.** Each section reports values as they stood at that step; later fixes changed some of them. Current values:
+> `notes/05_claims_and_limitations.md` (claim register, re-checked by `src/quality/check_claims.py`) and `reports/`. Current status at the end:
+> *Final state (2026-11-20)*.
 
 ลำดับงานตาม priority ของ Nat: (1) reproducibility → (2) correctness audit + tests → (3) independent review → (4) แก้ critical/major ที่ไม่ต้องเปลี่ยน spec,
 log อะไรที่เป็น spec change เป็น deviation → rerun (1)–(2) → (5) รายงานนี้
@@ -159,15 +163,15 @@ before computing). Results: `notes/10_extensions_results.md`.
 | item | decision | result |
 |---|---|---|
 | CR-1 MOB-6 confirmatory test | 60-month loans, never computed | **FAIL** — sensitivity 9/9, specificity 4/6 (67% < 80%) |
-| MA-1 as-of model | 12-month bad, data to 2014-06, reported next to the reference | OOT Gini 33.1 (−3.65); realistic first alarm Jun 2017 |
-| MA-2 tie-break | no champion change | grid sensitivity reported (36.5–36.9) |
-| MA-3 macro bootstrap | subsample redrawn per replicate (correctness fix) | θ −0.038 [−0.094, −0.004] → B still FAIL |
-| MA-5 staging | illustration: stage 3 ≥ 3 missed, stage 2 1–2 missed (≈ 30 DPD proxy) | stage 2 1,571, stage 3 2,300 loans |
+| MA-1 as-of model | 12-month bad, data to 2014-06, reported next to the reference | OOT Gini 33.1 (−3.65) at the time; after the R5-1 retrain 33.0 (−3.76); realistic first alarm Jun 2017 |
+| MA-2 tie-break | no champion change | grid sensitivity reported (36.5–36.9 at the time; 36.47–36.79 after the R5-1 retrain) |
+| MA-3 macro bootstrap | subsample redrawn per replicate (correctness fix) | θ −0.038 [−0.094, −0.004] at the time; −0.045 [−0.099, −0.009] after the R5-1 retrain → B still FAIL |
+| MA-5 staging | illustration: stage 3 ≥ 3 missed, stage 2 1–2 missed (≈ 30 DPD proxy — relabelled ≈ 0–60 DPD after gate round 2 R8-1) | stage 2 1,571, stage 3 2,300 loans; backstop-consistent variant 1,521 / 1,640 |
 | MA-6 ECL benchmark | refit at reporting date, discounted LGD, 90-DPD sensitivity | refit → 1.10× (vs 1.17×) — **withdrawn after gate round 1 (R7-1/R2-1): artefact; corrected 1.27× vs 1.18×**; LGD 90.4%; 90-DPD 12m ECL $80m (now $79.2m) |
 | MA-10 pre-registration evidence | private remote | https://github.com/Natpaphonnn/LendingClub-Credit-Risk (private). **Correction (gate R1-1/R10-1):** only E1–E5 (4562602) and the gate rubric (9a493da) were pushed before computing; Phase 1–2 pre-registrations were first pushed after their results (order self-attested) |
 
 ## Re-run after extensions (2026-11-20)
-Two fresh runs from `data/raw` with the final code (incl. E1–E5): **byte-identical** (`reports/quality/runtime_runA.log`, `runtime_runB.log`;
+Two fresh runs from `data/raw` with the code at that time (incl. E1–E5): **byte-identical** (logs since overwritten by later runs;
 522–523 s each, rule B bootstrap now redraws the subsample per replicate). Tests **51/51**; claim re-check **36/36** (one doc rounding fixed:
 θ CI upper bound −0.00448 → "−0.004", not "−0.005"); note-number provenance 1,301/1,301 traced. `requirements.lock.txt` regenerated (adds pytest).
 
@@ -182,3 +186,18 @@ Two fresh runs from `data/raw` with the final code (incl. E1–E5): **byte-ident
 - Effect: every M2-based number moved slightly (OOT Gini 36.8 → 36.7; ΔGini +3.1; M2 − LC +1.05 → +1.01); conclusions unchanged except
   **E5 (refit widens, not closes, the ECL gap)** and **policy C** (MILP significantly worse than the cutoff at 5%; the cutoff level is what matters).
   E1 verdict unchanged (FAIL).
+
+## Bank gate round 2 (2026-11-20) — `reports/quality/gate_round2.md`
+- 10 fresh reviewers on commit 330f9d2 (instructed not to open round-1 results). Mean **8.22**, no BLOCKING finding → **PASS**.
+  Scores: R1 8.4 · R2 7.9 · R3 8.4 · R4 8.6 · R5 8.5 · R6 8.3 · R7 7.9 · R8 8.0 · R9 8.2 · R10 8.0.
+- Majors were fixed after the gate (no pre-registered threshold, window or criterion changed; relabels and post-hoc descriptive rows only):
+  ranking wording scoped to quarters with complete outcomes + descriptive month-12 KS/Gini by quarter (R2-1/R6-1); E5 (c) stated as a lower
+  bound + knowable-tail row (R7-1); missed-instalment → DPD relabel + backstop-consistent staging variant (R8-1); "90-DPD" relabelled ≈ 60 DPD +
+  post-hoc 4th-missed row (R8-2); macro CI sentence computed instead of hard-coded (R9-1); policy takeaway reworded (R9-2); run_all now deletes
+  data/interim and rebuilds from raw, runs tests + checkers (R10-1/R10-5); BLS pinned by parsed values with an opt-in override (R10-4/R1-3);
+  monotonicity test sweeps split thresholds on NaN-enriched rows; the residual NaN-routing reversal (≤ 0.03 pp PD) is disclosed (R10-3/R5-1).
+- Full list with outcomes: `reports/quality/gate_round2_fixes.md`.
+
+## Final state (2026-11-20)
+See `reports/quality/runtime_runA.log` / `runtime_runB.log` (two fresh runs from raw; data/interim deleted first), `claims_check.md`,
+`note_numbers_check.md` and `reports_manifest.sha256` for the current reproducibility, claim and provenance status.

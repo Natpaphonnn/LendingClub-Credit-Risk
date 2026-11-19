@@ -16,3 +16,7 @@ Validation log loss spread across the 12 pre-registered configs: 0.00048 — sel
 |           31 |                 200 |           0 |         165 |          0.3761 |    36.5174 |  26.3058 |       -1.6958 |            |
 |           63 |                 200 |          10 |         172 |          0.3761 |    36.4699 |  26.3791 |       -1.7314 |            |
 |           63 |                 200 |           0 |         135 |          0.3762 |    36.4699 |  26.3693 |       -1.7229 |            |
+
+## Cost of the monotone constraints (descriptive; gate R5-2)
+
+Champion config without constraints: validation log loss 0.37481 (constrained 0.37568); OOT Gini 37.16 (constrained 36.74). Not a candidate model — shown to size what the interpretability constraint costs.

@@ -1,9 +1,12 @@
-"""E5 — ECL benchmark (notes/08_prereg_extensions.md §E5) with gate-round-1 fixes (notes/09, reports/quality/gate_round1.md).
+"""E5 — ECL benchmark (notes/08_prereg_extensions.md §E5) with gate fixes (reports/quality/gate_round1.md, gate_round2.md).
 
-- Refits at the reporting date now start at 2009-01 (R7-1 / R2-1: the 2012-09 start left MOB 22–36 unidentified) and fail loudly if
-  any spline column lacks support (hazard.check_identified).
-- (c') as-of sensitivity: score covariate = logit of the as-of PD12 (data to 2014-06) and LGD from defaults known by 2014-06 (R3-1 / R8-2 / R2-2).
-- Descriptive additions (R8-1, R8-6, R2-1): in-sample backtest of A, count × EAD × LGD decomposition, 12-month backtest, MOB-window split.
+- (c) primary refit at 2014-12-31: the pre-registered 2012-09 start observes at most MOB 21, so the refit is used only for MOB 1–21
+  (fitted with check=False: the unsupported last spline column is zero for t ≤ 24.3 and cannot affect those months); MOB 22–36 hazards
+  come from reference A — whose outcomes run past the reporting date, so (c) is a LOWER BOUND on the knowable-only gap (gate R7-1).
+- (c'') knowable tail: MOB 22–36 from the 2009-start refit (outcomes to 2014-06); (c2) full-horizon 2009-start refit (degraded pre-2012-09 score).
+- (c') as-of sensitivity: score covariate = logit of the as-of PD12 (data to 2014-06) and LGD from defaults known by 2014-06.
+- (d) pre-registered "90-DPD" = default at the 3rd missed instalment (d + 2) ≈ 60 DPD at that due date (gate R8-2); (d') post-hoc d + 3 ≈ 90 DPD.
+- Descriptive additions: in-sample backtest of A, count × EAD × LGD decomposition, 12-month backtest, MOB-window split.
 Outputs: reports/phase2/ecl_benchmark.md, reports/phase2/ecl_benchmark.json
 Usage: nice -n 19 .venv/bin/python -I src/phase2/ecl_benchmark.py
 """
@@ -66,6 +69,10 @@ tr90 = trn.copy().reset_index(drop=True)
 T, ev = code_events(tr90.loan_status.to_numpy(), tr90.lp_mob, as_float(tr90.default_mob) + 2, tr90.W)
 tr90["T"], tr90["event"] = T, ev
 m_90 = fit_on(tr90)
+tr91 = trn.copy().reset_index(drop=True)
+T, ev = code_events(tr91.loan_status.to_numpy(), tr91.lp_mob, as_float(tr91.default_mob) + 3, tr91.W)
+tr91["T"], tr91["event"] = T, ev
+m_91 = fit_on(tr91)
 
 r, EAD, DF = schedule(port)
 real = realised_loss(port)
@@ -114,8 +121,11 @@ scen = {"(a) reference A, undiscounted LGD": (m_ref, LGD_u, port, 0),
             ({"early": m_r14_prereg, "tail": m_ref}, LGD_d[12], port, 0),
         "(c') (c) with as-of score and LGD from defaults known by 2014-06":
             ({"early": m_r14_prereg_a, "tail": m_ref, "early_port": port_asof}, LGD_known_d12, port, 0),
+        "(c'') (c) with the MOB 22–36 tail from the 2009-start refit (knowable at 2014-12)":
+            ({"early": m_r14_prereg, "tail": m_r14}, LGD_d[12], port, 0),
         "(c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)": (m_r14, LGD_d[12], port, 0),
-        "(d) 90-DPD default definition, discounted LGD (k=12)": (m_90, LGD_d[12], port, 2)}
+        "(d) default at 3rd missed instalment (≈ 60 DPD; pre-registered as '90-DPD'), discounted LGD (k=12)": (m_90, LGD_d[12], port, 2),
+        "(d') post-hoc: default at 4th missed instalment (≈ 90 DPD), discounted LGD (k=12)": (m_91, LGD_d[12], port, 3)}
 rows, out, splits, decs = [], {}, {}, {}
 for nm, (mdl, lgd_ecl, p, sh) in scen.items():
     e, hd, hp = run(mdl, lgd_ecl, p, sh)
@@ -173,7 +183,7 @@ info = {k: {kk: v[kk] for kk in ("n_loans", "defaults", "prepays", "issue_window
         for k, v in (("refit_2014_prereg_2012start", m_r14_prereg), ("refit_2014_from_2009", m_r14), ("refit_2015", m_r15))}
 out.update({"LGD_undiscounted": LGD_u, "LGD_discounted": LGD_d, "LGD_known_by_2014_06_disc12": LGD_known_d12,
             "LGD_known_by_2014_06_undisc": LGD_known_u, "n_defaults_known_by_2014_06": len(known),
-            "realised_loss_m": real.sum() / 1e6, "models": info, "model_90dpd_defaults": m_90["defaults"],
+            "realised_loss_m": real.sum() / 1e6, "models": info, "model_90dpd_defaults": m_90["defaults"], "model_d3_defaults": m_91["defaults"],
             "decomposition": decs, "mob_window_split": {k: {kk: list(vv) for kk, vv in v.items()} for k, v in splits.items()},
             "backtest_12m": {"pred_EL_12m_undisc_m": el12, "realised_12m_m": real12, "ratio": real12 / el12,
                              "pd12_pred_pct": pd12_pred, "pd12_obs_pct": pd12_obs},
@@ -204,21 +214,25 @@ default: k = 6 → {100*LGD_d[6]:.1f}%, **k = 12 → {100*LGD_d[12]:.1f}%**, k =
 ({len(known):,}): {100*LGD_known_u:.1f}% undiscounted, {100*LGD_known_d12:.1f}% discounted (recovery amounts are still final values — limitation).
 Realised net principal loss of the 2015 vintage: ${real.sum()/1e6:.1f}m.
 
-Refits (outcomes observed only up to reporting date − 6 months; identifiability asserted — every spline column has support):
+Refits (outcomes observed only up to reporting date − 6 months). Identifiability is asserted for every full-horizon fit; the (c) early model is
+fitted with check=False and used only for the MOB range it identifies:
 - at 2014-12-31 as pre-registered: issued {info['refit_2014_prereg_2012start']['issue_window'][0]}..{info['refit_2014_prereg_2012start']['issue_window'][1]},
   {info['refit_2014_prereg_2012start']['n_loans']:,} loans, max MOB observed **{CUT_ID}**, {info['refit_2014_prereg_2012start']['defaults']:,} defaults
 - at 2015-12-31 (staging): issued {info['refit_2015']['issue_window'][0]}..{info['refit_2015']['issue_window'][1]}, {info['refit_2015']['n_loans']:,} loans,
-  max MOB observed {info['refit_2015']['max_mob_observed']} (all spline columns supported)
+  max MOB observed {info['refit_2015']['max_mob_observed']} (all spline columns supported; MOB 34–36 extrapolate the last cubic piece)
 - **Gate fix (R7-1 / R2-1):** the first version reported the 2014-12 refit over 36 months, but with max MOB {CUT_ID} its last spline coefficient is
   unidentified and MOB {CUT_ID+1}–36 hazards were extrapolation (the reported 1.10× was an artefact; fit_mnl now refuses such a design). The
   pre-registered refit is therefore used only for MOB 1–{CUT_ID}; MOB {CUT_ID+1}–36 hazards come from reference A — **a stated assumption, not
-  a pre-registered element** (bug-driven deviation, notes/10).
+  a pre-registered element** (bug-driven deviation, notes/10). Reference A was fitted on outcomes observed after the reporting date, so (c) is a
+  **lower bound** on the knowable-only gap; (c'') takes the tail from the 2009-start refit instead (all inputs knowable except the score and
+  final recovery amounts).
 - (c2) sensitivity: refit on vintages from 2009-01 (outcomes still only to 2014-06; {info['refit_2014_from_2009']['n_loans']:,} loans, max MOB
   {info['refit_2014_from_2009']['max_mob_observed']}). Not the primary: M2 scores pre-2012-09 loans with several bureau fields missing, so their
   score is inflated relative to their outcomes, which flattens the fitted score slope (in-sample A/E by issue year below).
 - Scores: (c) uses the reference M2 score (trained on full 36-month labels → post-2014 information); (c') replaces it with the as-of model's PD12
-  (data to 2014-06) and uses LGD from defaults known by 2014-06. 90-DPD model: {m_90['defaults']:,} defaults (horizon 36: defaults with d + 2 > 36
-  are censored — a slight bias against this definition).
+  (data to 2014-06) and uses LGD from defaults known by 2014-06. (d) 3rd-missed-instalment model: {m_90['defaults']:,} defaults;
+  (d') 4th: {m_91['defaults']:,} (horizon 36: defaults with d + k > 36 are censored — a slight bias against these definitions). Mapping: the
+  first missed instalment is due in month d, so at the k-th missed due date the loan is ≈ 30(k − 1) days past due (gate R8-1/R8-2).
 
 ## Scenarios
 

@@ -14,7 +14,7 @@ cutoff around 2018), so no lender could have had this exact model in 2015.
 We therefore report two models: the **reference** model (full labels; alarms dated relative to a counterfactual 2015 deployment) and an
 **as-of** model built only from what a lender knew on 31 Dec 2014 (12-month bad window, outcomes to Jun 2014). *(notes/10_extensions_results.md E2)*
 
-**One-line answer:** It kept ranking borrowers well (and beat LendingClub's own grades), but actual defaults drifted up to 46% above
+**One-line answer:** It kept ranking borrowers well on every vintage whose outcomes are complete (and beat LendingClub's own grades), but actual defaults drifted up to 46% above
 what it expected; the standard stability alarm never fired, label-based checks fired 18 months after the first worse loans were
 issued (the month-12 observation window itself; about two years with the realistic as-of model), macro data could not explain it, and the lifetime expected loss came in below the loss actually realised (realised = 1.18× predicted).
 
@@ -41,7 +41,7 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
 *Figure 2 — `fig2_champion_vs_lc.png`*
 - Trained on 36-month loans issued Sep 2012 – Dec 2013 (120,683), tuned on 2014, tested on 2015 (282,787), application data only.
 - **Out-of-time Gini: monotone LightGBM 36.7 [36.3, 37.3] vs WoE scorecard 33.7 [33.1, 34.2] vs LC sub-grade 35.7 [35.2, 36.3].**
-  Paired ΔGini (LightGBM − scorecard) **+3.1 [2.8, 3.4]**, above the pre-registered bar of +2.0 with CI > 0 → LightGBM is champion.
+  Paired ΔGini (LightGBM − scorecard) **+3.1 [2.8, 3.3]**, above the pre-registered bar of +2.0 with CI > 0 → LightGBM is champion.
   Against LC's sub-grade (descriptive benchmark, not pre-registered): **+1.01 [0.52, 1.46]**. Every one of the 12 grid configs beats the scorecard by ≥ 2.8. The realistic as-of model (12-month bad, data to Jun 2014) scores
   **33.0 [32.5, 33.5]** — 3.76 below the reference: part of the reference's edge is labels a 2014 lender could not have had. *(10_extensions_results.md E2)*
   *(notes/02_phase1_results.md §4; reports/phase1/evaluation.md; reports/quality/grid_sensitivity.md)*
@@ -50,9 +50,12 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
 - Both models are shown side by side: the scorecard (14 characteristics, PDO 20) is the explainable one; reason codes for declines
   exist for both ("points below max" vs TreeSHAP; top reason agrees 52% of the time, the scorecard's top reason sits in LightGBM's top 4 90% of the time). *(02_phase1_results.md §6)*
 
-## 3. Ranking survives, calibration drifts
+## 3. Ranking holds (where it can be measured), calibration drifts
 *Figure 3 — `fig3_ranking_vs_level.png`*
-- KS of the champion on every matured quarter 2014Q1–2015Q4 stays **25.8–27.2** (validation 26.2) — never near its alarm. *(reports/phase1/monitoring.md §3)*
+- KS of the champion on every quarter with complete, knowable outcomes (2014Q1–2015Q3; 2014 is the reference year) stays **25.8–27.2**
+  (validation 26.2) — never near its alarm. *(reports/phase1/monitoring.md §3)*
+- Later vintages have no final outcome yet. Against defaults by month 12 (descriptive, added after review) the ranking softens on the worst
+  vintages: KS12 for 2016Q2–Q4 is 0.87–0.89× its 2014 level, recovering to ≈ 0.95× in 2017. *(monitoring.md §3b)*
 - But the level breaks: on 2015 the model **under-predicts PD by 1.70 pp** (mean PD 13.1% vs 14.9% observed); the cutoff tuned to an
   11% bad rate on 2014 delivers **11.9%** on 2015. *(02_phase1_results.md §4–5)*
 - Actual/expected defaults by month 12 climb from 0.93 (2014Q1) to **1.46 (2016Q3)**. *(monitoring.md §2)*
@@ -69,7 +72,7 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
   label-based alarm (month-12 A/E amber) could only be known in **Dec 2016**; red in Sep 2017 for the champion (Jun 2017 for the scorecard).
   Meanwhile **~545k loans** (36-month, 2015Q2–2016Q4) were booked. A/E thresholds are conventions without statistical bounds, and the month-12 A/E alarm shares its numerator and knowable date with the
   deterioration truth — so this 18-month lag is the month-12 observation window itself, not a detector failing. *(02_phase1_results.md §7)*
-- With the **as-of model** a lender really could have had in Jan 2015 (PD12 well calibrated at first, A/E 1.01 for 2015Q1), the first amber is for
+- With the **as-of model** a lender really could have had in Jan 2015 (PD12 well calibrated at first, A/E 1.02 for 2015Q1), the first amber is for
   2015Q4 vintages, knowable **Jun 2017**; red for 2016Q1, knowable **Sep 2017**; its PSI never left green (max 0.075). "First worse vintage"
   here means ≥ 1.2× the 2012-09..2013-12 month-12 default rate; against the as-of model's own development window the first such vintage is
   2016Q1, whose truth is knowable the same month as the red alarm. *(reports/phase4/asof_model.md)*
@@ -118,25 +121,31 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
   (×1.44 vs ×1.03 riskiest) — a gradient already visible on 2014 validation, so a property of the fitted score slope that the drift amplified.
   *(reports/phase2/ecl.md; ecl_benchmark.md; survival_A.md)*
 - Would recalibrating at the reporting date have helped? **Refitting at 31 Dec 2014** on outcomes a lender could see (to Jun 2014) makes it
-  **worse: 1.27×** (1.33× vs 1.19× over the months the refit can identify) — the only outcomes visible in 2014 came from vintages that
-  performed better than 2015. A refit cannot see drift that has not happened yet. (An earlier version reported 1.10× here; that was an
+  **worse: 1.27×** — and that is a lower bound, because months 22–36 still borrow the reference model's tail (fitted on later outcomes);
+  with a knowable tail it is 1.41×, and over the months the refit identifies 1.33× vs 1.19×. The only outcomes visible in 2014 came from
+  vintages that performed better than 2015. A refit cannot see drift that has not happened yet. (An earlier version reported 1.10× here; that was an
   artefact of extrapolating hazards beyond month 21 and was withdrawn after review.) Discounting recoveries at the loan rate raises LGD from
-  88.8% to 90.4%; a 90-DPD default definition lowers 12-month ECL ($79m vs $101m) but barely changes lifetime loss (1.18×).
+  88.8% to 90.4%; dating default later lowers 12-month ECL — $79m at the 3rd missed instalment (≈ 60 DPD; pre-registered under the label "90-DPD"), $68m at
+  the 4th (≈ 90 DPD) vs $101m — but barely changes lifetime loss (1.18–1.19×).
   *(reports/phase2/ecl_benchmark.md; 10_extensions_results.md E5)*
 - Illustrative, in-sample overlay (scale expected loss by observed A/E): **month-12 overlay closes 57%** of the gap ($256m), knowable
   Sep 2016 – Jun 2017; the month-6 version closes only 11%. *(reports/phase2/overlay.md)*
 - Staging is shown only as an **ex-post illustration** (monthly DPD is not in the data): at Dec-2015, 1,571 loans with 1–2 missed instalments
-  (≈ ≥ 30 DPD) go to Stage 2 and 2,300 with ≥ 3 (≈ 90 DPD) to Stage 3; delinquencies that later cured are invisible. *(ecl.md; 10 E4)*
+  (≈ 0–60 DPD) go to Stage 2 and 2,300 with ≥ 3 (≈ ≥ 60 DPD) to Stage 3 under the pre-registered thresholds; aligned with the 30/90-DPD
+  backstops (2–3 / ≥ 4 missed) the counts are 1,521 and 1,640. Delinquencies that later cured are invisible. *(ecl.md; 10 E4)*
 
-## 9. A good PD cutoff is enough — set its level with funding cost
+## 9. A good PD cutoff is enough — the hard part is its level
 *Figure 8 — `fig8_policy_cutoff_vs_milp.png`*
 - A MILP chose approval cells (PD decile × amount) to maximise expected NPV under approval ≥ 75% and expected bad ≤ 11%.
 - On the pre-registered metric (undiscounted realised profit), **approve-everyone wins ($230m vs MILP $222m)** — the metric was wrong: it
   charges no cost of funds. *(reports/phase2/policy_C.md)*
 - On an exploratory metric with a 5% funding cost (approximate timing): **simple champion cutoff $47.5m > MILP $45.8m ≫ approve-everyone $28.4m**;
-  the MILP is significantly worse than the cutoff at 5% (−$1.7m, paired bootstrap CI [−2.7, −0.8]), not different at 3%, and better at 8% only
-  because it approves fewer loans. A single PD threshold tuned to the same objective matches the MILP at every rate.
-  Business reading: the cell optimiser adds nothing over one PD threshold; what matters is setting that threshold with the cost of funds. *(policy_C.md)*
+  on 2015 the MILP is no better than the cutoff at 5% (−$1.7m, paired bootstrap CI [−2.7, −0.8], holding the chosen policies fixed), not
+  different at 3%, and better at 8% only because it approves fewer loans. A single PD threshold tuned to the same objective matches the MILP
+  at every rate — but at 5% it realised only $44.9m: tuned to NPV on a PD that under-predicted, it over-approved. Dollar levels depend on
+  the cash-timing assumption; the differences are the evidence.
+  Business reading: the cell optimiser adds nothing over one PD threshold; the threshold level depends on funding cost *and* on how well the
+  PD is calibrated. *(policy_C.md)*
 
 ## Closing (what a Thai bank should take from this)
 1. Monitor **level** (A/E by vintage, early months-on-book, with statistical bounds), not just stability (PSI) and ranking (KS).

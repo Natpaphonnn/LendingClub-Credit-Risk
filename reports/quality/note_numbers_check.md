@@ -1,4 +1,4 @@
-# Note number provenance — 2338 numeric tokens checked; 2328 matched a report value, 10 matched an independently re-derived count, 12 explained exceptions, 0 unmatched
+# Note number provenance — 3085 numeric tokens checked; 3075 matched a report value, 10 matched an independently re-derived count, 17 explained exceptions, 0 unmatched
 
 Re-derived counts: 1,364,557 ✓, 1,433,835 ✓, 1,485,240 ✓, 2,749 ✓, 473 ✓, 544,642 ✓
 
@@ -23,3 +23,8 @@ Unmatched tokens need a manual verdict (threshold / arithmetic in text / count o
 | 01_data_audit.md | 203 | `125,703` | Phase 0 ad-hoc query |
 | 01_data_audit.md | 203 | `19,576` | Phase 0 ad-hoc query |
 | 01_data_audit.md | 268 | `403` | HTTP status code |
+| 06_quality_report.md | 54 | `$45.6` | chronological record: pre-R5-1 policy value |
+| 06_quality_report.md | 66 | `1.07497` | chronological record: earlier survival_A value |
+| 06_quality_report.md | 93 | `332.14` | unit-test fixture value (tests/test_riskutils.py) |
+| 06_quality_report.md | 176 | `1,301` | chronological record: provenance count at that step |
+| 06_quality_report.md | 176 | `1,301` | chronological record: provenance count at that step |

@@ -25,38 +25,85 @@
  },
  "staging": {
   "stage": [
-   "Stage 1 (performing, no missed instalment visible; 12-month ECL)",
-   "Stage 2 (1\u20132 missed instalments \u2248 \u2265 30 DPD, ex-post proxy; lifetime ECL)",
-   "Stage 3 (\u2265 3 missed instalments \u2248 90 DPD; LGD \u00d7 EAD at default)",
+   "Stage 1 (performing or < 1 missed instalment(s) visible; 12-month ECL)",
+   "Stage 2 (1\u20132 missed instalments \u2248 0\u201360 DPD, ex-post proxy; lifetime ECL)",
+   "Stage 3 (\u2265 3 missed instalments \u2248 \u2265 60 DPD; LGD \u00d7 EAD at default)",
    "derecognised (prepaid by the report month)",
-   "  memo: of stage 3, \u2265 6 missed instalments (likely already written off under LC's ~150-DPD charge-off policy)"
+   "  memo: of stage 3, \u2265 6 missed instalments (\u2248 \u2265 150 DPD; likely already written off under LC's ~150-DPD policy)",
+   "  memo: of stage 3, exactly 5 missed (\u2248 120\u2013150 DPD; borderline write-off)"
   ],
   "loans": [
    263610,
    1571,
    2300,
    15453,
-   682
+   682,
+   439
   ],
   "gross EAD $m": [
    2992.3097835644694,
    17.08876882463447,
    25.052721242157332,
    0.0,
-   7.640801400557533
+   7.640801400557533,
+   4.846838841669829
   ],
   "allowance $m": [
    111.00630549209887,
    1.51830702146244,
    22.249612480204306,
    0.0,
-   6.7858843978406895
+   6.7858843978406895,
+   4.30453382444093
   ],
   "coverage %": [
    3.71,
    8.88,
    88.81,
    NaN,
+   88.81,
+   88.81
+  ]
+ },
+ "staging_backstop": {
+  "stage": [
+   "Stage 1 (performing or < 2 missed instalment(s) visible; 12-month ECL)",
+   "Stage 2 (2\u20133 missed instalments \u2248 30\u201390 DPD, ex-post proxy; lifetime ECL)",
+   "Stage 3 (\u2265 4 missed instalments \u2248 \u2265 90 DPD; LGD \u00d7 EAD at default)",
+   "derecognised (prepaid by the report month)",
+   "  memo: of stage 3, \u2265 6 missed instalments (\u2248 \u2265 150 DPD; likely already written off under LC's ~150-DPD policy)",
+   "  memo: of stage 3, exactly 5 missed (\u2248 120\u2013150 DPD; borderline write-off)"
+  ],
+  "loans": [
+   264320,
+   1521,
+   1640,
+   15453,
+   682,
+   439
+  ],
+  "gross EAD $m": [
+   2999.924388985528,
+   16.351698471207868,
+   17.95500987825355,
+   0.0,
+   7.640801400557533,
+   4.846838841669829
+  ],
+  "allowance $m": [
+   111.50193814926152,
+   1.4554842582567036,
+   15.946052646653762,
+   0.0,
+   6.7858843978406895,
+   4.30453382444093
+  ],
+  "coverage %": [
+   3.72,
+   8.9,
+   88.81,
+   NaN,
+   88.81,
    88.81
   ]
  },

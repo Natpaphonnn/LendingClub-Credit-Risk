@@ -52,5 +52,16 @@ md = ("# LightGBM grid — sensitivity of OOT metrics (DESCRIPTIVE; champion unc
       f"KS {rng['OOT KS'][0]:.2f}–{rng['OOT KS'][1]:.2f}, CITL {rng['OOT CITL pp'][0]:.2f} to {rng['OOT CITL pp'][1]:.2f} pp. "
       f"Weakest config minus scorecard OOT Gini ({g1:.2f}) = {margin:.2f} → the '≥ 2.0 Gini' conclusion "
       f"{'holds for every config' if margin >= 2.0 else 'does NOT hold for every config'}; every config under-predicts PD on OOT.\n\n" + T.round(4).to_markdown(index=False) + "\n")
+# cost of the monotone constraints (gate R5-2): champion config without constraints — descriptive benchmark, not a candidate
+ch = T.iloc[0]
+pu = dict(objective="binary", metric="binary_logloss", learning_rate=0.05, num_leaves=int(ch.num_leaves),
+          min_child_samples=int(ch.min_child_samples), lambda_l2=float(ch.lambda_l2), feature_fraction=0.8, bagging_fraction=0.8,
+          bagging_freq=1, seed=SEED, num_threads=4, verbose=-1, deterministic=True, force_row_wise=True)
+ev = {}
+mu = lgb.train(pu, dtr, 3000, valid_sets=[dva], valid_names=["v"], callbacks=[lgb.early_stopping(100, verbose=False), lgb.record_evaluation(ev)])
+pu_ = mu.predict(X[oo], num_iteration=mu.best_iteration)
+md += (f"\n## Cost of the monotone constraints (descriptive; gate R5-2)\n\nChampion config without constraints: validation log loss "
+       f"{min(ev['v']['binary_logloss']):.5f} (constrained {ch.valid_logloss:.5f}); OOT Gini {100 * (2 * roc_auc_score(y, pu_) - 1):.2f} "
+       f"(constrained {ch['OOT Gini']:.2f}). Not a candidate model — shown to size what the interpretability constraint costs.\n")
 (ROOT / "reports" / "quality" / "grid_sensitivity.md").write_text(md)
 print(md)

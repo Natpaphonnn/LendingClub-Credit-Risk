@@ -31,18 +31,35 @@ LGD by M2-PD quintile band (1 = safest; train cut points), sensitivity only: B1 
 |      4 |   56423 |     675.813 |               15.109 |             17.619 |                50.4   |             62.754 |                  1.245 |             20.956 |            43.572 |
 |      5 |   67467 |     791.712 |               27.549 |             26.613 |               115.568 |            118.732 |                  1.027 |             52.454 |            98.181 |
 
-## Allowance at reporting date 2015-12-31 — EX-POST ILLUSTRATION (monthly DPD is not in the data)
+## Allowance at reporting date 2015-12-31 for the 2015-vintage sub-portfolio — EX-POST ILLUSTRATION (monthly DPD is not in the data)
 
-| stage                                                                                                       |   loans |   gross EAD $m |   allowance $m |   coverage % |
-|:------------------------------------------------------------------------------------------------------------|--------:|---------------:|---------------:|-------------:|
-| Stage 1 (performing, no missed instalment visible; 12-month ECL)                                            |  263610 |       2992.31  |        111.006 |         3.71 |
-| Stage 2 (1–2 missed instalments ≈ ≥ 30 DPD, ex-post proxy; lifetime ECL)                                    |    1571 |         17.089 |          1.518 |         8.88 |
-| Stage 3 (≥ 3 missed instalments ≈ 90 DPD; LGD × EAD at default)                                             |    2300 |         25.053 |         22.25  |        88.81 |
-| derecognised (prepaid by the report month)                                                                  |   15453 |          0     |          0     |       nan    |
-| memo: of stage 3, ≥ 6 missed instalments (likely already written off under LC's ~150-DPD charge-off policy) |     682 |          7.641 |          6.786 |        88.81 |
+Pre-registered E4 thresholds (stage 2 = 1–2 missed, stage 3 = ≥ 3 missed):
+
+| stage                                                                                                         |   loans |   gross EAD $m |   allowance $m |   coverage % |
+|:--------------------------------------------------------------------------------------------------------------|--------:|---------------:|---------------:|-------------:|
+| Stage 1 (performing or < 1 missed instalment(s) visible; 12-month ECL)                                        |  263610 |       2992.31  |        111.006 |         3.71 |
+| Stage 2 (1–2 missed instalments ≈ 0–60 DPD, ex-post proxy; lifetime ECL)                                      |    1571 |         17.089 |          1.518 |         8.88 |
+| Stage 3 (≥ 3 missed instalments ≈ ≥ 60 DPD; LGD × EAD at default)                                             |    2300 |         25.053 |         22.25  |        88.81 |
+| derecognised (prepaid by the report month)                                                                    |   15453 |          0     |          0     |       nan    |
+| memo: of stage 3, ≥ 6 missed instalments (≈ ≥ 150 DPD; likely already written off under LC's ~150-DPD policy) |     682 |          7.641 |          6.786 |        88.81 |
+| memo: of stage 3, exactly 5 missed (≈ 120–150 DPD; borderline write-off)                                      |     439 |          4.847 |          4.305 |        88.81 |
+
+Post-hoc, backstop-consistent variant (gate R8-1): the first missed instalment is due in the month after the last payment, so m missed due dates
+≈ 30(m − 1) to 30m DPD. Stage 2 = 2–3 missed (≈ > 30 DPD backstop), stage 3 = ≥ 4 missed (≈ ≥ 90 DPD); 1 missed stays in stage 1:
+
+| stage                                                                                                         |   loans |   gross EAD $m |   allowance $m |   coverage % |
+|:--------------------------------------------------------------------------------------------------------------|--------:|---------------:|---------------:|-------------:|
+| Stage 1 (performing or < 2 missed instalment(s) visible; 12-month ECL)                                        |  264320 |       2999.92  |        111.502 |         3.72 |
+| Stage 2 (2–3 missed instalments ≈ 30–90 DPD, ex-post proxy; lifetime ECL)                                     |    1521 |         16.352 |          1.455 |         8.9  |
+| Stage 3 (≥ 4 missed instalments ≈ ≥ 90 DPD; LGD × EAD at default)                                             |    1640 |         17.955 |         15.946 |        88.81 |
+| derecognised (prepaid by the report month)                                                                    |   15453 |          0     |          0     |       nan    |
+| memo: of stage 3, ≥ 6 missed instalments (≈ ≥ 150 DPD; likely already written off under LC's ~150-DPD policy) |     682 |          7.641 |          6.786 |        88.81 |
+| memo: of stage 3, exactly 5 missed (≈ 120–150 DPD; borderline write-off)                                      |     439 |          4.847 |          4.305 |        88.81 |
 
 - Stage definitions (notes/08_prereg_extensions.md §E4): m = instalments due by Dec-2015 and not paid, visible **only for loans that ultimately
-  charged off** (delinquent loans that later cured are invisible → stage 2 is understated). Approximation: 1 missed instalment ≈ 30 DPD, 3 ≈ 90 DPD.
+  charged off** (delinquent loans that later cured are invisible → stage 2 is understated). DPD at the report date ≈ 30(m − 1) to 30m, so the
+  pre-registered labels "1 missed ≈ 30 DPD, 3 ≈ 90 DPD" are one bucket generous (gate R8-1) — see the backstop-consistent variant.
+- Scope: 2015 originations only (not the whole book outstanding at Dec-2015); EIR = contractual rate (origination fees ignored).
 - Stage 1 → 12-month ECL; stage 2 → lifetime ECL; both from hazards conditional on survival (not conditioned on delinquency → stage 2 allowance
   understated). Stage 3 → LGD × outstanding principal at the first missed payment.
 - This uses the final status (hindsight); it illustrates stage mechanics and is not an allowance a lender could have booked at Dec-2015.

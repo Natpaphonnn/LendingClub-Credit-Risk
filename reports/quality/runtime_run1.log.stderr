@@ -1,8 +1,0 @@
-/Users/natpaphonnukhunthod/Projects/LendingClub-Credit-Risk/src/phase1/train_lgbm.py:29: Pandas4Warning: Constructing a Categorical with a dtype and values containing non-null entries not in that dtype's categories is deprecated and will raise in a future version.
-  X[c] = pd.Categorical(X[c], categories=cats[c])
-/Users/natpaphonnukhunthod/Projects/LendingClub-Credit-Risk/src/phase1/train_lgbm.py:29: Pandas4Warning: Constructing a Categorical with a dtype and values containing non-null entries not in that dtype's categories is deprecated and will raise in a future version.
-  X[c] = pd.Categorical(X[c], categories=cats[c])
-/Users/natpaphonnukhunthod/Projects/LendingClub-Credit-Risk/src/phase2/build_loans.py:58: Pandas4Warning: Constructing a Categorical with a dtype and values containing non-null entries not in that dtype's categories is deprecated and will raise in a future version.
-  X[c] = pd.Categorical(X[c], categories=cats[c])
-/Users/natpaphonnukhunthod/Projects/LendingClub-Credit-Risk/src/phase2/build_loans.py:58: Pandas4Warning: Constructing a Categorical with a dtype and values containing non-null entries not in that dtype's categories is deprecated and will raise in a future version.
-  X[c] = pd.Categorical(X[c], categories=cats[c])

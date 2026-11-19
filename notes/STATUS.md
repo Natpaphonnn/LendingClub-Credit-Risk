@@ -26,7 +26,7 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 
 ## Decisions (Nat, 2026-11-19, after Phase 2)
 1. เล่า **B ที่ fail เป็นจุดแข็ง** — pre-registered rule ที่ต้องผ่านครบสามข้อกัน spurious pass (adverse scenario ทำให้ PD ลดลง) ไว้ได้
-2. ทำ **management overlay แบบสั้น**: scale lifetime PD ด้วย early A/E (MOB-6 / MOB-12) แล้วดูว่าปิด under-provision 17% บน 2015 backtest ได้เท่าไร —
+2. ทำ **management overlay แบบสั้น**: scale lifetime PD ด้วย early A/E (MOB-6 / MOB-12) แล้วดูว่าปิด gap ของ lifetime-EL backtest (realised > predicted) บน 2015 ได้เท่าไร (คำว่า "under-provision" ถูกเลิกใช้หลัง review MA-4) —
    ติด label **illustrative / in-sample** (MOB-6 ค้นพบบน 2015 และทดสอบบน 2016–17 แล้ว จึงไม่มี vintage ที่ยังไม่เคยเห็นเหลือ)
 3. C: แสดง profit metric ทั้งสองแบบ, บอกตรง ๆ ว่า metric ที่ pre-register (undiscounted) **ผิด** (ไม่มี cost of funds),
    และข้อสรุปทางธุรกิจคือ **"PD cutoff ที่ดีก็พอ"**
@@ -82,10 +82,19 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 ## Bank gate (rubric notes/09_gate_rubric.md, commit 9a493da)
 - **Round 1: FAIL** — mean 7.13; BLOCKING R5-1 (monotone method), R7-1/R2-1 (E5 refit unidentified) → แก้แล้ว (bug fixes);
   deviation: E5 refit ใช้เฉพาะ MOB 1–21 ที่ identify ได้ + reference tail (log ใน notes/10). รายละเอียด reports/quality/gate_round1.md
-- Round 2: pending
+- **Round 2: PASS** — mean 8.22 (R1 8.4 · R2 7.9 · R3 8.4 · R4 8.6 · R5 8.5 · R6 8.3 · R7 7.9 · R8 8.0 · R9 8.2 · R10 8.0), ไม่มี BLOCKING.
+  Majors แก้หลัง gate (relabel / post-hoc descriptive เท่านั้น ไม่เปลี่ยน pre-registered spec): reports/quality/gate_round2.md, gate_round2_fixes.md
+  - ข้อที่เปลี่ยนความหมาย: E5 refit 1.27× เป็น lower bound (knowable tail 1.41×); "stage 3 ≥ 3 missed" ≈ ≥ 60 DPD ไม่ใช่ 90; "90-DPD" sensitivity
+    จริง ๆ ≈ 60 DPD (4th missed ≈ 90 DPD: 12m ECL $67.8m); policy C: ระดับ cutoff ขึ้นกับทั้ง cost of funds และ calibration ของ PD;
+    ranking "รอด" ยืนยันได้เฉพาะ 2014Q1–2015Q3 (month-12 KS ของ 2016Q2–Q4 ลดเหลือ 0.87–0.89×)
 
 ## Repo
 - Private: https://github.com/Natpaphonnn/LendingClub-Credit-Risk (no data files tracked)
 
-## Next step
-- Gate round 2 → package → demo → article draft (notes/07_article_draft.md)
+## Done — package / demo / article ✅
+- README (reproduce steps: run_all ลบ data/interim แล้ว rebuild จาก raw + tests + checkers), requirements.lock.txt, raw_inputs.sha256, bls_values.sha256
+- Demo: demo/index.html (static, aggregates only) · Article draft: notes/07_article_draft.md
+
+## Next step / open questions for Nat
+- อ่าน article draft แล้วตัดสินใจ publish (Medium) — ยังเป็น draft; repo ยัง private
+- Deferred (minor): scorecard bin-stability table (R4-2), shared scoring helper (R10-12), independent re-derivation ของ ECL/policy claims (R10-10), tests ของ as-of information set (R3-3)

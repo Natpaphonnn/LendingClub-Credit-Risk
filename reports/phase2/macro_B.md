@@ -12,8 +12,11 @@
 
 Hessian standard errors are not shown: the fit uses a weighted non-event subsample and ignores clustering, so they are not valid for
 inference (independent review MA-3). Every bootstrap replicate redraws the 25% non-event subsample from the full loan-month panel and
-resamples the 24 issue quarters (E3, notes/08_prereg_extensions.md). The bootstrap distribution sits below the point estimate, so whether the
-CI excludes 0 depends on the CI method (a normal-approximation CI would include 0); the rule outcome does not, because θ is not positive.
+resamples the 24 issue quarters (E3, notes/08_prereg_extensions.md). Bootstrap mean -0.0453 vs point estimate
+-0.0452; the percentile CI is [-0.0990, -0.0095] and a normal-approximation CI
+(θ ± 1.96·SD) is [-0.0874, -0.0030] — both exclude 0. The rule outcome does not depend on
+the CI method, because θ is not positive. Clusters are unequal: about 85% of loans fall in the 10 quarters from 2012Q3, so the effective number
+of clusters is smaller than 24 and the interval may be anti-conservative (gate R9-5).
 Test (b) is out-of-time by vintage, not by calendar: the fit panel's loan-months run into 2015–17, overlapping the 2015 vintage's outcome window.
 
 | fit | loans | issue quarters | γ_u default | γ_Δ12u default | θ default | γ_u prepay | γ_Δ12u prepay |

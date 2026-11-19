@@ -4,6 +4,7 @@ Pre-registration: `notes/02_prereg_phase1.md` (commit 652b889 — commit ก่�
 ทุกตัวเลขมาจาก code ใน `src/phase1/` → ตารางเต็ม `reports/phase1/`, figures `reports/figures/p1_*.png`.
 OOT 2015 ถูกประเมินครั้งเดียวต่อ pipeline run ใน `evaluate.py` หลังเลือกทุกอย่างบน validation แล้ว; มี deterministic re-run 1 ครั้ง (ดู §10 ข้อ 5)
 อัปเดต 2026-11-20 หลัง gate round 1: M2 retrain ด้วย monotone_constraints_method="intermediate" (bug R5-1 — "advanced" ละเมิด constraint); ตัวเลขเดิมอยู่ใน git history (ดู §10 ข้อ 7)
+อัปเดตอีกครั้งหลัง gate round 2 (PASS, mean 8.22): ขอบเขตของ "ranking รอด", calibration ที่มีอยู่แล้วบน 2014, residual monotonicity (§10 ข้อ 8) — เป็น wording/descriptive เท่านั้น ไม่มี threshold ที่ pre-register เปลี่ยน
 
 Reproduce (ตามลำดับ, รวม ~2 นาที):
 ```
@@ -17,8 +18,11 @@ for s in build_dataset train_scorecard train_lgbm evaluate monitoring vintage ex
 
 1. **Champion = M2 LightGBM (monotone)** ตามกฎที่ pre-register ไว้: OOT Gini 36.7 [36.3, 37.3] vs scorecard 33.7 [33.1, 34.2];
    paired ΔGini = **+3.1 [2.8, 3.3]** points (เกณฑ์ ≥ 2.0 และ CI > 0 → ผ่าน)
-2. **Model "รอด" 2015 ในแง่ ranking แต่ไม่รอดในแง่ calibration:** KS/Gini บน OOT ไม่ลดลงเลย แต่ทั้งสอง model
-   under-predict PD 1.70–2.0 pp (≈ 11–13% relative); cutoff ที่ตั้งไว้ปี 2014 ให้ bad rate 11.0% → ปี 2015 ได้ 11.7–11.9%
+2. **Model "รอด" 2015 ในแง่ ranking แต่ไม่รอดในแง่ calibration:** KS/Gini บน OOT ไม่ลดลง (ranking ยืนยันได้เฉพาะ quarter ที่ outcome ครบ
+   2014Q1–2015Q3; vintage หลังจากนั้นยังไม่มี final outcome — เทียบกับ default by MOB 12 แบบ descriptive แล้ว KS ของ 2016Q2–Q4 ลดเหลือ
+   0.87–0.89× ของระดับ 2014 แล้วกลับมา ≈ 0.95× ใน 2017, `monitoring.md` §3b) แต่ทั้งสอง model
+   under-predict PD 1.70–2.0 pp (≈ 11–13% relative; M2 under-predict −0.57 pp อยู่แล้วบน validation 2014 → ส่วนเพิ่มบน 2015 ≈ −1.1 pp);
+   cutoff ที่ตั้งไว้ปี 2014 ให้ bad rate 11.0% → ปี 2015 ได้ 11.7–11.9%
 3. **Monitoring: PSI/CSI ไม่จับ drift เลย** (score PSI ≤ 0.03 ตลอด 2014Q1–2017Q3; M2 ≤ 0.06 ถึง 2018). Signal แรกที่จับได้คือ MOB-12 A/E:
    amber สำหรับ vintage 2015Q2 → **รู้ได้ ธ.ค. 2016** (ทั้งสอง model); red 2016Q1 → ก.ย. 2017 (champion M2); 2015Q4 → มิ.ย. 2017 (scorecard M1). ระหว่างนั้น LC ปล่อยไปแล้ว
    ~545k loans (36m, 2015Q2–2016Q4) ที่อยู่ใน vintage ที่แย่ลง
@@ -26,7 +30,8 @@ for s in build_dataset train_scorecard train_lgbm evaluate monitoring vintage ex
    ขณะที่ characteristics ของผู้กู้ดู "ดีขึ้น" (utilization ลด) → นี่คือ **concept drift** (score→PD เปลี่ยน) ไม่ใช่ population shift
    ซึ่งเป็นเหตุผลที่ PSI มองไม่เห็น → ต่อเข้ากับ Phase 2 B (macro / forward-looking) ได้ตรง ๆ
 5. **D (reason codes + monotone):** ทำแล้วทั้งสอง model; top-1 reason ตรงกัน 52%, M1 top-1 อยู่ใน M2 top-4 90%
-   (M1 reasons เรียงด้วย unrounded points — ไม่มี tie; monotonicity ของ M2 ทดสอบหลัง train แล้ว — tests/test_monotone.py)
+   (M1 reasons เรียงด้วย unrounded points — ไม่มี tie; monotonicity ทดสอบหลัง train โดย sweep ทุก split threshold บน sample ที่มี NaN —
+   tests/test_monotone.py; M2 ยังมี residual reversal เล็กมากจาก NaN routing (annual_inc, ≤ 0.03 pp PD) — §10 ข้อ 8)
 6. **As-of model (added later, notes/10_extensions_results.md E2):** model ที่ใช้เฉพาะข้อมูล ณ 2014-12-31 (bad 12 เดือน) ได้ OOT Gini 33.0
    (ต่ำกว่า reference 3.76) และ alarm ครั้งแรกที่รู้ได้จริงคือ Jun 2017
 
@@ -57,7 +62,8 @@ Base table: 1,485,240 rows (`data/interim/p1_base.parquet`, git-ignored). OOT �
 
 - 12 configs; เลือก num_leaves 31, min_child_samples 1000, lambda_l2 0, 192 rounds (validation log loss 0.37568).
   ทุก config ห่างกันแค่ ≤ 0.0005 log loss → ไม่ sensitive ต่อ hyper-parameters. `reports/phase1/lgbm_grid.md`, `lgbm_importance.md`
-- Monotone constraints ตามรายการที่ pre-register (17 ลด risk, 17 เพิ่ม risk), method "intermediate" (gate fix R5-1); in-sample Gini 44.4 vs validation 36.1
+- Monotone constraints ตามรายการที่ pre-register (17 ลด risk, 17 เพิ่ม risk), method "intermediate" (gate fix R5-1); in-sample Gini 44.4 vs validation 36.1.
+  ต้นทุนของ constraint (descriptive, gate round 2 R5-2): config เดียวกันแบบไม่มี constraint ได้ OOT Gini 37.16 vs 36.74 (`reports/quality/grid_sensitivity.md`)
   (train calibration slope 1.223 → slope < 1 บน validation/OOT เป็นคุณสมบัติของ fit ไม่ใช่ drift)
 
 ## 4. Headline comparison — OOT 2015 (n = 282,787) — `reports/phase1/evaluation.md`
@@ -73,7 +79,10 @@ Observed bad rate 14.88%. 95% bootstrap CI (B = 500). Validation 2014: M1 Gini 3
 - M2 − LC sub_grade บน OOT = +1.01 [0.52, 1.46] (paired bootstrap, descriptive)
 - LC sub_grade ดีกว่า M1 บน OOT 2.0 [1.6, 2.5] points แต่ไม่ดีกว่าบน validation (31.9 vs 32.4) — LC มีข้อมูลมากกว่าเรา
   (full bureau report, model ที่ update ทุกปี) และ M2 ชนะ LC ได้ ~1.0 point
-- Calibration: M2 slope 0.93 = PD กระจายเกินไปเล็กน้อย (overconfident ที่ปลาย); ทั้งคู่ under-predict ทั้งระดับ → `p1_calibration_oot.png`
+- Calibration: M2 slope 0.93 = PD กระจายเกินไปเล็กน้อย (overconfident ที่ปลาย); ทั้งคู่ under-predict ทั้งระดับ → `p1_calibration_oot.png`.
+  CITL M2 บน validation 2014 = −0.57 pp [−0.72, −0.41] อยู่แล้ว (ไม่ recalibrate ตาม prereg) → drift ที่เพิ่มบน 2015 ≈ −1.1 pp (gate round 2 R5-4).
+  CI ของ CITL เป็น i.i.d. loan bootstrap ซึ่ง understate ความไม่แน่นอนของ level metric: reviewer recompute แบบ cluster ได้ ≈ [−1.96, −1.44]
+  (by issue month) และ ≈ [−2.10, −1.16] (by state) — sign ของข้อสรุปไม่เปลี่ยน (gate round 2 R5-3)
 
 ## 5. Cutoff rule (prereg §6) — `p1_strategy_curve.png`
 
@@ -116,8 +125,11 @@ Cutoff ตั้งบน validation 2014 ให้ approved bad rate ≤ 11.0%,
 - **CSI:** มี alerts แต่ชี้ไปทางที่ "ดูปลอดภัยขึ้น": verification_status red ตั้งแต่ 2015Q4 (Source Verified 16% ใน 2013 → 35–47% ในแต่ละ quarter หลัง 2014
   = LC เปลี่ยนกระบวนการ); revol_util / bc_util / percent_bc_gt_75 red ตั้งแต่ 2017Q4 (median revol_util 59% → 41%).
   ไม่มี characteristic ไหนบอกว่า risk แย่ลง
-- **KS ไม่ลด** (M1 22.4–25.2, M2 25.8–27.2 ทุก quarter ที่ matured และ knowable ณ 2019-03; แถว 2014 คือ reference period) → ranking ยังดี; ปัญหาคือ level
-- **A/E MOB-12** คือ signal label-based ที่ alarm: M1 เริ่มไต่ตั้งแต่ 2014Q3 (1.05) → amber 2015Q2 (1.15) → red 2015Q4 (1.26) →
+- **KS ไม่ลด** (M1 22.4–25.2, M2 25.8–27.2 ทุก quarter ที่ matured และ knowable ณ 2019-03 = 2014Q1–2015Q3; แถว 2014 คือ reference period)
+  → ranking ยังดีเท่าที่วัดได้; ปัญหาคือ level. Vintage ที่ drift หนักสุด (2016) ยังไม่มี final outcome: เทียบกับ default by MOB 12
+  (descriptive, ไม่ได้ pre-register — `monitoring.md` §3b) KS12 ของ M2 ช่วง 2016Q2–Q4 = 0.87–0.89× ของค่าเฉลี่ย 2014 แล้วกลับมา ≈ 0.95–0.97× ใน 2017
+  → ranking อ่อนลงเล็กน้อยใน vintage ที่แย่ที่สุด (gate round 2 R2-1 / R6-1)
+- **A/E MOB-12** คือ signal label-based ที่ alarm (flags ใช้ strict > ตาม prereg — แก้ code แล้ว ไม่มี flag เปลี่ยน, gate round 2 R6-3): M1 เริ่มไต่ตั้งแต่ 2014Q3 (1.05) → amber 2015Q2 (1.15) → red 2015Q4 (1.26) →
   peak 2016Q3 (1.52, M1); M2 amber 2015Q2 (1.13) → red 2016Q1 (1.34) → peak 2016Q3 (1.46). แต่ lag 18 เดือน: vintage แรกที่แย่ลง
   (เม.ย.–มิ.ย. 2015) จับได้ ธ.ค. 2016. ข้อควรระวัง (gate R6-2): A/E MOB-12 กับ deterioration truth ใช้ numerator เดียวกัน (defaults by MOB 12)
   และ knowable date เดียวกัน ต่างกันแค่ PD-mix normalisation → alarm นี้แทบเป็นการ restate truth; lag 18 เดือนคือ observation window เอง
@@ -186,6 +198,10 @@ Cumulative default (% ของ loans ตั้งต้น), risk bands = M1-sc
    | cutoff M2 | PD ≤ 0.2008 | PD ≤ 0.1994 |
    ทั้ง 12 configs (intermediate) ให้ OOT Gini 36.47–36.79 (weakest − scorecard = 2.79) — reports/quality/grid_sensitivity.md.
    ตัวเลขทั้งหมดในเอกสารนี้เป็นของ run ปัจจุบัน
+8. **Gate round 2 (2026-11-20, PASS) — residual monotonicity (R5-1 / R10-3, disclosed ไม่ใช่ spec change):** sweep ทุก split threshold บน sample
+   ที่มี NaN พบ reversal เล็กมากใน M2: annual_inc รอบ split threshold หนึ่ง (~$41k) สำหรับแถวที่ mths_since_recent_bc เป็น NaN (LightGBM route missing ของ feature อื่น
+   ต่างกันสองฝั่ง split) — ขนาดสูงสุด ≈ 0.03 pp PD, ไม่กระทบตัวเลขใด; as-of model ไม่มี reversal. tests/test_monotone.py ตอนนี้ sweep split thresholds
+   ด้วย tolerance 0.05 pp และจะ fail ถ้าเกิน
 นอกนั้นเป็นไปตาม prereg ทุกข้อ (split, features, binning, selection, grid, decision rule, cutoff rule, thresholds)
 
 ## 11. Implications for Phase 2 (A + B)

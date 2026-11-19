@@ -244,19 +244,23 @@ c2_ = eb_["(c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded
 w_ = eb_["mob_window_split"]
 k_c = "(c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)"
 chk("C30", "refit ratio (MOB 1–21 refit + ref tail) / ratio reference / MOB 1–21 ratio refit / MOB 1–21 ratio reference / 2009-start ratio",
-    ["1.27", "1.18", "1.33", "1.19", "1.69"],
-    [c_["realised / predicted"], a_["realised / predicted"], w_[k_c]["MOB 1–21"][1] / w_[k_c]["MOB 1–21"][0],
+    ["1.27", "1.18", "1.41", "1.33", "1.19", "1.69"],
+    [c_["realised / predicted"], a_["realised / predicted"],
+     eb_["(c'') (c) with the MOB 22–36 tail from the 2009-start refit (knowable at 2014-12)"]["realised / predicted"], w_[k_c]["MOB 1–21"][1] / w_[k_c]["MOB 1–21"][0],
      w_["(a) reference A, undiscounted LGD"]["MOB 1–21"][1] / w_["(a) reference A, undiscounted LGD"]["MOB 1–21"][0], c2_["realised / predicted"]],
     "ecl_benchmark.json", "read")
-d_ = eb_["(d) 90-DPD default definition, discounted LGD (k=12)"]
+d_ = eb_["(d) default at 3rd missed instalment (≈ 60 DPD; pre-registered as '90-DPD'), discounted LGD (k=12)"]
 b_ = eb_["(b) reference A, discounted LGD (k=12)"]
 chk("C31", "LGD discounted / undiscounted %; 12m ECL 90-DPD / reference (disc.) $m; 90-DPD backtest ratio",
-    ["90.4", "88.8", "79.2", "101.3", "1.18"],
-    [100 * eb_["LGD_discounted"]["12"], 100 * eb_["LGD_undiscounted"], d_["day-1 12m ECL $m"], b_["day-1 12m ECL $m"], d_["realised / predicted"]],
+    ["90.4", "88.8", "79.2", "101.3", "67.8", "1.18", "1.19"],
+    [100 * eb_["LGD_discounted"]["12"], 100 * eb_["LGD_undiscounted"], d_["day-1 12m ECL $m"], b_["day-1 12m ECL $m"],
+     eb_["(d') post-hoc: default at 4th missed instalment (≈ 90 DPD), discounted LGD (k=12)"]["day-1 12m ECL $m"], d_["realised / predicted"],
+     eb_["(d') post-hoc: default at 4th missed instalment (≈ 90 DPD), discounted LGD (k=12)"]["realised / predicted"]],
     "ecl_benchmark.json", "read")
 stg = pd.DataFrame(ecl["staging"])
-chk("C32", "stage 2 loans / stage 3 loans / stage 1 allowance $m / coverage %", ["1,571", "2,300", "111.0", "3.71"],
-    [stg.loans[1], stg.loans[2], stg["allowance $m"][0], stg["coverage %"][0]], "ecl.json", "read")
+stb = pd.DataFrame(ecl["staging_backstop"])
+chk("C32", "stage 2 / stage 3 loans; stage 1 allowance $m / coverage %; backstop stage 2 / 3 loans", ["1,571", "2,300", "111.0", "3.71", "1,521", "1,640"],
+    [stg.loans[1], stg.loans[2], stg["allowance $m"][0], stg["coverage %"][0], stb.loans[1], stb.loans[2]], "ecl.json", "read")
 
 # ---- the 'up to 46% above expected' figure (notes/04_story.md one-line answer + fig3 subtitle)
 trm = split_mask(b, TRAIN)

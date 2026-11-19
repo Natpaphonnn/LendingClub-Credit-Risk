@@ -33,6 +33,15 @@
   "backtest: pred EL (undisc.) $m": 215.57340087576551,
   "realised / predicted": 1.269878065338684
  },
+ "(c'') (c) with the MOB 22\u201336 tail from the 2009-start refit (knowable at 2014-12)": {
+  "scenario": "(c'') (c) with the MOB 22\u201336 tail from the 2009-start refit (knowable at 2014-12)",
+  "mean 12m PD %": 3.968191146850586,
+  "mean lifetime PD %": 10.680928230285645,
+  "day-1 12m ECL $m": 92.43843189942905,
+  "lifetime ECL $m": 171.8084405682104,
+  "backtest: pred EL (undisc.) $m": 194.45354799929888,
+  "realised / predicted": 1.4078011744151089
+ },
  "(c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)": {
   "scenario": "(c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)",
   "mean 12m PD %": 3.3326737880706787,
@@ -42,14 +51,23 @@
   "backtest: pred EL (undisc.) $m": 162.3920998284586,
   "realised / predicted": 1.6857466190274837
  },
- "(d) 90-DPD default definition, discounted LGD (k=12)": {
-  "scenario": "(d) 90-DPD default definition, discounted LGD (k=12)",
+ "(d) default at 3rd missed instalment (\u2248 60 DPD; pre-registered as '90-DPD'), discounted LGD (k=12)": {
+  "scenario": "(d) default at 3rd missed instalment (\u2248 60 DPD; pre-registered as '90-DPD'), discounted LGD (k=12)",
   "mean 12m PD %": 3.2469186782836914,
   "mean lifetime PD %": 13.101541519165039,
   "day-1 12m ECL $m": 79.18958507901135,
   "lifetime ECL $m": 198.78805220411223,
   "backtest: pred EL (undisc.) $m": 231.18337239199377,
   "realised / predicted": 1.1841333155155502
+ },
+ "(d') post-hoc: default at 4th missed instalment (\u2248 90 DPD), discounted LGD (k=12)": {
+  "scenario": "(d') post-hoc: default at 4th missed instalment (\u2248 90 DPD), discounted LGD (k=12)",
+  "mean 12m PD %": 2.751661539077759,
+  "mean lifetime PD %": 12.879891395568848,
+  "day-1 12m ECL $m": 67.81375285613841,
+  "lifetime ECL $m": 195.8744116419074,
+  "backtest: pred EL (undisc.) $m": 230.1394196917062,
+  "realised / predicted": 1.1895047515515362
  },
  "LGD_undiscounted": 0.8881116053278834,
  "LGD_discounted": {
@@ -94,6 +112,7 @@
   }
  },
  "model_90dpd_defaults": 14557,
+ "model_d3_defaults": 14316,
  "decomposition": {
   "(a) reference A, undiscounted LGD": {
    "count ratio": 1.108144298809824,
@@ -116,6 +135,13 @@
    "mean default MOB pred": 18.44631621858295,
    "mean default MOB actual": 17.933403026919148
   },
+  "(c'') (c) with the MOB 22\u201336 tail from the 2009-start refit (knowable at 2014-12)": {
+   "count ratio": 1.3927542237815063,
+   "EAD/default ratio": 1.0055393544730744,
+   "LGD ratio": 1.0052353662584566,
+   "mean default MOB pred": 16.51474716749105,
+   "mean default MOB actual": 17.933403026919148
+  },
   "(c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)": {
    "count ratio": 1.6147713703913933,
    "EAD/default ratio": 1.0385167129414599,
@@ -123,11 +149,18 @@
    "mean default MOB pred": 17.020206771033298,
    "mean default MOB actual": 17.933403026919148
   },
-  "(d) 90-DPD default definition, discounted LGD (k=12)": {
+  "(d) default at 3rd missed instalment (\u2248 60 DPD; pre-registered as '90-DPD'), discounted LGD (k=12)": {
    "count ratio": 1.13543174458923,
    "EAD/default ratio": 1.0374610520655931,
    "LGD ratio": 1.0052353662584566,
    "mean default MOB pred": 19.530328583474894,
+   "mean default MOB actual": 17.933403026919148
+  },
+  "(d') post-hoc: default at 4th missed instalment (\u2248 90 DPD), discounted LGD (k=12)": {
+   "count ratio": 1.1549714397439053,
+   "EAD/default ratio": 1.024535873856706,
+   "LGD ratio": 1.0052353662584566,
+   "mean default MOB pred": 20.262852677826142,
    "mean default MOB actual": 17.933403026919148
   }
  },
@@ -162,6 +195,16 @@
     48.19842094979973
    ]
   },
+  "(c'') (c) with the MOB 22\u201336 tail from the 2009-start refit (knowable at 2014-12)": {
+   "MOB 1\u201321": [
+    169.06567941335865,
+    225.55351229279793
+   ],
+   "MOB 22\u201336+": [
+    25.3878685859402,
+    48.19842094979973
+   ]
+  },
   "(c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)": {
    "MOB 1\u201321": [
     136.7369246306478,
@@ -172,13 +215,23 @@
     48.19842094979973
    ]
   },
-  "(d) 90-DPD default definition, discounted LGD (k=12)": {
+  "(d) default at 3rd missed instalment (\u2248 60 DPD; pre-registered as '90-DPD'), discounted LGD (k=12)": {
    "MOB 1\u201321": [
     174.33720784319118,
     225.55351229279793
    ],
    "MOB 22\u201336+": [
     56.8461645488029,
+    48.19842094979973
+   ]
+  },
+  "(d') post-hoc: default at 4th missed instalment (\u2248 90 DPD), discounted LGD (k=12)": {
+   "MOB 1\u201321": [
+    165.91835281251224,
+    225.55351229279793
+   ],
+   "MOB 22\u201336+": [
+    64.2210668791939,
     48.19842094979973
    ]
   }
@@ -198,38 +251,43 @@
  },
  "staging_refit_2015": {
   "stage": [
-   "Stage 1 (performing, no missed instalment visible; 12-month ECL)",
-   "Stage 2 (1\u20132 missed instalments \u2248 \u2265 30 DPD, ex-post proxy; lifetime ECL)",
-   "Stage 3 (\u2265 3 missed instalments \u2248 90 DPD; LGD \u00d7 EAD at default)",
+   "Stage 1 (performing or < 1 missed instalment(s) visible; 12-month ECL)",
+   "Stage 2 (1\u20132 missed instalments \u2248 0\u201360 DPD, ex-post proxy; lifetime ECL)",
+   "Stage 3 (\u2265 3 missed instalments \u2248 \u2265 60 DPD; LGD \u00d7 EAD at default)",
    "derecognised (prepaid by the report month)",
-   "  memo: of stage 3, \u2265 6 missed instalments (likely already written off under LC's ~150-DPD charge-off policy)"
+   "  memo: of stage 3, \u2265 6 missed instalments (\u2248 \u2265 150 DPD; likely already written off under LC's ~150-DPD policy)",
+   "  memo: of stage 3, exactly 5 missed (\u2248 120\u2013150 DPD; borderline write-off)"
   ],
   "loans": [
    263610,
    1571,
    2300,
    15453,
-   682
+   682,
+   439
   ],
   "gross EAD $m": [
    2992.3097835644694,
    17.08876882463447,
    25.052721242157332,
    0.0,
-   7.640801400557533
+   7.640801400557533,
+   4.846838841669829
   ],
   "allowance $m": [
    101.45403245550582,
    1.4448813560644533,
    22.641082627366085,
    0.0,
-   6.905278439701373
+   6.905278439701373,
+   4.380269817201072
   ],
   "coverage %": [
    3.39,
    8.46,
    90.37,
    NaN,
+   90.37,
    90.37
   ]
  },

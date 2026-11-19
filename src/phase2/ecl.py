@@ -89,6 +89,7 @@ tot = agg(port)
 # ---- staging at reporting date 2015-12-31 — E4 definitions (notes/08_prereg_extensions.md), EX-POST illustration
 from ecl_lib import staging_e4  # noqa: E402
 staging = staging_e4(port, mA, LGD, "2015-12-01")
+staging_bs = staging_e4(port, mA, LGD, "2015-12-01", s2=(2, 3), s3_min=4)     # post-hoc, backstop-consistent (gate R8-1)
 
 # ---- scenarios (only if B passed)
 scen_md, scen = "", {}
@@ -108,7 +109,7 @@ else:
                "ECL above is score-only (through-the-cycle-ish, no forward-looking overlay) — a TFRS 9 gap stated plainly.\n")
 
 out = {"LGD": LGD, "LGD_CI": LGD_CI.tolist(), "LGD_by_band": lgd_band.to_dict(), "n_train_defaults": len(dft),
-       "total": tot.to_dict(), "staging": staging.to_dict(orient="list"), "scenarios": scen, "b_passed": b_passed}
+       "total": tot.to_dict(), "staging": staging.to_dict(orient="list"), "staging_backstop": staging_bs.to_dict(orient="list"), "scenarios": scen, "b_passed": b_passed}
 (REP2 / "ecl.json").write_text(json.dumps(out, indent=1, default=float))
 
 
@@ -140,12 +141,21 @@ LGD by M2-PD quintile band (1 = safest; train cut points), sensitivity only: {',
 
 {r2(by_b).to_markdown(index=False)}
 
-## Allowance at reporting date 2015-12-31 — EX-POST ILLUSTRATION (monthly DPD is not in the data)
+## Allowance at reporting date 2015-12-31 for the 2015-vintage sub-portfolio — EX-POST ILLUSTRATION (monthly DPD is not in the data)
+
+Pre-registered E4 thresholds (stage 2 = 1–2 missed, stage 3 = ≥ 3 missed):
 
 {r2(staging).to_markdown(index=False)}
 
+Post-hoc, backstop-consistent variant (gate R8-1): the first missed instalment is due in the month after the last payment, so m missed due dates
+≈ 30(m − 1) to 30m DPD. Stage 2 = 2–3 missed (≈ > 30 DPD backstop), stage 3 = ≥ 4 missed (≈ ≥ 90 DPD); 1 missed stays in stage 1:
+
+{r2(staging_bs).to_markdown(index=False)}
+
 - Stage definitions (notes/08_prereg_extensions.md §E4): m = instalments due by Dec-2015 and not paid, visible **only for loans that ultimately
-  charged off** (delinquent loans that later cured are invisible → stage 2 is understated). Approximation: 1 missed instalment ≈ 30 DPD, 3 ≈ 90 DPD.
+  charged off** (delinquent loans that later cured are invisible → stage 2 is understated). DPD at the report date ≈ 30(m − 1) to 30m, so the
+  pre-registered labels "1 missed ≈ 30 DPD, 3 ≈ 90 DPD" are one bucket generous (gate R8-1) — see the backstop-consistent variant.
+- Scope: 2015 originations only (not the whole book outstanding at Dec-2015); EIR = contractual rate (origination fees ignored).
 - Stage 1 → 12-month ECL; stage 2 → lifetime ECL; both from hazards conditional on survival (not conditioned on delinquency → stage 2 allowance
   understated). Stage 3 → LGD × outstanding principal at the first missed payment.
 - This uses the final status (hindsight); it illustrates stage mechanics and is not an allowance a lender could have booked at Dec-2015.

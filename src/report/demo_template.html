@@ -52,8 +52,8 @@ button.theme{float:right;background:none;border:1px solid var(--border);color:va
 <main>
 <button class="theme" id="theme">Toggle theme</button>
 <h1>Would your credit model have survived — and would you have noticed?</h1>
-<p class="lede">A model built on LendingClub loans from 2012–13 and used from 2015 kept ranking borrowers well, but defaults drifted well above
-what it expected. The standard stability alarm never fired. Aggregates only; every number traces to <code>reports/</code> in the repository.</p>
+<p class="lede">A model built on LendingClub loans from 2012–13 and used from 2015 kept ranking borrowers well on every vintage with complete outcomes,
+but defaults drifted well above what it expected. Its stability alarm (PSI) never fired. Aggregates only; every number traces to <code>reports/</code> in the repository.</p>
 <div class="tiles" id="tiles"></div>
 
 <section>
@@ -82,7 +82,7 @@ Bottom: actual ÷ expected defaults by month 12 — reference model (if live fro
 <div class="grid2">
 <section>
 <h2>Expected vs realised loss — 2015 loans</h2>
-<p class="sub">Undiscounted lifetime expected loss at origination vs realised net principal loss ($m). "Refit" = recalibrated on outcomes known at Dec 2014 (identified for months 1–21; later months from the reference model) — it widens the gap.</p>
+<p class="sub">Undiscounted lifetime expected loss at origination vs realised net principal loss ($m). "Refit" = recalibrated on outcomes known at Dec 2014 (identified for months 1–21; later months from the reference model, so ×1.27 is a lower bound — ×1.41 with a knowable tail) — it widens the gap.</p>
 <svg id="ecl" viewBox="0 0 440 240" role="img" aria-label="expected vs realised loss"></svg>
 </section>
 <section>
@@ -168,7 +168,7 @@ function render(){
     h.addEventListener("mousemove", e => showTip(e, `<b>${r.model}</b><br>Gini ${(100 * r.gini).toFixed(1)} [${(100 * r.gini_lo).toFixed(1)}, ${(100 * r.gini_hi).toFixed(1)}]<br>KS ${(100 * r.ks).toFixed(1)}`));
     h.addEventListener("mouseleave", hideTip); });
   // ecl
-  const labels = {"reference A, undiscounted LGD": "reference", "refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)": "refit at 2014-12", "90-DPD default definition, discounted LGD (k=12)": "90-DPD"};
+  const labels = {"reference A, undiscounted LGD": "reference", "refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)": "refit at 2014-12", "default at 3rd missed instalment (≈ 60 DPD; pre-registered as '90-DPD'), discounted LGD (k=12)": "3rd missed (≈60 DPD)"};
   const E = D.ecl.filter(e => e.pred !== null && e.pred !== undefined && labels[e.name]), es = document.getElementById("ecl"); es.innerHTML = "";
   const ymax = 300, Yb = v => 200 - v / ymax * 180, bw = 70;
   [0, 100, 200, 300].forEach(t => { el("line", {x1: 40, x2: 440, y1: Yb(t), y2: Yb(t), class: "gridl"}, es); el("text", {x: 34, y: Yb(t) + 4, "text-anchor": "end"}, es).textContent = t; });
