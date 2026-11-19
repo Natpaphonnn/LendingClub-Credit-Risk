@@ -1,4 +1,4 @@
-# Note number provenance — 2211 numeric tokens checked; 2202 matched a report value, 9 matched an independently re-derived count, 12 explained exceptions, 0 unmatched
+# Note number provenance — 2338 numeric tokens checked; 2328 matched a report value, 10 matched an independently re-derived count, 12 explained exceptions, 0 unmatched
 
 Re-derived counts: 1,364,557 ✓, 1,433,835 ✓, 1,485,240 ✓, 2,749 ✓, 473 ✓, 544,642 ✓
 

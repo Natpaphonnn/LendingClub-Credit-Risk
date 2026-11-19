@@ -1,49 +1,51 @@
 >> src/audit/convert_to_parquet.py data/raw data/interim
-   20 s
+   0 s
 >> src/audit/run_audit.py data/interim data/raw/dictionary/LCDataDictionary.xlsx reports/audit
-   10 s
->> src/audit/make_figures.py data/interim reports/figures
-   1 s
->> src/phase1/build_dataset.py
-   2 s
->> src/phase1/train_scorecard.py
    9 s
+>> src/audit/make_figures.py data/interim reports/figures
+   2 s
+>> src/phase1/build_dataset.py
+   1 s
+>> src/phase1/train_scorecard.py
+   8 s
 >> src/phase1/train_lgbm.py
-   45 s
+   36 s
 >> src/phase1/evaluate.py
-   40 s
+   37 s
 >> src/phase1/monitoring.py
-   10 s
+   9 s
 >> src/phase1/vintage.py
    1 s
 >> src/phase1/explore_early_signal.py
    1 s
->> src/phase2/fetch_bls.py
-   0 s
->> src/phase2/build_loans.py
-   9 s
->> src/phase2/fit_A.py
-   9 s
->> src/phase2/rule_B.py
-   251 s
->> src/phase2/ecl.py
-   4 s
->> src/phase2/ecl_benchmark.py
-   18 s
->> src/phase2/policy_C.py
-   9 s
->> src/phase2/mob6_test.py
-   1 s
->> src/phase2/overlay.py
-   1 s
 >> src/phase4/mob6_60m_test.py
-   4 s
->> src/phase4/asof_model.py
-   23 s
->> src/report/article_figures.py
    3 s
+>> src/phase4/asof_model.py
+   20 s
+>> src/phase2/fetch_bls.py
+   1 s
+>> src/phase2/build_loans.py
+   8 s
+>> src/phase2/fit_A.py
+   8 s
+>> src/phase2/rule_B.py
+   253 s
+>> src/phase2/ecl.py
+   3 s
+>> src/phase2/ecl_benchmark.py
+   39 s
+>> src/phase2/policy_C.py
+   17 s
+>> src/phase2/mob6_test.py
+   0 s
+>> src/phase2/overlay.py
+   2 s
+>> src/report/article_figures.py
+   2 s
 >> src/quality/grid_sensitivity.py
-   50 s
+   42 s
 >> src/quality/leakage_split_proof.py
    1 s
-TOTAL 522 s
+>> src/report/build_demo.py
+   0 s
+TOTAL 504 s
