@@ -1,27 +1,28 @@
 # STATUS — 2026-11-19
 
-## Done — Phase 0 (data audit) ✅
-- ดาวน์โหลด Kaggle "All Lending Club loan data" (accepted + rejected .csv.gz) → data/raw/; license CC0-1.0 ตรวจจาก Kaggle API;
-  sha256 / ขนาด / วันที่ บันทึกใน notes/data_sources.md. Data dictionary: Figshare copy (CC BY 4.0)
-- แปลงเป็น parquet ใน data/interim/ (DuckDB, all-VARCHAR); venv: `.venv` (Python 3.12, requirements.txt)
-- Audit ขั้น 2–7 → **notes/01_data_audit.md** (+ reports/audit/*.md, reports/figures/p0_*.png); code: src/audit/
-- git init แบบ local (ไม่มี remote); data files ไม่อยู่ใน git
+## Decisions (Nat, 2026-11-19)
+1. **Story pivot accepted:** "Lender in 2014 — does the model survive the 2015–16 vintages, and would monitoring notice in time?"
+   2007–08 = crisis anchor สำหรับ stress test (Phase 2 B)
+2. **Senior items = A + B** (TFRS 9 lifetime ECL: survival/lifetime PD with prepayment competing risk + macro-linked PD & stress test).
+   D ทำใน Phase 1. C = stretch. **Plan B = A + C ถ้า macro signal อ่อน** — ใช้กฎด้านล่าง
+3. **Exclude "Does not meet the credit policy" loans** (2,749 loans, 2007–2010) จาก headline model (documented in 01_data_audit.md §2)
+4. **Skip 8 (reject inference) และ G (causal rate→default)** ตาม evidence ใน 01_data_audit.md §5–6. **Park 6** (NLP)
 
-## Key results
-- 2,260,668 accepted loans (2007-06 → 2018-12, as-of ≈ 2019-03); 27.6M rejected applications
-- 2007 = 603 loans, 2008 = 2,393 → **ใช้ 2007→2008 เป็น headline OOT test ไม่ได้**
-- Matured: 36m ถึง issue 2015-12 (621k loans), 60m ถึง 2013; 2016–2018 ใช้สำหรับ monitoring / survival
-- Leakage map: 99 APP / 9 LC-decision / 38 POST columns
-- Recommendation: senior items **A + B** (TFRS 9 lifetime ECL story); D ใส่ใน Phase 1; C stretch.
-  6 = side study only (desc หายหลัง 2014-03); 8 = limited (skip/appendix); G = no sharp cutoff (skip)
+### Plan B rule (written 2026-11-19, before any macro data is downloaded or examined)
+In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch to **A + C**, and keep macro only as a simple sensitivity overlay, labelled as weak.
+1. **Sign + significance:** in a PD model of matured 36m vintages (issued 2009–2014) using the Phase 1 score (frozen) plus state unemployment
+   (BLS LAUS; level and 12-month change, measured over the loan's life), the macro coefficient has the expected sign (higher/rising unemployment
+   → higher PD), and its 95% CI excludes 0. CI from block bootstrap by issue quarter, or cluster-robust by state × quarter.
+2. **Out-of-time value:** on held-out 2015 vintages, adding macro cuts the calibration error across issue-quarter × state-group cells
+   (mean |predicted − observed| bad rate) by ≥ 10% relative to score-only, and does not worsen OOT log loss.
+3. **Plausible stress size:** applying the 2008–09 unemployment path gives an adverse/baseline PD multiplier between 1.1× and 3×.
+   This is a sanity range around the crisis-anchor ratio of ~1.5× seen in the audit; it is not an estimation target.
+
+## Done — Phase 0 (data audit) ✅
+- Data, sha256, license → notes/data_sources.md; findings → notes/01_data_audit.md; code src/audit/; local git (no remote)
+
+## In progress — Phase 1 (core 1+2+3 + D)
+- Pre-registration: notes/02_prereg_phase1.md (committed before any model fitting)
 
 ## Open questions for Nat
-1. ยอมรับการปรับ story ไหม: "lender ปี 2014 → model รอด vintage 2015–16 ไหม และ monitoring จับได้ทันไหม",
-   โดยให้ 2007–08 เป็น crisis anchor ของ stress test (ดู 01_data_audit.md §9)
-2. เลือก senior items 2 ตัว (แนะนำ A + B)
-3. Exclude loans 'does not meet the credit policy' (2,749 loans, 2007–2010) จาก headline model — ok ไหม?
-4. ทำ item 6 / 8 / G ไหม (แนะนำ: 6 แบบ side study ด้วย emp_title หรือ desc 2009–13; skip 8 และ G)
-
-## Next step
-- Phase 1 pre-registration (notes/02_prereg_scorecard.md): split, bad definition, feature list (APP only), metrics + intervals
-  — รอ Nat ตอบ open questions ก่อน
+- (none yet for Phase 1)
