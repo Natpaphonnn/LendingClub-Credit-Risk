@@ -4,41 +4,42 @@ PD: A model (score-only competing-risks hazard, fit 2012-09..2013-12). **LGD = 8
 (EAD-weighted, 15,007 train defaults; LGD_i = 1 − (recoveries − collection fee) / (funded − principal received)).
 EAD = scheduled annuity balance; prepayment via competing risk. Discount = EIR (int_rate/12).
 
-LGD by M2-PD quintile band (1 = safest; train cut points), sensitivity only: B1 87.5%, B2 89.0%, B3 88.7%, B4 88.9%, B5 88.9%
+LGD by M2-PD quintile band (1 = safest; train cut points), sensitivity only: B1 87.5%, B2 88.7%, B3 88.9%, B4 88.8%, B5 89.0%
 
 ## Portfolio totals (day 1 = at origination; all loans Stage 1 at origination)
 
 |   loans |   funded $m |   pred lifetime PD % |   actual default % |   pred EL (undisc) $m |   realised loss $m |   realised / predicted |   day-1 ECL 12m $m |   lifetime ECL $m |
 |--------:|------------:|---------------------:|-------------------:|----------------------:|-------------------:|-----------------------:|-------------------:|------------------:|
-|  282934 |      3622.8 |               13.564 |             14.876 |                234.93 |            273.752 |                  1.165 |            100.701 |           202.745 |
+|  282934 |      3622.8 |               13.424 |             14.876 |               232.415 |            273.752 |                  1.178 |             99.583 |            200.57 |
 
 ## Backtest by issue quarter — predicted lifetime EL (undiscounted, at origination) vs realised net principal loss
 
 | issue_q   |   loans |   funded $m |   pred lifetime PD % |   actual default % |   pred EL (undisc) $m |   realised loss $m |   realised / predicted |   day-1 ECL 12m $m |   lifetime ECL $m |
 |:----------|--------:|------------:|---------------------:|-------------------:|----------------------:|-------------------:|-----------------------:|-------------------:|------------------:|
-| 2015Q1    |   56569 |     728.872 |               13.974 |             14.833 |                49.041 |             53.625 |                  1.093 |             21.066 |            42.202 |
-| 2015Q2    |   64222 |     815.616 |               13.85  |             15.381 |                54.473 |             64.268 |                  1.18  |             23.394 |            46.892 |
-| 2015Q3    |   73572 |     952.461 |               13.364 |             14.578 |                60.919 |             70.016 |                  1.149 |             26.069 |            52.556 |
-| 2015Q4    |   88571 |    1125.85  |               13.262 |             14.785 |                70.497 |             85.843 |                  1.218 |             30.171 |            61.094 |
+| 2015Q1    |   56569 |     728.872 |               13.83  |             14.833 |                48.536 |             53.625 |                  1.105 |             20.838 |            41.766 |
+| 2015Q2    |   64222 |     815.616 |               13.69  |             15.381 |                53.839 |             64.268 |                  1.194 |             23.107 |            46.345 |
+| 2015Q3    |   73572 |     952.461 |               13.239 |             14.578 |                60.274 |             70.016 |                  1.162 |             25.785 |            51.998 |
+| 2015Q4    |   88571 |    1125.85  |               13.126 |             14.785 |                69.766 |             85.843 |                  1.23  |             29.853 |            60.461 |
 
 ## Backtest by risk band (M2 PD quintile on train; 5 = riskiest)
 
 |   band |   loans |   funded $m |   pred lifetime PD % |   actual default % |   pred EL (undisc) $m |   realised loss $m |   realised / predicted |   day-1 ECL 12m $m |   lifetime ECL $m |
 |-------:|--------:|------------:|---------------------:|-------------------:|----------------------:|-------------------:|-----------------------:|-------------------:|------------------:|
-|      1 |   53740 |     795.191 |                3.151 |              4.533 |                10.921 |             16.599 |                  1.52  |              4.063 |             9.877 |
-|      2 |   52073 |     692.969 |                6.712 |              9.068 |                21.42  |             30.78  |                  1.437 |              8.332 |            19.037 |
-|      3 |   53718 |     671.024 |               10.372 |             13.204 |                33.147 |             44.931 |                  1.356 |             13.307 |            29.051 |
-|      4 |   56478 |     674.809 |               15.412 |             17.745 |                51.226 |             63.15  |                  1.233 |             21.282 |            44.291 |
-|      5 |   66925 |     788.802 |               28.261 |             26.621 |               118.217 |            118.291 |                  1.001 |             53.716 |           100.488 |
+|      1 |   54334 |     806.001 |                3.314 |              4.57  |                11.669 |             16.813 |                  1.441 |              4.371 |            10.551 |
+|      2 |   51150 |     680.053 |                6.888 |              9.148 |                21.674 |             30.964 |                  1.429 |              8.474 |            19.257 |
+|      3 |   53560 |     669.216 |               10.356 |             13.127 |                33.104 |             44.489 |                  1.344 |             13.328 |            29.009 |
+|      4 |   56423 |     675.813 |               15.109 |             17.619 |                50.4   |             62.754 |                  1.245 |             20.956 |            43.572 |
+|      5 |   67467 |     791.712 |               27.549 |             26.613 |               115.568 |            118.732 |                  1.027 |             52.454 |            98.181 |
 
 ## Allowance at reporting date 2015-12-31 — EX-POST ILLUSTRATION (monthly DPD is not in the data)
 
-| stage                                                                    |   loans |   gross EAD $m |   allowance $m |   coverage % |
-|:-------------------------------------------------------------------------|--------:|---------------:|---------------:|-------------:|
-| Stage 1 (performing, no missed instalment visible; 12-month ECL)         |  263610 |       2992.31  |        112.293 |         3.75 |
-| Stage 2 (1–2 missed instalments ≈ ≥ 30 DPD, ex-post proxy; lifetime ECL) |    1571 |         17.089 |          1.537 |         9    |
-| Stage 3 (≥ 3 missed instalments ≈ 90 DPD; LGD × EAD at default)          |    2300 |         25.053 |         22.25  |        88.81 |
-| derecognised (prepaid by the report month)                               |   15453 |          0     |          0     |       nan    |
+| stage                                                                                                       |   loans |   gross EAD $m |   allowance $m |   coverage % |
+|:------------------------------------------------------------------------------------------------------------|--------:|---------------:|---------------:|-------------:|
+| Stage 1 (performing, no missed instalment visible; 12-month ECL)                                            |  263610 |       2992.31  |        111.006 |         3.71 |
+| Stage 2 (1–2 missed instalments ≈ ≥ 30 DPD, ex-post proxy; lifetime ECL)                                    |    1571 |         17.089 |          1.518 |         8.88 |
+| Stage 3 (≥ 3 missed instalments ≈ 90 DPD; LGD × EAD at default)                                             |    2300 |         25.053 |         22.25  |        88.81 |
+| derecognised (prepaid by the report month)                                                                  |   15453 |          0     |          0     |       nan    |
+| memo: of stage 3, ≥ 6 missed instalments (likely already written off under LC's ~150-DPD charge-off policy) |     682 |          7.641 |          6.786 |        88.81 |
 
 - Stage definitions (notes/08_prereg_extensions.md §E4): m = instalments due by Dec-2015 and not paid, visible **only for loans that ultimately
   charged off** (delinquent loans that later cured are invisible → stage 2 is understated). Approximation: 1 missed instalment ≈ 30 DPD, 3 ≈ 90 DPD.

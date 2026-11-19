@@ -66,8 +66,28 @@ def _probs(X, B):
     return e / den                                # P1, P2
 
 
-def fit_mnl(X, y, w, B0=None, iters=30, tol=1e-7, ridge=1e-8):
+class NotIdentifiedError(ValueError):
+    pass
+
+
+def check_identified(X, w, max_cond=1e10):
+    """Gate review R7-1 / R2-1: every design column needs weighted support and the information matrix must be well
+    conditioned — otherwise coefficients (e.g. late-MOB spline terms beyond the observed horizon) are not identified."""
+    support = (np.abs(X) * w[:, None]).sum(0)
+    dead = np.where(support <= 1e-8 * support.max())[0]
+    if len(dead):
+        raise NotIdentifiedError(f"design columns without support in the fitting data: {dead.tolist()}")
+    Xs = X / np.sqrt((X ** 2 * w[:, None]).sum(0) / w.sum())
+    cond = np.linalg.cond((Xs * w[:, None]).T @ Xs / w.sum())
+    if cond > max_cond:
+        raise NotIdentifiedError(f"information matrix ill-conditioned (cond = {cond:.3g})")
+    return cond
+
+
+def fit_mnl(X, y, w, B0=None, iters=30, tol=1e-7, ridge=1e-8, check=True):
     n, p = X.shape
+    if check and B0 is None:
+        check_identified(X, w)
     B = np.zeros((p, 2)) if B0 is None else B0.copy()
     Y = np.column_stack([(y == 1), (y == 2)]).astype(float)
     for it in range(iters):

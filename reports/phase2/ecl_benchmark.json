@@ -1,37 +1,55 @@
 {
  "(a) reference A, undiscounted LGD": {
   "scenario": "(a) reference A, undiscounted LGD",
-  "mean 12m PD %": 4.279447555541992,
-  "mean lifetime PD %": 13.564178466796875,
-  "day-1 12m ECL $m": 100.70073189030363,
-  "lifetime ECL $m": 202.74487316371935,
-  "backtest: pred EL (undisc.) $m": 234.93018941779573,
-  "realised / predicted": 1.1652479995057683
+  "mean 12m PD %": 4.235815048217773,
+  "mean lifetime PD %": 13.424160957336426,
+  "day-1 12m ECL $m": 99.58299710715326,
+  "lifetime ECL $m": 200.57012201675352,
+  "backtest: pred EL (undisc.) $m": 232.41509554923954,
+  "realised / predicted": 1.1778578004826736
  },
  "(b) reference A, discounted LGD (k=12)": {
   "scenario": "(b) reference A, discounted LGD (k=12)",
-  "mean 12m PD %": 4.279447555541992,
-  "mean lifetime PD %": 13.564178466796875,
-  "day-1 12m ECL $m": 102.4725125838386,
-  "lifetime ECL $m": 206.31207118998176
+  "mean 12m PD %": 4.235815048217773,
+  "mean lifetime PD %": 13.424160957336426,
+  "day-1 12m ECL $m": 101.33511179557479,
+  "lifetime ECL $m": 204.09905634607858
  },
- "(c) refit at 2014-12-31, discounted LGD (k=12)": {
-  "scenario": "(c) refit at 2014-12-31, discounted LGD (k=12)",
-  "mean 12m PD %": 4.005120277404785,
-  "mean lifetime PD %": 15.137685775756836,
-  "day-1 12m ECL $m": 93.36994391481265,
-  "lifetime ECL $m": 214.5868827516842,
-  "backtest: pred EL (undisc.) $m": 249.02683792103628,
-  "realised / predicted": 1.0992868701541376
+ "(c) refit at 2014-12-31 as pre-registered (MOB 1\u201321) + reference tail, discounted LGD (k=12)": {
+  "scenario": "(c) refit at 2014-12-31 as pre-registered (MOB 1\u201321) + reference tail, discounted LGD (k=12)",
+  "mean 12m PD %": 3.968191146850586,
+  "mean lifetime PD %": 12.917492866516113,
+  "day-1 12m ECL $m": 92.43843189942905,
+  "lifetime ECL $m": 188.3422833076681,
+  "backtest: pred EL (undisc.) $m": 215.57536155884338,
+  "realised / predicted": 1.2698665156494449
+ },
+ "(c') (c) with as-of score and LGD from defaults known by 2014-06": {
+  "scenario": "(c') (c) with as-of score and LGD from defaults known by 2014-06",
+  "mean 12m PD %": 3.8853213787078857,
+  "mean lifetime PD %": 12.641779899597168,
+  "day-1 12m ECL $m": 91.31416976461944,
+  "lifetime ECL $m": 188.20444727902296,
+  "backtest: pred EL (undisc.) $m": 215.57340087576551,
+  "realised / predicted": 1.269878065338684
+ },
+ "(c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)": {
+  "scenario": "(c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)",
+  "mean 12m PD %": 3.3326737880706787,
+  "mean lifetime PD %": 9.21239185333252,
+  "day-1 12m ECL $m": 77.51799529461154,
+  "lifetime ECL $m": 143.14748925844194,
+  "backtest: pred EL (undisc.) $m": 162.3920998284586,
+  "realised / predicted": 1.6857466190274837
  },
  "(d) 90-DPD default definition, discounted LGD (k=12)": {
   "scenario": "(d) 90-DPD default definition, discounted LGD (k=12)",
-  "mean 12m PD %": 3.2797913551330566,
-  "mean lifetime PD %": 13.237560272216797,
-  "day-1 12m ECL $m": 80.06779605496466,
-  "lifetime ECL $m": 200.91732402085688,
-  "backtest: pred EL (undisc.) $m": 233.65565220043135,
-  "realised / predicted": 1.1716041562211879
+  "mean 12m PD %": 3.2469186782836914,
+  "mean lifetime PD %": 13.101541519165039,
+  "day-1 12m ECL $m": 79.18958507901135,
+  "lifetime ECL $m": 198.78805220411223,
+  "backtest: pred EL (undisc.) $m": 231.18337239199377,
+  "realised / predicted": 1.1841333155155502
  },
  "LGD_undiscounted": 0.8881116053278834,
  "LGD_discounted": {
@@ -39,52 +57,230 @@
   "12": 0.9037374586385022,
   "24": 0.9171005621946087
  },
+ "LGD_known_by_2014_06_disc12": 0.9140759277505635,
+ "LGD_known_by_2014_06_undisc": 0.8999385167709726,
+ "n_defaults_known_by_2014_06": 4773,
  "realised_loss_m": 273.7519332425977,
- "refit_2014": {
-  "n_loans": 181130,
-  "defaults": 4965,
-  "prepays": 17447
+ "models": {
+  "refit_2014_prereg_2012start": {
+   "n_loans": 181130,
+   "defaults": 4965,
+   "prepays": 17447,
+   "issue_window": [
+    "2012-09-01",
+    "2014-05-01"
+   ],
+   "max_mob_observed": 21
+  },
+  "refit_2014_from_2009": {
+   "n_loans": 231622,
+   "defaults": 10298,
+   "prepays": 36878,
+   "issue_window": [
+    "2009-01-01",
+    "2014-05-01"
+   ],
+   "max_mob_observed": 36
+  },
+  "refit_2015": {
+   "n_loans": 384980,
+   "defaults": 17198,
+   "prepays": 68765,
+   "issue_window": [
+    "2012-09-01",
+    "2015-05-01"
+   ],
+   "max_mob_observed": 33
+  }
  },
- "refit_2015": {
-  "n_loans": 384980,
-  "defaults": 17198,
-  "prepays": 68765
+ "model_90dpd_defaults": 14557,
+ "decomposition": {
+  "(a) reference A, undiscounted LGD": {
+   "count ratio": 1.108144298809824,
+   "EAD/default ratio": 1.0573743709623484,
+   "LGD ratio": 1.0052353662584566,
+   "mean default MOB pred": 17.92142299731581,
+   "mean default MOB actual": 17.933403026919148
+  },
+  "(c) refit at 2014-12-31 as pre-registered (MOB 1\u201321) + reference tail, discounted LGD (k=12)": {
+   "count ratio": 1.1516095816693,
+   "EAD/default ratio": 1.096945461475182,
+   "LGD ratio": 1.0052353662584566,
+   "mean default MOB pred": 18.451400708639227,
+   "mean default MOB actual": 17.933403026919148
+  },
+  "(c') (c) with as-of score and LGD from defaults known by 2014-06": {
+   "count ratio": 1.1767256795959102,
+   "EAD/default ratio": 1.087838259252588,
+   "LGD ratio": 1.0052353662584566,
+   "mean default MOB pred": 18.44631621858295,
+   "mean default MOB actual": 17.933403026919148
+  },
+  "(c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)": {
+   "count ratio": 1.6147713703913933,
+   "EAD/default ratio": 1.0385167129414599,
+   "LGD ratio": 1.0052353662584566,
+   "mean default MOB pred": 17.020206771033298,
+   "mean default MOB actual": 17.933403026919148
+  },
+  "(d) 90-DPD default definition, discounted LGD (k=12)": {
+   "count ratio": 1.13543174458923,
+   "EAD/default ratio": 1.0374610520655931,
+   "LGD ratio": 1.0052353662584566,
+   "mean default MOB pred": 19.530328583474894,
+   "mean default MOB actual": 17.933403026919148
+  }
  },
- "model_90dpd": {
-  "n_loans": 120683,
-  "defaults": 14557,
-  "prepays": 61594
+ "mob_window_split": {
+  "(a) reference A, undiscounted LGD": {
+   "MOB 1\u201321": [
+    189.7139395796574,
+    225.55351229279793
+   ],
+   "MOB 22\u201336+": [
+    42.70115596958204,
+    48.19842094979973
+   ]
+  },
+  "(c) refit at 2014-12-31 as pre-registered (MOB 1\u201321) + reference tail, discounted LGD (k=12)": {
+   "MOB 1\u201321": [
+    169.06567941335865,
+    225.55351229279793
+   ],
+   "MOB 22\u201336+": [
+    46.50968214548466,
+    48.19842094979973
+   ]
+  },
+  "(c') (c) with as-of score and LGD from defaults known by 2014-06": {
+   "MOB 1\u201321": [
+    169.37723861222673,
+    225.55351229279793
+   ],
+   "MOB 22\u201336+": [
+    46.1961622635391,
+    48.19842094979973
+   ]
+  },
+  "(c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)": {
+   "MOB 1\u201321": [
+    136.7369246306478,
+    225.55351229279793
+   ],
+   "MOB 22\u201336+": [
+    25.655175197810728,
+    48.19842094979973
+   ]
+  },
+  "(d) 90-DPD default definition, discounted LGD (k=12)": {
+   "MOB 1\u201321": [
+    174.33720784319118,
+    225.55351229279793
+   ],
+   "MOB 22\u201336+": [
+    56.8461645488029,
+    48.19842094979973
+   ]
+  }
+ },
+ "backtest_12m": {
+  "pred_EL_12m_undisc_m": 108.13580557187707,
+  "realised_12m_m": 123.67143519200012,
+  "ratio": 1.143667766083239,
+  "pd12_pred_pct": 4.235815048217773,
+  "pd12_obs_pct": 4.664692119010088
+ },
+ "in_sample_A": {
+  "pred_m": 89.84982534535214,
+  "realised_m": 92.36194515730057,
+  "ratio": 1.0279590951044444,
+  "EAD_at_default_vs_scheduled_train": 1.02433627713451
  },
  "staging_refit_2015": {
   "stage": [
    "Stage 1 (performing, no missed instalment visible; 12-month ECL)",
    "Stage 2 (1\u20132 missed instalments \u2248 \u2265 30 DPD, ex-post proxy; lifetime ECL)",
    "Stage 3 (\u2265 3 missed instalments \u2248 90 DPD; LGD \u00d7 EAD at default)",
-   "derecognised (prepaid by the report month)"
+   "derecognised (prepaid by the report month)",
+   "  memo: of stage 3, \u2265 6 missed instalments (likely already written off under LC's ~150-DPD charge-off policy)"
   ],
   "loans": [
    263610,
    1571,
    2300,
-   15453
+   15453,
+   682
   ],
   "gross EAD $m": [
    2992.3097835644694,
    17.08876882463447,
    25.052721242157332,
-   0.0
+   0.0,
+   7.640801400557533
   ],
   "allowance $m": [
-   102.09249595750478,
-   1.457658061124262,
+   101.45403245550582,
+   1.4448813560644533,
    22.641082627366085,
-   0.0
+   0.0,
+   6.905278439701373
   ],
   "coverage %": [
-   3.41,
-   8.53,
+   3.39,
+   8.46,
    90.37,
-   NaN
+   NaN,
+   90.37
+  ]
+ },
+ "refit_2009_insample_by_year": {
+  "issue year": [
+   2009,
+   2010,
+   2011,
+   2012,
+   2013,
+   2014
+  ],
+  "loans": [
+   4716,
+   8466,
+   14101,
+   43470,
+   100422,
+   60447
+  ],
+  "mean_lp": [
+   -1.5490168333053589,
+   -1.5867304801940918,
+   -1.599023699760437,
+   -1.8377223014831543,
+   -2.1608731746673584,
+   -2.110748052597046
+  ],
+  "pred": [
+   601.8663330078125,
+   1007.6030883789062,
+   1577.7105712890625,
+   3714.765625,
+   3064.818603515625,
+   243.45571899414062
+  ],
+  "act": [
+   581,
+   820,
+   1440,
+   4028,
+   3237,
+   192
+  ],
+  "A/E": [
+   0.9653306193361348,
+   0.8138125115508195,
+   0.9127149340347345,
+   1.0843214368335823,
+   1.0561799632405218,
+   0.7886444434054185
   ]
  }
 }

@@ -239,7 +239,7 @@ ax.set_ylim(0, q["realised $m"].max() * 1.25)
 ax.grid(axis="x", visible=False)
 ax.legend(loc="upper left", fontsize=9)
 tot = ov["total"]
-finish(fig, f"Realised loss came in at {tot['realised/pred']:.2f}× expected; a month-12 overlay closes {100*tot['gap closed MOB12']:.0f}% of the gap",
+finish(fig, f"Realised loss came in at {tot['realised/pred']:.2f}× expected; an in-sample month-12 overlay closes {100*tot['gap closed MOB12']:.0f}% (illustrative)",
        f"2015 loans; lifetime EL at origination, not an allowance. Overlay = EL × month-12 A/E "
        f"(month-6: {100*tot['gap closed MOB6']:.0f}%). Illustrative.",
        "fig7_ecl_backtest_overlay.png")

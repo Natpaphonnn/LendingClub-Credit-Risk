@@ -145,3 +145,13 @@ def test_fit_mnl_recovers_parameters():
     y = np.where(u < P[:, 0], 1, np.where(u < P[:, 0] + P[:, 1], 2, 0))
     Bh, _, _ = fit_mnl(X, y, np.ones(n))
     assert np.allclose(Bh, B, atol=0.06)
+
+
+def test_fit_mnl_refuses_unidentified_design():
+    """Gate R7-1 / R2-1: a spline column with no support (MOB beyond the observed horizon) must raise, not be ridge-hidden."""
+    from hazard import NotIdentifiedError, design, expand
+    loans = pd.DataFrame({"T": rng.integers(1, 22, 3000), "event": rng.integers(0, 3, 3000)})   # max observed MOB 21
+    idx, t, y, w = expand(loans)
+    L = np.column_stack([rng.normal(size=3000), rng.normal(size=3000), rng.normal(size=3000)])[idx]
+    with pytest.raises(NotIdentifiedError):
+        fit_mnl(design(t, L), y, w)

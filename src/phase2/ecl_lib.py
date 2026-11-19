@@ -48,23 +48,31 @@ def realised_loss(port):
     return np.where(is_def, port.funded_amnt - port.total_rec_prncp - port.recoveries + port.collection_recovery_fee, 0.0)
 
 
-def fit_hazard_asof(loans, report_date, start="2012-09-01", lag_m=6, default_shift=0):
-    """Refit the A-spec hazard using only outcomes observable by report_date − lag (E5). default_shift=2 → 90-DPD events."""
+def fit_hazard_asof(loans, report_date, start="2012-09-01", lag_m=6, default_shift=0, lp=None, check=True):
+    """Refit the A-spec hazard using only outcomes observable by report_date − lag (E5). default_shift=2 → 90-DPD events.
+    start: pre-registered 2012-09. Gate fix R7-1 / R2-1: for R = 2014-12-31 that window observes at most MOB 21, so the late-MOB spline
+    terms are not identified (fit_mnl now refuses it); the benchmark passes start = 2009-01 (bug-driven deviation, notes/10) — older
+    vintages, still only outcomes observable by R − lag, identify the full 36-month shape. check=False only for the MOB ≤ 21 diagnostic.
+    lp: optional replacement score column (e.g. logit of the as-of PD12) for the as-of sensitivity."""
     cut = pd.Timestamp(report_date).to_period("M").to_timestamp() - pd.DateOffset(months=lag_m)
     tr = loans[(loans.issue_dt >= start) & (loans.issue_dt <= pd.Timestamp(report_date))].copy()
     W = np.minimum(36, payments_due(tr.issue_dt, cut.strftime("%Y-%m-%d")))
     tr["W_R"] = W
-    tr = tr[tr.W_R >= 1].reset_index(drop=True)
+    tr = tr[tr.W_R >= 1]
     dm = as_float(tr.default_mob) + default_shift
     T, ev = code_events(tr.loan_status.to_numpy(), tr.lp_mob, dm, tr.W_R)
     tr["T"], tr["event"] = T, ev
-    return fit_on(tr)
+    if lp is not None:
+        tr["lp"] = lp.loc[tr.index].to_numpy() if hasattr(lp, "loc") else lp
+    out = fit_on(tr.reset_index(drop=True), check=check)
+    out.update({"issue_window": (str(tr.issue_dt.min().date()), str(tr.issue_dt.max().date())), "max_mob_observed": int(tr.W_R.max())})
+    return out
 
 
-def fit_on(tr):
+def fit_on(tr, check=True):
     sc = Scaler(tr)
     li, t, y, w = expand(tr)
-    B, cov, its = fit_mnl(design(t, sc.loan_cols(tr)[li]), y, w)
+    B, cov, its = fit_mnl(design(t, sc.loan_cols(tr)[li]), y, w, check=check)
     return {"B": B, "scaler": sc, "n_loans": len(tr), "n_rows": len(t), "defaults": int((y == 1).sum()),
             "prepays": int((y == 2).sum()), "iters": its}
 
@@ -103,5 +111,9 @@ def staging_e4(port, model, LGD, report="2015-12-01"):
             ("derecognised (prepaid by the report month)", gone, np.zeros(n))]
     t = pd.DataFrame([{"stage": nm, "loans": int(msk.sum()), "gross EAD $m": float(ead_rep[msk].sum() / 1e6) if "derecog" not in nm else 0.0,
                        "allowance $m": float(al[msk].sum() / 1e6)} for nm, msk, al in rows])
+    wo = m >= 6
+    t = pd.concat([t, pd.DataFrame([{"stage": "  memo: of stage 3, ≥ 6 missed instalments (likely already written off under LC's ~150-DPD charge-off policy)",
+                                     "loans": int(wo.sum()), "gross EAD $m": float(ead_rep[wo].sum() / 1e6),
+                                     "allowance $m": float((LGD * ead_def)[wo].sum() / 1e6)}])], ignore_index=True)
     t["coverage %"] = (100 * t["allowance $m"] / t["gross EAD $m"].replace(0, np.nan)).round(2)
     return t

@@ -4,21 +4,22 @@
 
 | rule | statistic | threshold | result |
 |---|---|---|---|
-| (a) sign + significance | θ = γ_u + γ_Δ12u (default) = -0.0379, 95% block-bootstrap CI [-0.0935, -0.0045] | θ > 0 and CI > 0 | FAIL |
-| (b) OOT value | cell error macro 2.121 pp vs score-only 2.909 pp (-27.1%); log loss 0.39246 vs 0.39415 | ≤ −10% and log loss not worse | PASS |
-| (c) stress size | adverse/baseline lifetime PD multiplier = 0.911 (mean PD 12.55% → 11.43%) | 1.1 – 3.0 | FAIL |
+| (a) sign + significance | θ = γ_u + γ_Δ12u (default) = -0.0452, 95% block-bootstrap CI [-0.0990, -0.0095] | θ > 0 and CI > 0 | FAIL |
+| (b) OOT value | cell error macro 2.145 pp vs score-only 2.981 pp (-28.0%); log loss 0.39235 vs 0.39420 | ≤ −10% and log loss not worse | PASS |
+| (c) stress size | adverse/baseline lifetime PD multiplier = 0.893 (mean PD 12.48% → 11.15%) | 1.1 – 3.0 | FAIL |
 
 ## Macro coefficients (log-odds per 1 pp; bracket = block-bootstrap CI by issue quarter, B=200)
 
 Hessian standard errors are not shown: the fit uses a weighted non-event subsample and ignores clustering, so they are not valid for
-inference (independent review MA-3). The bootstrap keeps the 25% subsample fixed (as pre-registered); θ also moved from −0.0185 to −0.0379
-when the frozen M2 score was re-fit in the deterministic re-run (same rule outcome: FAIL). Since E3 (notes/08_prereg_extensions.md) every
-bootstrap replicate redraws the 25% non-event subsample from the full panel before resampling issue quarters.
+inference (independent review MA-3). Every bootstrap replicate redraws the 25% non-event subsample from the full loan-month panel and
+resamples the 24 issue quarters (E3, notes/08_prereg_extensions.md). The bootstrap distribution sits below the point estimate, so whether the
+CI excludes 0 depends on the CI method (a normal-approximation CI would include 0); the rule outcome does not, because θ is not positive.
+Test (b) is out-of-time by vintage, not by calendar: the fit panel's loan-months run into 2015–17, overlapping the 2015 vintage's outcome window.
 
 | fit | loans | issue quarters | γ_u default | γ_Δ12u default | θ default | γ_u prepay | γ_Δ12u prepay |
 |---|---:|---:|---|---|---|---|---|
-| primary 2009-2014 | 333,745 | 24 | -0.0619 | 0.0240 | **-0.0379 [-0.0935, -0.0045]** | -0.0452 | -0.0369 |
-| sensitivity 2012-09..2014 | 283,253 | 10 | -0.0055 | 0.0342 | **0.0287 [-0.0116, 0.0609]** | -0.0454 | -0.0370 |
+| primary 2009-2014 | 333,745 | 24 | -0.0657 | 0.0205 | **-0.0452 [-0.0990, -0.0095]** | -0.0441 | -0.0359 |
+| sensitivity 2012-09..2014 | 283,253 | 10 | -0.0060 | 0.0356 | **0.0296 [-0.0106, 0.0616]** | -0.0453 | -0.0372 |
 
 (sensitivity row = pre-registered robustness, not part of the rule)
 
@@ -26,22 +27,22 @@ bootstrap replicate redraws the 25% non-event subsample from the full panel befo
 
 | issue_q   | region    |     n |   obs |   pred_score_only |   pred_macro |
 |:----------|:----------|------:|------:|------------------:|-------------:|
-| 2015Q1    | Midwest   |  9996 | 14.63 |             12.42 |        13.24 |
-| 2015Q1    | Northeast | 10919 | 15.34 |             12.02 |        12.71 |
-| 2015Q1    | South     | 19813 | 15.09 |             12.44 |        13.19 |
-| 2015Q1    | West      | 15840 | 14.3  |             12.39 |        12.87 |
-| 2015Q2    | Midwest   | 11272 | 14.57 |             12.22 |        13.08 |
-| 2015Q2    | Northeast | 13086 | 15.68 |             11.97 |        12.75 |
-| 2015Q2    | South     | 23120 | 15.63 |             12.36 |        13.17 |
-| 2015Q2    | West      | 16744 | 15.35 |             12.19 |        12.78 |
-| 2015Q3    | Midwest   | 13112 | 14.63 |             12.01 |        12.97 |
-| 2015Q3    | Northeast | 15051 | 14.81 |             11.54 |        12.35 |
-| 2015Q3    | South     | 26046 | 14.94 |             11.89 |        12.75 |
-| 2015Q3    | West      | 19358 | 13.89 |             11.75 |        12.38 |
-| 2015Q4    | Midwest   | 16001 | 14.09 |             11.69 |        12.72 |
-| 2015Q4    | Northeast | 18014 | 14.67 |             11.18 |        12.06 |
-| 2015Q4    | South     | 31924 | 15.39 |             11.62 |        12.54 |
-| 2015Q4    | West      | 22491 | 14.61 |             11.38 |        12.1  |
+| 2015Q1    | Midwest   |  9996 | 14.63 |             12.34 |        13.21 |
+| 2015Q1    | Northeast | 10919 | 15.34 |             11.95 |        12.68 |
+| 2015Q1    | South     | 19813 | 15.09 |             12.39 |        13.18 |
+| 2015Q1    | West      | 15840 | 14.3  |             12.28 |        12.8  |
+| 2015Q2    | Midwest   | 11272 | 14.57 |             12.15 |        13.07 |
+| 2015Q2    | Northeast | 13086 | 15.68 |             11.88 |        12.71 |
+| 2015Q2    | South     | 23120 | 15.63 |             12.28 |        13.14 |
+| 2015Q2    | West      | 16744 | 15.35 |             12.09 |        12.72 |
+| 2015Q3    | Midwest   | 13112 | 14.63 |             11.94 |        12.96 |
+| 2015Q3    | Northeast | 15051 | 14.81 |             11.48 |        12.34 |
+| 2015Q3    | South     | 26046 | 14.94 |             11.83 |        12.74 |
+| 2015Q3    | West      | 19358 | 13.89 |             11.68 |        12.36 |
+| 2015Q4    | Midwest   | 16001 | 14.09 |             11.62 |        12.71 |
+| 2015Q4    | Northeast | 18014 | 14.67 |             11.11 |        12.03 |
+| 2015Q4    | South     | 31924 | 15.39 |             11.56 |        12.54 |
+| 2015Q4    | West      | 22491 | 14.61 |             11.3  |        12.07 |
 
 ## Context: state unemployment (BLS LAUS, SA), min / median / max across 51 states
 

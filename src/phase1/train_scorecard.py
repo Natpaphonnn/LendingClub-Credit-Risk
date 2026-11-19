@@ -116,7 +116,9 @@ def score_frame(d):
     for c in cols:
         lab = bins[c].assign(d[c])
         L[c] = lab
-        P[c] = lab.map(points[c]).fillna(0).astype(np.int16)
+        pts = lab.map(points[c])
+        assert pts.notna().all(), f"{c}: unmapped bin (gate R4-5: no silent 0 points)"
+        P[c] = pts.astype(np.int16)
     s = P.sum(axis=1).astype(np.int32)
     pd_ = 1 / (1 + np.exp((s - offset) / factor))
     return s, pd_, P, L

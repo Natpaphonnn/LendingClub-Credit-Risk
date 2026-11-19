@@ -2,42 +2,42 @@
 
 ## Discrimination & calibration — validation_2014 (n=162,570, bad rate 13.73%)
 
-95% bootstrap CI in brackets (B=500). CITL = mean PD − observed bad rate. Paired ΔGini (M2 − M1) = 3.74 [3.37, 4.09] Gini points. LC sub_grade − M1 = -0.53 [-1.33, 0.10]. M2 − LC sub_grade = 4.27 [3.65, 4.98] (descriptive benchmark comparison).
+95% bootstrap CI in brackets (B=500). CITL = mean PD − observed bad rate. Paired ΔGini (M2 − M1) = 3.70 [3.35, 4.05] Gini points. LC sub_grade − M1 = -0.53 [-1.33, 0.10]. M2 − LC sub_grade = 4.23 [3.63, 4.94] (descriptive benchmark comparison).
 
 | model        | Gini (×100)       | KS (×100)         |   mean PD % | CITL (pp)            | calib slope          | Brier                   | log loss                |
 |:-------------|:------------------|:------------------|------------:|:---------------------|:---------------------|:------------------------|:------------------------|
 | M1_scorecard | 32.4 [31.7, 33.2] | 23.4 [22.8, 24.1] |       13.03 | -0.69 [-0.85, -0.53] | 0.978 [0.955, 1.002] | 0.1138 [0.1127, 0.1150] | 0.3803 [0.3772, 0.3835] |
-| M2_lgbm      | 36.2 [35.5, 36.9] | 26.4 [25.8, 27.1] |       13.13 | -0.60 [-0.74, -0.44] | 0.926 [0.906, 0.946] | 0.1127 [0.1115, 0.1138] | 0.3756 [0.3723, 0.3786] |
+| M2_lgbm      | 36.1 [35.4, 36.9] | 26.2 [25.7, 26.9] |       13.15 | -0.57 [-0.72, -0.41] | 0.928 [0.907, 0.948] | 0.1127 [0.1115, 0.1138] | 0.3757 [0.3724, 0.3787] |
 | LC_subgrade  | 31.9 [31.2, 32.5] | 23.6 [22.9, 24.2] |             |                      |                      |                         |                         |
 
 ## Discrimination & calibration — oot_2015 (n=282,787, bad rate 14.88%)
 
-95% bootstrap CI in brackets (B=500). CITL = mean PD − observed bad rate. Paired ΔGini (M2 − M1) = 3.10 [2.81, 3.38] Gini points. LC sub_grade − M1 = 2.05 [1.59, 2.54]. M2 − LC sub_grade = 1.05 [0.56, 1.48] (descriptive benchmark comparison).
+95% bootstrap CI in brackets (B=500). CITL = mean PD − observed bad rate. Paired ΔGini (M2 − M1) = 3.06 [2.77, 3.34] Gini points. LC sub_grade − M1 = 2.05 [1.59, 2.54]. M2 − LC sub_grade = 1.01 [0.52, 1.46] (descriptive benchmark comparison).
 
 | model        | Gini (×100)       | KS (×100)         |   mean PD % | CITL (pp)            | calib slope          | Brier                   | log loss                |
 |:-------------|:------------------|:------------------|------------:|:---------------------|:---------------------|:------------------------|:------------------------|
 | M1_scorecard | 33.7 [33.1, 34.2] | 24.3 [23.8, 24.8] |       12.89 | -2.00 [-2.12, -1.88] | 1.001 [0.984, 1.019] | 0.1215 [0.1206, 0.1224] | 0.3996 [0.3973, 0.4020] |
-| M2_lgbm      | 36.8 [36.3, 37.3] | 26.6 [26.2, 27.1] |       13.13 | -1.75 [-1.87, -1.63] | 0.928 [0.914, 0.943] | 0.1202 [0.1193, 0.1210] | 0.3946 [0.3922, 0.3968] |
+| M2_lgbm      | 36.7 [36.3, 37.3] | 26.5 [26.1, 27.1] |       13.19 | -1.70 [-1.82, -1.58] | 0.929 [0.914, 0.945] | 0.1202 [0.1193, 0.1210] | 0.3946 [0.3922, 0.3968] |
 | LC_subgrade  | 35.7 [35.2, 36.3] | 26.2 [25.8, 26.7] |             |                      |                      |                         |                         |
 
 ## Calibration by PD decile — OOT 2015 (%, each model's own deciles)
 
 |   decile |     n |   M1_mean_pd |   M1_bad_rate |   M2_mean_pd |   M2_bad_rate |
 |---------:|------:|-------------:|--------------:|-------------:|--------------:|
-|        1 | 28279 |         3.82 |          3.72 |         2.82 |          3.17 |
-|        2 | 28279 |         6    |          7.11 |         5.13 |          6.18 |
-|        3 | 28278 |         7.68 |          9.08 |         6.94 |          8.31 |
-|        4 | 28279 |         9.27 |         10.85 |         8.7  |         10.73 |
-|        5 | 28279 |        10.89 |         13.13 |        10.52 |         12.72 |
-|        6 | 28278 |        12.61 |         14.95 |        12.51 |         14.83 |
-|        7 | 28279 |        14.55 |         17.15 |        14.81 |         17.25 |
-|        8 | 28278 |        16.91 |         20.05 |        17.67 |         20.32 |
-|        9 | 28279 |        20.14 |         23.36 |        21.7  |         24.16 |
-|       10 | 28279 |        26.99 |         29.44 |        30.55 |         31.17 |
+|        1 | 28279 |         3.82 |          3.72 |         2.84 |          3.1  |
+|        2 | 28279 |         6    |          7.11 |         5.24 |          6.21 |
+|        3 | 28278 |         7.68 |          9.08 |         7.08 |          8.35 |
+|        4 | 28279 |         9.27 |         10.85 |         8.81 |         10.65 |
+|        5 | 28279 |        10.89 |         13.13 |        10.59 |         12.69 |
+|        6 | 28278 |        12.61 |         14.95 |        12.54 |         15.15 |
+|        7 | 28279 |        14.55 |         17.15 |        14.79 |         17.24 |
+|        8 | 28278 |        16.91 |         20.05 |        17.6  |         20.04 |
+|        9 | 28279 |        20.14 |         23.36 |        21.62 |         24.22 |
+|       10 | 28279 |        26.99 |         29.44 |        30.78 |         31.16 |
 
 ## Pre-registered decision rule
 
-ΔGini (M2 − M1) on OOT = 3.10 points, 95% CI [2.81, 3.38]. Rule: M2 champion iff ΔGini ≥ 2.0 and CI lower bound > 0. → **Champion = M2_lgbm**
+ΔGini (M2 − M1) on OOT = 3.06 points, 95% CI [2.77, 3.34]. Rule: M2 champion iff ΔGini ≥ 2.0 and CI lower bound > 0. → **Champion = M2_lgbm**
 
 ## Cutoff rule — set on validation 2014 (approved bad rate ≤ 11.0%), applied unchanged to OOT 2015
 
@@ -47,56 +47,75 @@
 |:-------------|:------------|:----------------|:------------------|:---------------------|-----------------:|------------:|
 | M1_scorecard | 532         | validation_2014 | 77.4 [77.2, 77.6] | 10.88 [10.71, 11.04] |            23.51 |       13.73 |
 | M1_scorecard | 532         | oot_2015        | 77.9 [77.7, 78.0] | 11.73 [11.60, 11.87] |            25.97 |       14.88 |
-| M2_lgbm      | PD ≤ 0.2008 | validation_2014 | 82.1 [81.9, 82.3] | 11.00 [10.82, 11.17] |            26.22 |       13.73 |
-| M2_lgbm      | PD ≤ 0.2008 | oot_2015        | 81.7 [81.5, 81.8] | 11.91 [11.78, 12.04] |            28.13 |       14.88 |
+| M2_lgbm      | PD ≤ 0.1994 | validation_2014 | 82.1 [81.9, 82.3] | 11.00 [10.82, 11.17] |            26.2  |       13.73 |
+| M2_lgbm      | PD ≤ 0.1994 | oot_2015        | 81.6 [81.4, 81.7] | 11.88 [11.75, 12.01] |            28.19 |       14.88 |
 
 ## Strategy curve — approved bad rate (%) by approval rate
 
 |   approval_% |   M1_scorecard|validation_2014 |   M1_scorecard|oot_2015 |   M2_lgbm|validation_2014 |   M2_lgbm|oot_2015 |
 |-------------:|-------------------------------:|------------------------:|--------------------------:|-------------------:|
-|           50 |                           8.28 |                    8.78 |                      7.58 |               8.22 |
-|           55 |                           8.69 |                    9.29 |                      8.08 |               8.77 |
-|           60 |                           9.15 |                    9.81 |                      8.55 |               9.32 |
-|           65 |                           9.65 |                   10.32 |                      9.05 |               9.9  |
-|           70 |                          10.13 |                   10.84 |                      9.58 |              10.46 |
-|           75 |                          10.64 |                   11.42 |                     10.16 |              11.07 |
-|           80 |                          11.09 |                   12    |                     10.74 |              11.69 |
-|           85 |                          11.64 |                   12.62 |                     11.37 |              12.37 |
-|           90 |                          12.2  |                   13.27 |                     12.03 |              13.07 |
-|           95 |                          12.89 |                   13.99 |                     12.79 |              13.87 |
+|           50 |                           8.28 |                    8.78 |                      7.61 |               8.2  |
+|           55 |                           8.69 |                    9.29 |                      8.12 |               8.79 |
+|           60 |                           9.15 |                    9.81 |                      8.57 |               9.36 |
+|           65 |                           9.65 |                   10.32 |                      9.06 |               9.89 |
+|           70 |                          10.13 |                   10.84 |                      9.58 |              10.49 |
+|           75 |                          10.64 |                   11.42 |                     10.12 |              11.06 |
+|           80 |                          11.09 |                   12    |                     10.78 |              11.68 |
+|           85 |                          11.64 |                   12.62 |                     11.37 |              12.36 |
+|           90 |                          12.2  |                   13.27 |                     12.04 |              13.07 |
+|           95 |                          12.89 |                   13.99 |                     12.81 |              13.87 |
 |          100 |                          13.73 |                   14.88 |                     13.73 |              14.88 |
 
 ## Reason codes — M1, OOT 2015 declines (n=62,585, 'points below max' method)
 
 | reason (characteristic)   |   % of declines with it in top-4 |   % as top-1 |
 |:--------------------------|---------------------------------:|-------------:|
-| fico                      |                             92.4 |         28.5 |
-| tot_hi_cred_lim           |                             82   |          6.7 |
-| acc_open_past_24mths      |                             65.6 |         33.6 |
-| loan_to_income            |                             45.3 |         15.4 |
-| mths_since_recent_inq     |                             40.4 |          2   |
-| bc_open_to_buy            |                             38.7 |          6.3 |
-| annual_inc                |                             14.2 |          0   |
-| purpose                   |                             12.6 |          7.6 |
-| dti                       |                              8.7 |          0   |
+| fico                      |                             88   |         18.9 |
+| tot_hi_cred_lim           |                             76   |          8.1 |
+| acc_open_past_24mths      |                             66.7 |         33.2 |
+| bc_open_to_buy            |                             50.3 |          8.2 |
+| loan_to_income            |                             45.4 |         20   |
+| mths_since_recent_inq     |                             39.9 |          4   |
+| purpose                   |                             12.7 |          7.6 |
+| dti                       |                             12.3 |          0   |
+| annual_inc                |                              8.8 |          0   |
+| mo_sin_rcnt_rev_tl_op     |                              0   |          0   |
 
-## Reason codes — M2 TreeSHAP, OOT 2015 declines (n=51,788) — top-1 frequency (top 12)
+## Reason codes — M2 TreeSHAP, OOT 2015 declines (n=52,103) — top-1 frequency (top 12)
 
-| feature               |   % as top-1 |
-|:----------------------|-------------:|
-| loan_to_income        |         18.3 |
-| fico                  |         15.4 |
-| acc_open_past_24mths  |         14.5 |
-| purpose               |         13.3 |
-| annual_inc            |         10   |
-| dti                   |          6.2 |
-| bc_open_to_buy        |          5.6 |
-| num_tl_op_past_12m    |          4.7 |
-| loan_amnt             |          2.9 |
-| revol_bal             |          2   |
-| total_bc_limit        |          1.9 |
-| mths_since_recent_inq |          1.4 |
+| feature              |   % as top-1 |
+|:---------------------|-------------:|
+| loan_to_income       |         17.8 |
+| fico                 |         17.6 |
+| acc_open_past_24mths |         14.1 |
+| purpose              |         13.6 |
+| annual_inc           |          9.8 |
+| bc_open_to_buy       |          6.3 |
+| dti                  |          6.1 |
+| num_tl_op_past_12m   |          3.5 |
+| loan_amnt            |          2.9 |
+| revol_bal            |          2.2 |
+| total_bc_limit       |          1.5 |
+| inq_last_6mths       |          1.3 |
 
 ## Reason-code agreement (applicants declined by both models)
 
-n = 41,017; M1 top-1 == M2 top-1: 48.2%; M1 top-1 within M2 top-4: 89.7%. Low agreement is expected partly because M2 can use correlated substitutes (e.g. avg_cur_bal vs tot_hi_cred_lim).
+n = 41,197; M1 top-1 == M2 top-1: 51.7%; M1 top-1 within M2 top-4: 89.7%. Most frequent disagreements (M1 top-1 → M2 top-1, % of both-declined): acc_open_past_24mths → fico 5.6%, acc_open_past_24mths → loan_to_income 3.7%, tot_hi_cred_lim → annual_inc 3.5%, loan_to_income → annual_inc 2.8%, acc_open_past_24mths → dti 2.7%. Agreement measures concordance, not stability.
+
+## Approval at a matched approved bad rate ≤ 11% (descriptive; gate R4-1)
+
+The pre-registered M1 cutoff is an integer score, so it stops below 11% approved bad rate; the unrounded M1 linear predictor shows the comparison at a matched bad rate. On OOT each column is the in-sample maximum approval meeting 11% on that set.
+
+| set             |   M1 integer score (pre-registered cutoff) |   M1 unrounded linear predictor |   M2 (max approval with approved bad ≤ 11%) |
+|:----------------|-------------------------------------------:|--------------------------------:|--------------------------------------------:|
+| validation_2014 |                                      77.43 |                           79.07 |                                       82.07 |
+| oot_2015        |                                      77.87 |                           71.38 |                                       74.4  |
+
+## Train-window discrimination (in-sample, for overfitting comparison; gate R5-2)
+
+M2 in-sample calibration slope 1.223; its validation slope is already < 1 (see above), so the OOT slope < 1 is a property of the fit, not of drift.
+
+| model        |   Gini train ×100 |   Gini validation ×100 |   Gini OOT ×100 |
+|:-------------|------------------:|-----------------------:|----------------:|
+| M1_scorecard |              33.2 |                   32.4 |            33.7 |
+| M2_lgbm      |              44.4 |                   36.1 |            36.7 |

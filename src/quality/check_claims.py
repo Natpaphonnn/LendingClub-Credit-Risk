@@ -1,4 +1,4 @@
-"""Re-check every claim in notes/05_claims_and_limitations.md (C1-C26) + the '45% above expected' figure.
+"""Re-check every claim in notes/05_claims_and_limitations.md (C1-C26) + the 'above expected' peak figure.
 
 Where possible the value is RE-DERIVED independently (raw/interim data, sklearn instead of own metric code); otherwise read
 from the source report the claim cites. PASS = equal at the precision stated in the claim.
@@ -107,32 +107,33 @@ oo = b[split_mask(b, OOT) & b.bad.notna()]
 va = b[split_mask(b, VALID) & b.bad.notna()]
 g = lambda y, s: 100 * (2 * roc_auc_score(y, s) - 1)  # noqa: E731
 o = m1["oot_2015"]
-chk("C5a", "OOT Gini M2 [CI]", ["36.8", "36.3", "37.3"], [g(oo.bad, oo.pd_m2), 100 * o["M2_lgbm"]["gini_lo"], 100 * o["M2_lgbm"]["gini_hi"]],
+chk("C5a", "OOT Gini M2 [CI]", ["36.7", "36.3", "37.3"], [g(oo.bad, oo.pd_m2), 100 * o["M2_lgbm"]["gini_lo"], 100 * o["M2_lgbm"]["gini_hi"]],
     "metrics.json + sklearn", "point re-derived with sklearn; CI read", doc_id="C5")
 chk("C5b", "OOT Gini M1 [CI]", ["33.7", "33.1", "34.2"], [g(oo.bad, -oo.score_m1), 100 * o["M1_scorecard"]["gini_lo"], 100 * o["M1_scorecard"]["gini_hi"]],
     "metrics.json + sklearn", "point re-derived with sklearn; CI read", doc_id="C5")
 d = o["delta_gini_M2_minus_M1"]
-chk("C5c", "ΔGini M2−M1 [CI]", ["3.1", "2.8", "3.4"], [g(oo.bad, oo.pd_m2) - g(oo.bad, -oo.score_m1), 100 * d["lo"], 100 * d["hi"]],
+chk("C5c", "ΔGini M2−M1 [CI]", ["3.1", "2.8", "3.3"], [g(oo.bad, oo.pd_m2) - g(oo.bad, -oo.score_m1), 100 * d["lo"], 100 * d["hi"]],
     "metrics.json + sklearn", "point re-derived; CI read", doc_id="C5")
 dl = o["delta_gini_M2_minus_LC"]
-chk("C6", "OOT Gini LC sub-grade [CI]; paired M2 − LC [CI]", ["35.7", "35.2", "36.3", "1.05", "0.56", "1.48"],
+chk("C6", "OOT Gini LC sub-grade [CI]; paired M2 − LC [CI]", ["35.7", "35.2", "36.3", "1.01", "0.52", "1.46"],
     [g(oo.bad, oo.sub_grade.map(sg)), 100 * o["LC_subgrade"]["gini_lo"], 100 * o["LC_subgrade"]["gini_hi"],
      g(oo.bad, oo.pd_m2) - g(oo.bad, oo.sub_grade.map(sg)), 100 * dl["lo"], 100 * dl["hi"]],
     "metrics.json + sklearn", "points re-derived; CIs read")
 c1, c2 = m1["cutoff"]["M1_scorecard|validation_2014"]["cutoff"], m1["cutoff"]["M2_lgbm|validation_2014"]["cutoff"]
-chk("C7", "validation approval % M2 vs M1", ["82.1", "77.4"], [100 * (va.pd_m2 <= c2).mean(), 100 * (va.score_m1 >= c1).mean()],
+chk("C7", "validation approval % M2 vs M1; M1 unrounded at matched bad rate", ["82.1", "77.4", "79.1"],
+    [100 * (va.pd_m2 <= c2).mean(), 100 * (va.score_m1 >= c1).mean(), m1["matched_bad_rate_approval"]["M1 unrounded linear predictor"][0]],
     "metrics.json cutoffs + scores", "approval re-derived")
 mat = mon[mon.KS_M2.notna()]
-chk("C8", "KS M2 min / max on matured quarters; validation KS; min ≥ 0.9×valid", ["25.9", "27.1", "26.4"],
+chk("C8", "KS M2 min / max on matured quarters; validation KS; min ≥ 0.9×valid", ["25.8", "27.2", "26.2"],
     [100 * mat.KS_M2.min(), 100 * mat.KS_M2.max(), 100 * m1["validation_2014"]["M2_lgbm"]["ks"]], "monitoring.json + metrics.json", "read")
 rows[-1]["result"] = rows[-1]["result"] if mat.KS_M2.min() >= 0.9 * m1["validation_2014"]["M2_lgbm"]["ks"] else "FAIL"
 citl = 100 * (oo.pd_m2.mean() - oo.bad.mean())
 cm = m1["cutoff"]["M2_lgbm|oot_2015"]
 appr = oo[oo.pd_m2 <= c2]
-chk("C9", "CITL M2 pp [CI]; OOT approved bad % [CI]", ["-1.75", "-1.87", "-1.63", "11.91", "11.78", "12.04"],
+chk("C9", "CITL M2 pp [CI]; OOT approved bad % [CI]", ["-1.70", "-1.82", "-1.58", "11.88", "11.75", "12.01"],
     [citl, 100 * o["M2_lgbm"]["citl_lo"], 100 * o["M2_lgbm"]["citl_hi"], 100 * appr.bad.mean(), 100 * cm["approved_bad_ci"][0], 100 * cm["approved_bad_ci"][1]],
     "metrics.json + scores", "points re-derived; CIs read")
-chk("C10", "max PSI M2 2014–2018", ["0.058"], [mon.PSI_M2.max()], "monitoring.json", "read")
+chk("C10", "max PSI M2 2014–2018", ["0.057"], [mon.PSI_M2.max()], "monitoring.json", "read")
 ms = mon.set_index("issue_q")
 chk("C11", "PSI M1 2018Q3 / Q4; % below cutoff 2014Q1 / 2018Q4", ["0.11", "0.12", "21", "10"],
     [ms.PSI_M1["2018Q3"], ms.PSI_M1["2018Q4"], 100 * ms.pct_below_cut_M1["2014Q1"], 100 * ms.pct_below_cut_M1["2018Q4"]], "monitoring.json", "read")
@@ -166,41 +167,43 @@ chk("C16", "MOB6 2016–17 flagged (M1 = M2); discovery M2 sensitivity / specifi
 rows[-1]["result"] = rows[-1]["result"] if mt["sensitivity (amber+)"][1].split(" ")[0] == "7/7" else "FAIL"
 pa = pd.read_parquet(ROOT / "data" / "interim" / "p2" / "pred_A.parquet")
 p15 = pa[pa.issue_q.str.startswith("2015")]
-chk("C17", "2015 lifetime PD naive / competing-risks / actual (%)", ["18.2", "13.6", "14.9"],
+chk("C17", "2015 lifetime PD naive / competing-risks / actual (%)", ["18.0", "13.4", "14.9"],
     [100 * p15.pd_life_naive.mean(), 100 * p15.pd_life.mean(), 100 * oo.bad.mean()], "pred_A.parquet + p1_base", "re-derived")
 sa = md_table(R2 / "survival_A.md", "A/E of cumulative default by period").set_index("period")
 f = lambda per, cs: [float(sa.loc[per, c]) for c in cs if sa.loc[per, c] not in ("nan", "")]  # noqa: E731
 A3 = ["A/E@12", "A/E@24", "A/E@36"]
 chk("C18", "A/E train (mean @12/24/36); 2014 min/max; 2015 min/max; 2016 min/max; 2017 @12",
-    ["1.01", "0.98", "1.02", "1.07", "1.11", "1.26", "1.39", "1.44"],
+    ["1.01", "0.98", "1.03", "1.09", "1.12", "1.27", "1.39", "1.43"],
     [np.mean(f("train 2012Q4-13", A3)), min(f("valid 2014", A3)), max(f("valid 2014", A3)), min(f("OOT 2015", A3)), max(f("OOT 2015", A3)),
      min(f("2016", A3)), max(f("2016", A3)), f("2017", A3)[0]], "survival_A.md", "parsed")
-chk("C19", "θ [CI]; rule b rel. change %; stress multiplier", ["-0.038", "-0.094", "-0.004", "-27.1", "0.91"],
+chk("C19", "θ [CI]; rule b rel. change %; stress multiplier", ["-0.045", "-0.099", "-0.009", "-28.0", "0.89"],
     [mb["rule_a"]["theta"], mb["rule_a"]["ci"][0], mb["rule_a"]["ci"][1], 100 * mb["rule_b"]["rel_change"], mb["rule_c"]["multiplier"]],
     "macro_B.json", "read")
 rows[-1]["result"] = rows[-1]["result"] if (not mb["rule_a"]["pass"] and mb["rule_b"]["pass"] and not mb["rule_c"]["pass"]) else "FAIL"
-chk("C20", "γ_u default (level coefficient)", ["-0.062"], [mb["primary"]["gamma_u_default"]], "macro_B.json", "read")
+chk("C20", "γ_u default (level coefficient)", ["-0.066"], [mb["primary"]["gamma_u_default"]], "macro_B.json", "read")
 t = ecl["total"]
-chk("C21", "pred EL $m / realised $m / ratio / % of realised missed", ["234.9", "273.8", "1.17", "14"],
+chk("C21", "pred EL $m / realised $m / ratio / % of realised missed", ["232.4", "273.8", "1.18", "15"],
     [t["pred EL (undisc) $m"], t["realised loss $m"], t["realised / predicted"], 100 * (1 - t["pred EL (undisc) $m"] / t["realised loss $m"])],
     "ecl.json", "read")
 eb = md_table(R2 / "ecl.md", "Backtest by risk band")
-chk("C22", "realised/pred safest band 1 / riskiest band 5", ["1.52", "1.00"],
+chk("C22", "realised/pred safest band 1 / riskiest band 5", ["1.44", "1.03"],
     [float(eb["realised / predicted"].iloc[0]), float(eb["realised / predicted"].iloc[-1])], "ecl.md", "parsed")
-chk("C23", "12m ECL $m (%), lifetime $m (%), LGD % [CI]", ["100.7", "2.8", "202.7", "5.6", "88.8", "88.6", "89.0"],
+chk("C23", "12m ECL $m (%), lifetime $m (%), LGD % [CI]", ["99.6", "2.7", "200.6", "5.5", "88.8", "88.6", "89.0"],
     [t["day-1 ECL 12m $m"], 100 * t["day-1 ECL 12m $m"] / t["funded $m"], t["lifetime ECL $m"], 100 * t["lifetime ECL $m"] / t["funded $m"],
      100 * ecl["LGD"], 100 * ecl["LGD_CI"][0], 100 * ecl["LGD_CI"][1]], "ecl.json", "read")
 ot = ov["total"]
-chk("C24", "overlay EL MOB12 / MOB6 $m; gap closed % MOB12 / MOB6", ["256.0", "237.3", "54", "6"],
+chk("C24", "overlay EL MOB12 / MOB6 $m; gap closed % MOB12 / MOB6", ["255.8", "237.1", "57", "11"],
     [ot["EL_ovl12 $m"], ot["EL_ovl6 $m"], 100 * ot["gap closed MOB12"], 100 * ot["gap closed MOB6"]], "overlay.json", "read")
 P = pd.DataFrame(pc["0.05"]["table"])
 P = P[P.set == "OOT 2015"].set_index("policy")
 P.index = [("M2 cutoff" if i.startswith("Phase 1 M2") else i) for i in P.index]
 chk("C25", "undiscounted profit approve-all / MILP $m", ["230.3", "222.3"],
     [P.loc["approve all", "realised profit $m"], P.loc["C: MILP cells", "realised profit $m"]], "policy_C.json", "read")
-chk("C26", "NPV@5% cutoff / MILP / approve-all $m", ["47.4", "45.6", "28.4"],
+D5 = pd.DataFrame(pc["0.05"]["diffs"]).set_index(["difference ($m, OOT 2015)", "bootstrap"])
+ci5 = [float(x) for x in D5.loc[("C−M2 NPV", "loan"), "95% CI"].strip("[]").split(",")]
+chk("C26", "NPV@5% cutoff / MILP / approve-all $m; MILP − cutoff NPV [loan-bootstrap CI]", ["47.5", "45.8", "28.4", "-1.74", "-2.66", "-0.82"],
     [P.loc["M2 cutoff", "EXPLORATORY realised NPV $m"], P.loc["C: MILP cells", "EXPLORATORY realised NPV $m"],
-     P.loc["approve all", "EXPLORATORY realised NPV $m"]], "policy_C.json", "read")
+     P.loc["approve all", "EXPLORATORY realised NPV $m"], D5.loc[("C−M2 NPV", "loan"), "point"], ci5[0], ci5[1]], "policy_C.json", "read")
 
 # ---- extensions (notes/08_prereg_extensions.md; results notes/10_extensions_results.md)
 R4 = ROOT / "reports" / "phase4"
@@ -227,40 +230,46 @@ sa_ = pd.read_parquet(ROOT / "data" / "interim" / "p4" / "scores_asof.parquet")
 bo = b.join(sa_)
 oo_ = bo[split_mask(bo, OOT) & bo.bad.notna()]
 dga = aj["oot_delta_gini_asof_minus_M2"]
-chk("C28", "as-of Gini [CI]; ΔGini vs reference [CI]", ["33.1", "32.6", "33.7", "-3.65", "-3.95", "-3.37"],
+chk("C28", "as-of Gini [CI]; ΔGini vs reference [CI]", ["33.0", "32.5", "33.5", "-3.76", "-4.05", "-3.46"],
     [g(oo_.bad, oo_.pd12_asof), 100 * aj["oot_final"]["asof_PD12"]["gini_lo"], 100 * aj["oot_final"]["asof_PD12"]["gini_hi"],
      g(oo_.bad, oo_.pd12_asof) - g(oo_.bad, oo_.pd_m2), 100 * dga["lo"], 100 * dga["hi"]], "asof_model.json + sklearn", "points re-derived")
 mo = pd.DataFrame(aj["monitoring"])
-chk("C29", "as-of first amber knowable / first red knowable / max PSI", ["Jun 2017", "Sep 2017", "0.079"],
+chk("C29", "as-of first amber knowable / first red knowable / max PSI", ["Jun 2017", "Sep 2017", "0.075"],
     [fmt_m(aj["first_amber"]["knowable"]), fmt_m(aj["first_red"]["knowable"]), mo.PSI.max()], "asof_model.json", "read")
 rows[-1]["result"] = rows[-1]["result"] if (aj["first_amber"]["issue_q"], aj["first_red"]["issue_q"]) == ("2015Q4", "2016Q1") else "FAIL"
 eb_ = json.loads((R2 / "ecl_benchmark.json").read_text())
-c_ = eb_["(c) refit at 2014-12-31, discounted LGD (k=12)"]
+c_ = eb_["(c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)"]
 a_ = eb_["(a) reference A, undiscounted LGD"]
-chk("C30", "refit pred EL $m / realised $m / ratio refit / ratio reference", ["249.0", "273.8", "1.10", "1.17"],
-    [c_["backtest: pred EL (undisc.) $m"], eb_["realised_loss_m"], c_["realised / predicted"], a_["realised / predicted"]], "ecl_benchmark.json", "read")
+c2_ = eb_["(c2) sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)"]
+w_ = eb_["mob_window_split"]
+k_c = "(c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)"
+chk("C30", "refit ratio (MOB 1–21 refit + ref tail) / ratio reference / MOB 1–21 ratio refit / MOB 1–21 ratio reference / 2009-start ratio",
+    ["1.27", "1.18", "1.33", "1.19", "1.69"],
+    [c_["realised / predicted"], a_["realised / predicted"], w_[k_c]["MOB 1–21"][1] / w_[k_c]["MOB 1–21"][0],
+     w_["(a) reference A, undiscounted LGD"]["MOB 1–21"][1] / w_["(a) reference A, undiscounted LGD"]["MOB 1–21"][0], c2_["realised / predicted"]],
+    "ecl_benchmark.json", "read")
 d_ = eb_["(d) 90-DPD default definition, discounted LGD (k=12)"]
 b_ = eb_["(b) reference A, discounted LGD (k=12)"]
 chk("C31", "LGD discounted / undiscounted %; 12m ECL 90-DPD / reference (disc.) $m; 90-DPD backtest ratio",
-    ["90.4", "88.8", "80.1", "102.5", "1.17"],
+    ["90.4", "88.8", "79.2", "101.3", "1.18"],
     [100 * eb_["LGD_discounted"]["12"], 100 * eb_["LGD_undiscounted"], d_["day-1 12m ECL $m"], b_["day-1 12m ECL $m"], d_["realised / predicted"]],
     "ecl_benchmark.json", "read")
 stg = pd.DataFrame(ecl["staging"])
-chk("C32", "stage 2 loans / stage 3 loans / stage 1 allowance $m / coverage %", ["1,571", "2,300", "112.3", "3.75"],
+chk("C32", "stage 2 loans / stage 3 loans / stage 1 allowance $m / coverage %", ["1,571", "2,300", "111.0", "3.71"],
     [stg.loans[1], stg.loans[2], stg["allowance $m"][0], stg["coverage %"][0]], "ecl.json", "read")
 
-# ---- the 'up to 47% above expected' figure (notes/04_story.md one-line answer + fig3 subtitle)
+# ---- the 'up to 46% above expected' figure (notes/04_story.md one-line answer + fig3 subtitle)
 trm = split_mask(b, TRAIN)
 r12 = b.loc[trm, "d12"].mean() / b.loc[trm, "bad"].mean()
 ae = {qq: gg.d12.sum() / (gg.pd_m2.sum() * r12) for qq, gg in b[b.issue_q.isin(ms.index[ms.AE12_M2.notna()])].groupby("issue_q")}
 peak_q = max(ae, key=ae.get)
-chk("X47", "peak MOB-12 A/E (champion) and its quarter ('up to 47% above expected')", ["1.47", "2016Q3"], [ae[peak_q], peak_q],
+chk("X47", "peak MOB-12 A/E (champion) and its quarter ('up to 46% above expected')", ["1.46", "2016Q3"], [ae[peak_q], peak_q],
     "p1_base + scores", "re-derived: Σ defaults by MOB12 / (Σ PD_M2 × r12)")
 sa_q = md_table(R2 / "survival_A.md", "By issue quarter").set_index("issue_q")
 chk("X47b", "corroboration: lifetime-model A/E @12 for 2016Q3", ["1.44"], [float(sa_q.loc["2016Q3", "AE@12"])], "survival_A.md",
     "independent model (competing-risks hazard)")
 story = (ROOT / "notes" / "04_story.md").read_text()
-rows[-2]["stated text found in notes/05"] = "story: " + ("yes" if "up to 47% above" in story and "1.47 (2016Q3)" in story else "NO")
+rows[-2]["stated text found in notes/05"] = "story: " + ("yes" if "up to 46% above" in story and "1.46 (2016Q3)" in story else "NO")
 if not rows[-2]["stated text found in notes/05"].endswith("yes"):
     rows[-2]["result"] = "FAIL"
 

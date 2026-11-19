@@ -13,12 +13,14 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-NOTES = ["02_phase1_results.md", "03_phase2_results.md", "04_story.md", "05_claims_and_limitations.md", "STATUS.md", "../README.md"]
+NOTES = ["01_data_audit.md", "02_phase1_results.md", "03_phase2_results.md", "04_story.md", "05_claims_and_limitations.md",
+         "10_extensions_results.md", "STATUS.md", "../README.md"]
 NUM = re.compile(r"(?<![\w.])([−\-+]?\$?\d{1,3}(?:,\d{3})+(?:\.\d+)?|[−\-+]?\$?\d+(?:\.\d+)?)(?![\w])")
 
 
 # historical outputs quoted on purpose in "before → after" disclosure tables (read straight from git, not from disk)
-HISTORICAL = [("5b35a6e", "reports/phase1/metrics.json"), ("5b35a6e", "reports/phase1/evaluation.md"),
+HISTORICAL = [("4abadbe", "reports/phase1/metrics.json"), ("4abadbe", "reports/phase1/evaluation.md"),  # pre-gate-fix (R5-1) values, labelled "before"
+              ("5b35a6e", "reports/phase1/metrics.json"), ("5b35a6e", "reports/phase1/evaluation.md"),
               ("4f0a078", "reports/phase2/ecl.md"), ("e43a338", "reports/phase2/macro_B.json"), ("fbb20bf", "reports/phase2/overlay.json"),
               ("ed56d91", "reports/phase2/ecl.md")]
 QUALITY_SOURCES = ["grid_sensitivity.md", "leakage_split_proof.md"]
@@ -100,8 +102,15 @@ def recomputed_counts():
 
 
 KNOWN = recomputed_counts()
+# explained exceptions (manual verdicts, kept visible in the output): Phase 0 ad-hoc audit queries and non-statistics
+EXPLAINED = {("01_data_audit.md", t): why for t, why in [
+    ("125,814", "Phase 0 ad-hoc query (desc present)"), ("90,044", "Phase 0 ad-hoc query"), ("125,703", "Phase 0 ad-hoc query"),
+    ("19,576", "Phase 0 ad-hoc query"), ("68,985", "Phase 0 ad-hoc query (joint apps 2018)"),
+    ("621,169", "Phase 0 ad-hoc query; independently re-derived by gate reviewer R1"), ("55,290", "Phase 0 ad-hoc query (60m to 2013)"),
+    ("418", "Phase 0 ad-hoc query on rejected file (thousands)"), ("392.6", "file size MB (notes/data_sources.md bytes)"),
+    ("255.5", "file size MB (notes/data_sources.md bytes)"), ("403", "HTTP status code")]}
 scales = np.array([1, 100, 0.01, 1e-6, 1e-3, -1, -100])
-rows, n_tok, verified = [], 0, []
+rows, n_tok, verified, explained = [], 0, [], []
 for note in NOTES:
     for ln, line in enumerate((ROOT / "notes" / note).read_text().splitlines(), 1):
         line = re.sub(r"(\d)([mk])\b", r"\1 \2", line)            # "$234.9m" -> "$234.9 m"
@@ -116,13 +125,18 @@ for note in NOTES:
             if not hit and tok in KNOWN and float(tok.replace(",", "")) == KNOWN[tok]:
                 verified.append((note, ln, tok))
                 continue
+            if not hit and (note, tok) in EXPLAINED:
+                explained.append((note, ln, tok, EXPLAINED[(note, tok)]))
+                continue
             if not hit:
                 rows.append((note, ln, tok, line.strip()[:140]))
 md = [f"# Note number provenance — {n_tok} numeric tokens checked; {n_tok - len(rows) - len(verified)} matched a report value, "
-      f"{len(verified)} matched an independently re-derived count, {len(rows)} unmatched\n",
+      f"{len(verified)} matched an independently re-derived count, {len(explained)} explained exceptions, {len(rows)} unmatched\n",
       "Re-derived counts: " + ", ".join(f"{k} ✓" for k in sorted({v[2] for v in verified})) + "\n",
       "Unmatched tokens need a manual verdict (threshold / arithmetic in text / count of items / error).\n",
       "| note | line | token | context |", "|---|---:|---|---|"]
 md += [f"| {a} | {b} | `{c}` | {d.replace('|', '¦')} |" for a, b, c, d in rows]
+md += ["", "## Explained exceptions (not traceable to a generated report)", "", "| note | line | token | reason |", "|---|---:|---|---|"]
+md += [f"| {a} | {b} | `{c}` | {d} |" for a, b, c, d in explained]
 (ROOT / "reports" / "quality" / "note_numbers_check.md").write_text("\n".join(md) + "\n")
 print(md[0])

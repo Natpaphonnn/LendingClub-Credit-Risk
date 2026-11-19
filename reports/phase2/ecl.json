@@ -5,54 +5,59 @@
   0.8902512417864098
  ],
  "LGD_by_band": {
-  "1": 0.8747955787524861,
-  "2": 0.8897037370863934,
-  "3": 0.8868712233808241,
-  "4": 0.8887923832673621,
-  "5": 0.8893145707540941
+  "1": 0.8747284487950692,
+  "2": 0.8874434355410056,
+  "3": 0.8888587504055394,
+  "4": 0.887903546486466,
+  "5": 0.8897347416798903
  },
  "n_train_defaults": 15007,
  "total": {
   "loans": 282934.0,
   "funded $m": 3622.795975,
-  "pred lifetime PD %": 13.564178466796875,
+  "pred lifetime PD %": 13.424160957336426,
   "actual default %": 14.875907455448974,
-  "pred EL (undisc) $m": 234.93018941779573,
+  "pred EL (undisc) $m": 232.41509554923954,
   "realised loss $m": 273.7519332425977,
-  "realised / predicted": 1.1652479995057683,
-  "day-1 ECL 12m $m": 100.70073189030363,
-  "lifetime ECL $m": 202.74487316371935
+  "realised / predicted": 1.1778578004826736,
+  "day-1 ECL 12m $m": 99.58299710715326,
+  "lifetime ECL $m": 200.57012201675352
  },
  "staging": {
   "stage": [
    "Stage 1 (performing, no missed instalment visible; 12-month ECL)",
    "Stage 2 (1\u20132 missed instalments \u2248 \u2265 30 DPD, ex-post proxy; lifetime ECL)",
    "Stage 3 (\u2265 3 missed instalments \u2248 90 DPD; LGD \u00d7 EAD at default)",
-   "derecognised (prepaid by the report month)"
+   "derecognised (prepaid by the report month)",
+   "  memo: of stage 3, \u2265 6 missed instalments (likely already written off under LC's ~150-DPD charge-off policy)"
   ],
   "loans": [
    263610,
    1571,
    2300,
-   15453
+   15453,
+   682
   ],
   "gross EAD $m": [
    2992.3097835644694,
    17.08876882463447,
    25.052721242157332,
-   0.0
+   0.0,
+   7.640801400557533
   ],
   "allowance $m": [
-   112.29262845222878,
-   1.5371653877612916,
+   111.00630549209887,
+   1.51830702146244,
    22.249612480204306,
-   0.0
+   0.0,
+   6.7858843978406895
   ],
   "coverage %": [
-   3.75,
-   9.0,
+   3.71,
+   8.88,
    88.81,
-   NaN
+   NaN,
+   88.81
   ]
  },
  "scenarios": {},

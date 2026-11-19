@@ -55,7 +55,8 @@ data = {
          "note": "only data known on 31 Dec 2014"},
         {"label": "Peak actual / expected", "value": f"{ref.AE12_M2.max():.2f}", "note": "defaults by month 12, champion"},
         {"label": "Realised / predicted loss", "value": f"{eb['(a) reference A, undiscounted LGD']['realised / predicted']:.2f}×",
-         "note": f"{eb['(c) refit at 2014-12-31, discounted LGD (k=12)']['realised / predicted']:.2f}× with a refit at the reporting date"},
+         "note": f"{eb['(c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)']['realised / predicted']:.2f}× "
+                 "after refitting on what was knowable at the reporting date"},
     ],
     "timeline": {
         "psi": [{"x": knowable(q, 0), "y": v, "q": q} for q, v in zip(mon.issue_q, mon.PSI_M2)],

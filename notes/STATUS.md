@@ -1,4 +1,4 @@
-# STATUS — 2026-11-19
+# STATUS — 2026-11-20
 
 ## Decisions (Nat, 2026-11-19)
 1. **Story pivot accepted:** "Lender in 2014 — does the model survive the 2015–16 vintages, and would monitoring notice in time?"
@@ -45,38 +45,47 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 - Data, sha256, license → notes/data_sources.md; findings → notes/01_data_audit.md; code src/audit/; local git (no remote)
 
 ## Done — Phase 1 (core 1+2+3 + D) ✅ — notes/02_phase1_results.md
-- **Champion = M2 monotone LightGBM:** OOT Gini 36.8 [36.3, 37.3] vs WoE scorecard 33.7 [33.1, 34.2]; ΔGini +3.1 [2.8, 3.4];
-  vs LC sub-grade +1.05 [0.56, 1.48]. ทั้ง 12 grid configs ชนะ scorecard ≥ 2.8 Gini
-- Ranking รอด 2015 แต่ calibration ไม่รอด: under-predict PD 1.75 pp (M2) / 2.0 pp (M1); cutoff 11% (2014) → 11.7–11.9% (2015)
-- Monitoring: score PSI ไม่เตือน (M2 ≤ 0.06 ตลอด 2014–18); MOB-12 A/E amber ที่ vintage 2015Q2 (รู้ได้ Dec 2016 หาก model ใช้งานตั้งแต่ 2015),
-  red Sep 2017 (M2) / Jun 2017 (M1); ~545k loans booked ระหว่างนั้น; peak A/E 1.47 (2016Q3)
+(ตัวเลขทั้งหมดหลัง gate fix R5-1: M2 retrain ด้วย monotone_constraints_method="intermediate")
+- **Champion = M2 monotone LightGBM:** OOT Gini 36.7 [36.3, 37.3] vs WoE scorecard 33.7 [33.1, 34.2]; ΔGini +3.1 [2.8, 3.3];
+  vs LC sub-grade +1.01 [0.52, 1.46]. Grid sensitivity: reports/quality/grid_sensitivity.md
+- Approval ที่ bad rate 11% (2014): 82.1% vs 77.4%; ที่ matched bad rate (unrounded scorecard) ต่าง 3.0 pp
+- Ranking รอด 2015 แต่ calibration ไม่รอด: under-predict PD 1.70 pp (M2); approved bad 11.88% vs target 11%
+- Monitoring: score PSI ไม่เตือน (M2 ≤ 0.057 ตลอด 2014–18); MOB-12 A/E amber ที่ vintage 2015Q2 (รู้ได้ Dec 2016 หาก model ใช้งานตั้งแต่ 2015),
+  red Sep 2017 (M2) / Jun 2017 (M1); ~545k loans booked ระหว่างนั้น; peak A/E 1.46 (2016Q3). MOB-12 A/E กับ truth ใช้ numerator เดียวกัน →
+  lag 18 เดือน = observation window
 - Vintage: MOB-12 default สูงขึ้นทุก score band (concept drift)
 
 ## Done — Phase 2 (A + Plan B → A + C, ECL) ✅ — notes/03_phase2_results.md
-- A: competing-risks lifetime PD — A/E 1.01 train, 0.98–1.02 (2014), 1.07–1.11 (2015), 1.26–1.39 (2016), 1.44 (2017);
-  censor prepayment แทน → lifetime PD 18.2% vs 13.6%
-- B FAIL → A + C: (a) θ −0.038 [−0.094, −0.004] (ไม่เป็นบวก; E3 bootstrap; run ก่อนหน้า −0.019 [−0.063, 0.011]), (b) PASS แบบหลอก (−27.1%), (c) 0.91
-- ECL 2015 (score-only, LGD 88.8%): day-1 12m $100.7m (2.8%), lifetime $202.7m (5.6%); backtest realised $273.8m = 1.17× predicted EL $234.9m;
-  overlay MOB-12 ปิด gap 54% (illustrative). Staging (E4, ex-post): stage 2 1,571 loans, stage 3 2,300 loans
-- C: บน metric ที่ pre-register (ผิด — ไม่มี cost of funds) approve-all ชนะ; exploratory NPV@5%: PD cutoff $47.4m ≈ MILP $45.6m
+- A: competing-risks lifetime PD — A/E 1.01 train, 0.98–1.03 (2014), 1.09–1.12 (2015), 1.27–1.39 (2016), 1.43 (2017);
+  censor prepayment แทน → lifetime PD 18.0% vs 13.4%
+- B FAIL → A + C: (a) θ −0.045 [−0.099, −0.009] (ไม่เป็นบวก), (b) PASS แบบหลอก (−28.0%), (c) 0.89
+- ECL 2015 (score-only, LGD 88.8%): day-1 12m $99.6m (2.7%), lifetime $200.6m (5.5%); backtest realised $273.8m = 1.18× predicted EL $232.4m
+  (in-sample 1.03× — EAD structural); overlay MOB-12 ปิด gap 57% (illustrative). Staging (E4, ex-post): stage 2 1,571 loans, stage 3 2,300 loans
+- C: metric ที่ pre-register (ผิด — ไม่มี cost of funds) approve-all ชนะ; exploratory NPV@5%: PD cutoff $47.5m > MILP $45.8m
+  (MILP − cutoff −1.74 [−2.66, −0.82]); single PD threshold ที่ tune objective เดียวกัน = MILP → cell optimiser ไม่ช่วย, ระดับ cutoff ต้องตั้งด้วย cost of funds
 - MOB-6 A/E (36m): descriptive เท่านั้น; confirmatory test บน 60m = FAIL (E1)
 
 ## Done — Phase 3 prep ✅ — notes/04_story.md, notes/05_claims_and_limitations.md, reports/figures/article/fig1–8
 
 ## Done — Quality (steps 1–5) ✅ — **notes/06_quality_report.md**
-- Reproducibility: pipeline deterministic (byte-identical reruns), ~6 นาที, versions locked (requirements.lock.txt)
-- Tests 48/48 pass; claim re-check all PASS; note-number provenance (02–05 + STATUS + README) traced; leakage & split proof
-- Independent review: 1 critical + 10 major — แก้ที่ไม่ต้องเปลี่ยน spec แล้ว; ที่ต้องเปลี่ยน spec รอ Nat (ด้านล่าง)
+- Reproducibility: deterministic pipeline, versions locked (requirements.lock.txt), raw inputs pinned by raw_inputs.sha256
+- Independent review (1 critical + 10 major) แก้แล้ว
 
 ## Done — Extensions E1–E5 ✅ — notes/10_extensions_results.md (pre-registered: notes/08_prereg_extensions.md, commit 4562602, pushed first)
-- E1 MOB-6 confirmatory test (60m): **FAIL** — sensitivity 9/9, specificity 4/6 (67% < 80%)
-- E2 as-of model: OOT Gini 33.1 (−3.65 vs reference); realistic first amber Jun 2017, red Sep 2017; PSI never alarmed
-- E3 macro bootstrap fix: θ −0.038 [−0.094, −0.004] → B still fails → A + C
-- E4 staging illustration: stage 2 1,571 loans, stage 3 2,300 loans (ex-post)
-- E5 ECL benchmark: refit at 2014-12 → realised = 1.10× predicted (vs 1.17×); discounted LGD 90.4%; 90-DPD 12m ECL $80m
+- E1 MOB-6 confirmatory test (60m): **FAIL** — sensitivity 9/9, specificity 4/6 (67% < 80%; CI 22–96%) — verdict เดิมหลัง retrain
+- E2 as-of model: OOT Gini 33.0 (−3.76 vs reference); realistic first amber Jun 2017, red Sep 2017; PSI never alarmed (max 0.075)
+- E3 macro bootstrap fix: B still fails → A + C
+- E4 staging illustration: stage 2 1,571 loans, stage 3 2,300 loans (ex-post; 682 ของ stage 3 น่าจะ write-off แล้ว)
+- E5 ECL benchmark: **refit ที่ 2014-12 ไม่ได้ปิด gap — กลับแย่ลง 1.27×** (vs 1.18×); 1.10× เดิมเป็น artefact (ถอนแล้ว, gate R7-1/R2-1);
+  discounted LGD 90.4%; 90-DPD 12m ECL $79.2m
+
+## Bank gate (rubric notes/09_gate_rubric.md, commit 9a493da)
+- **Round 1: FAIL** — mean 7.13; BLOCKING R5-1 (monotone method), R7-1/R2-1 (E5 refit unidentified) → แก้แล้ว (bug fixes);
+  deviation: E5 refit ใช้เฉพาะ MOB 1–21 ที่ identify ได้ + reference tail (log ใน notes/10). รายละเอียด reports/quality/gate_round1.md
+- Round 2: pending
 
 ## Repo
 - Private: https://github.com/Natpaphonnn/LendingClub-Credit-Risk (no data files tracked)
 
 ## Next step
-- Rerun from raw (byte-identical) → 10-reviewer gate (notes/09_gate_rubric.md) → package → demo → article draft (notes/07_article_draft.md)
+- Gate round 2 → package → demo → article draft (notes/07_article_draft.md)

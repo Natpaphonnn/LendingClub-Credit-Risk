@@ -29,7 +29,7 @@ The dataset also contains uncompressed copies (`accepted_2007_to_2018q4.csv/…`
 |---|---|
 | URL | https://figshare.com/articles/dataset/Lending_club_dataset_description/20016077 (file: https://ndownloader.figshare.com/files/35685971) |
 | DOI | 10.6084/m9.figshare.20016077.v1 |
-| License | CC BY 4.0 (from Figshare API) — cite the DOI if dictionary text is quoted |
+| License | CC BY 4.0 (from Figshare API) — cite the DOI if dictionary text is quoted. Caveat: the text is LendingClub's; the licence tag is the uploader's claim (same caveat as the Kaggle CC0 tag) |
 | File | data/raw/dictionary/LCDataDictionary.xlsx, 23,582 bytes, sha256 d39e281c1130c8abadce87250d97d363297e6c5c891fac6f721f076469e7a4bf (md5 matches Figshare's 690c70b9…) |
 | Downloaded | 2026-11-19 |
 | Why this copy | The Kaggle dataset doesn't include the dictionary. Its description points to the LendingClub download page, which is gone. The other Kaggle copy (wendykan/lending-club-loan-data) returns 403. Sheets: LoanStats (153 rows), browseNotes (122), RejectStats (9). All 151 accepted-file columns are found in it. |
@@ -68,3 +68,8 @@ cd034186345fda83e4cf6c9d657ed15effbfc8bd5da7c7f7a2df50f3b2a1a71b  bls_laus_b2_20
 |---|---:|---:|---|
 | data/interim/accepted_2007_to_2018Q4.parquet | 2,260,701 (incl. 33 footer rows) | 277 MB | all columns VARCHAR, zstd |
 | data/interim/rejected_2007_to_2018Q4.parquet | 27,648,741 | 168 MB | all columns VARCHAR, zstd |
+
+## Checksum manifest (gate R1-5)
+`raw_inputs.sha256` (repo root) lists sha256 of every raw input (Kaggle files, dictionary, 6 BLS JSON responses). `scripts/run_all.sh` verifies it
+before and after `fetch_bls.py`; a fresh BLS download returns the *current revised* LAUS series and will fail this check — the byte-identical claim
+holds only for the archived responses with these checksums.

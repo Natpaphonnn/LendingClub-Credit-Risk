@@ -82,7 +82,7 @@ Bottom: actual ÷ expected defaults by month 12 — reference model (if live fro
 <div class="grid2">
 <section>
 <h2>Expected vs realised loss — 2015 loans</h2>
-<p class="sub">Undiscounted lifetime expected loss at origination vs realised net principal loss ($m).</p>
+<p class="sub">Undiscounted lifetime expected loss at origination vs realised net principal loss ($m). "Refit" = recalibrated on outcomes known at Dec 2014 (identified for months 1–21; later months from the reference model) — it widens the gap.</p>
 <svg id="ecl" viewBox="0 0 440 240" role="img" aria-label="expected vs realised loss"></svg>
 </section>
 <section>
@@ -168,10 +168,10 @@ function render(){
     h.addEventListener("mousemove", e => showTip(e, `<b>${r.model}</b><br>Gini ${(100 * r.gini).toFixed(1)} [${(100 * r.gini_lo).toFixed(1)}, ${(100 * r.gini_hi).toFixed(1)}]<br>KS ${(100 * r.ks).toFixed(1)}`));
     h.addEventListener("mouseleave", hideTip); });
   // ecl
-  const E = D.ecl.filter(e => e.pred !== null && e.pred !== undefined), es = document.getElementById("ecl"); es.innerHTML = "";
+  const labels = {"reference A, undiscounted LGD": "reference", "refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)": "refit at 2014-12", "90-DPD default definition, discounted LGD (k=12)": "90-DPD"};
+  const E = D.ecl.filter(e => e.pred !== null && e.pred !== undefined && labels[e.name]), es = document.getElementById("ecl"); es.innerHTML = "";
   const ymax = 300, Yb = v => 200 - v / ymax * 180, bw = 70;
   [0, 100, 200, 300].forEach(t => { el("line", {x1: 40, x2: 440, y1: Yb(t), y2: Yb(t), class: "gridl"}, es); el("text", {x: 34, y: Yb(t) + 4, "text-anchor": "end"}, es).textContent = t; });
-  const labels = {"reference A, undiscounted LGD": "reference", "refit at 2014-12-31, discounted LGD (k=12)": "refit at 2014-12", "90-DPD default definition, discounted LGD (k=12)": "90-DPD"};
   E.forEach((e, i) => { const x = 60 + i * 120;
     const r = el("rect", {x, y: Yb(e.pred), width: bw, height: 200 - Yb(e.pred), rx: 4, fill: css("--s1")}, es);
     r.addEventListener("mousemove", ev => showTip(ev, `<b>${labels[e.name] || e.name}</b><br>predicted $${e.pred.toFixed(1)}m<br>realised / predicted ${e.ratio.toFixed(3)}`)); r.addEventListener("mouseleave", hideTip);
@@ -188,7 +188,7 @@ function render(){
   document.getElementById("macrodec").textContent = "Decision: macro does not enter — the 'adverse' scenario lowered PD, so the (b) pass was spurious.";
   // mob6 60m
   const R = D.mob6.res, q = D.mob6.quarters, v = D.mob6.ae6, tr = D.mob6.truth, ss = document.getElementById("mob6"); ss.innerHTML = "";
-  document.getElementById("mob6sub").textContent = `Pre-registered and pushed before computing. Sensitivity ${R.tp}/${R.n_truth_yes}, specificity ${R.tn}/${R.n_truth_no} (${(100 * R.specificity).toFixed(0)}% < 80%) → ${R.verdict}. Sensitive, not specific.`;
+  document.getElementById("mob6sub").textContent = `Pre-registered and pushed before computing. Sensitivity ${R.tp}/${R.n_truth_yes}, specificity ${R.tn}/${R.n_truth_no} (${(100 * R.specificity).toFixed(0)}% < 80%) → ${R.verdict}. Specificity not demonstrated (only ${R.n_truth_no} negative quarters).`;
   const mm = {l: 44, r: 10, t: 10, b: 28}, Ys = y => 230 - mm.b - (y - 0.8) / (2.0 - 0.8) * (230 - mm.t - mm.b), bw2 = (900 - mm.l - mm.r) / q.length;
   [0.8, 1.0, 1.4, 1.8].forEach(t => { el("line", {x1: mm.l, x2: 900 - mm.r, y1: Ys(t), y2: Ys(t), class: "gridl"}, ss); el("text", {x: mm.l - 6, y: Ys(t) + 4, "text-anchor": "end"}, ss).textContent = t; });
   q.forEach((qq, i) => { const x = mm.l + i * bw2 + 3, c = tr[i] === "YES" ? css("--s1") : css("--base");

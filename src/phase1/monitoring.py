@@ -103,7 +103,7 @@ for q in quarters:
     # final outcome KS (matured quarters)
     known_f = qe + pd.DateOffset(months=36 + CHARGEOFF_LAG_M)
     r["pct_final"] = d.bad.notna().mean()
-    if r["pct_final"] >= 0.99:
+    if r["pct_final"] >= 0.99 and known_f <= asof:          # gate R6-5 / R2-4: only outcomes knowable by the data cut
         lab = d[d.bad.notna()]
         r["bad_rate_final"] = lab.bad.mean()
         r["known_final"] = known_f.strftime("%Y-%m")
@@ -153,7 +153,8 @@ t3 = pd.DataFrame({
     "KS M1 ×100": [f"{100*a:.1f} [{100*b:.1f}, {100*c:.1f}]" for a, b, c in zip(mat.KS_M1, mat.KS_M1_lo, mat.KS_M1_hi)],
     "flag": mat.flag_KS_M1,
     "KS M2 ×100": [f"{100*a:.1f} [{100*b:.1f}, {100*c:.1f}]" for a, b, c in zip(mat.KS_M2, mat.KS_M2_lo, mat.KS_M2_hi)],
-    "flag ": mat.flag_KS_M2, "known at": mat.known_final})
+    "flag ": mat.flag_KS_M2, "known at": mat.known_final,
+    "role": ["reference period (validation year)" if q.startswith("2014") else "monitoring" for q in mat.issue_q]})
 m1cols = sc["cols"]
 t4 = C[m1cols].T.round(3)
 t4.index.name = "M1 characteristic CSI"

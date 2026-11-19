@@ -36,7 +36,7 @@ rows, best = [], None
 for nl, mcs, l2 in itertools.product([15, 31, 63], [200, 1000], [0, 10]):
     params = dict(objective="binary", metric="binary_logloss", learning_rate=0.05, num_leaves=nl,
                   min_child_samples=mcs, lambda_l2=l2, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1,
-                  monotone_constraints=mono, monotone_constraints_method="advanced", seed=SEED, num_threads=4,
+                  monotone_constraints=mono, monotone_constraints_method="intermediate", seed=SEED, num_threads=4,
                   verbose=-1, deterministic=True, force_row_wise=True)
     ev = {}
     m = lgb.train(params, dtr, num_boost_round=3000, valid_sets=[dva], valid_names=["valid"],

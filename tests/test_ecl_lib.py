@@ -45,4 +45,31 @@ def test_staging_e4_classification():
     B[0] = [-6, -6]
     st = staging_e4(port, {"B": B, "scaler": Sc()}, 0.9, "2015-12-01").set_index("stage")
     counts = st["loans"].to_list()
-    assert counts == [2, 1, 1, 1]                     # stage 1, stage 2, stage 3, derecognised
+    assert counts[:4] == [2, 1, 1, 1]                 # stage 1, stage 2, stage 3, derecognised (+ memo row: m >= 6)
+    assert counts[4] == 0
+
+
+def _synthetic_loans(n=6000, seed=3):
+    rng = np.random.default_rng(seed)
+    months = pd.date_range("2009-01-01", "2014-12-01", freq="MS")
+    issue = months[rng.integers(0, len(months), n)]
+    u = rng.random(n)
+    status = np.where(u < 0.15, "Charged Off", np.where(u < 0.75, "Fully Paid", "Current"))
+    return pd.DataFrame({"issue_dt": issue, "loan_status": status,
+                         "lp_mob": rng.integers(1, 37, n).astype(float),
+                         "default_mob": np.where(status == "Charged Off", rng.integers(1, 37, n), np.nan),
+                         "int_rate": rng.uniform(6, 25, n), "loan_amnt": rng.uniform(1e3, 35e3, n), "lp": rng.normal(-2, 0.6, n)})
+
+
+def test_fit_hazard_asof_censoring_window_and_identifiability():
+    """Gate R7-1 / R2-1 / R3-6: outcomes only to R − 6m; the pre-registered 2012-09 start at R = 2014-12 cannot identify MOB 22–36."""
+    from ecl_lib import fit_hazard_asof
+    from hazard import NotIdentifiedError
+    loans = _synthetic_loans()
+    with pytest.raises(NotIdentifiedError):
+        fit_hazard_asof(loans, "2014-12-31")                       # 2012-09 start: max MOB 21
+    m = fit_hazard_asof(loans, "2014-12-31", start="2009-01-01")
+    assert m["max_mob_observed"] == 36
+    assert m["issue_window"][1] <= "2014-05-01"                     # later issues have no observable month by 2014-06
+    m0 = fit_hazard_asof(loans, "2014-12-31", check=False)
+    assert m0["max_mob_observed"] == 21

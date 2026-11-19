@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credit Model Drift</title>
+<style>
+:root{
+  --surface:#fcfcfb;--panel:#ffffff;--ink:#0b0b0b;--ink2:#52514e;--muted:#898781;--grid:#e1e0d9;--base:#c3c2b7;--border:rgba(11,11,11,.10);
+  --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;
+  --q1:#b7d3f6;--q2:#86b6ef;--q3:#5598e7;--q4:#2a78d6;--q5:#104281;
+  --good:#0ca30c;--warn:#fab219;--crit:#d03b3b;--band:rgba(250,178,25,.13);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --surface:#1a1a19;--panel:#222221;--ink:#f0efec;--ink2:#c3c2b7;--muted:#898781;--grid:#2c2c2a;--base:#383835;--border:rgba(255,255,255,.10);
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;
+  --q1:#184f95;--q2:#256abf;--q3:#3987e5;--q4:#6da7ec;--q5:#b7d3f6;--band:rgba(250,178,25,.10);color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --surface:#1a1a19;--panel:#222221;--ink:#f0efec;--ink2:#c3c2b7;--muted:#898781;--grid:#2c2c2a;--base:#383835;--border:rgba(255,255,255,.10);
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;
+  --q1:#184f95;--q2:#256abf;--q3:#3987e5;--q4:#6da7ec;--q5:#b7d3f6;--band:rgba(250,178,25,.10);color-scheme:dark;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:28px 16px 48px}
+h1{font-size:26px;line-height:1.25;margin:0 0 6px}
+h2{font-size:18px;margin:0 0 4px}
+p.lede{color:var(--ink2);margin:0 0 20px;max-width:760px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:22px}
+.tile{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.tile .l{color:var(--ink2);font-size:13px}.tile .v{font-size:30px;font-weight:650;margin:2px 0}.tile .n{color:var(--muted);font-size:12.5px}
+section{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 18px 14px;margin-bottom:18px}
+.sub{color:var(--ink2);font-size:13.5px;margin:0 0 10px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--ink2);margin:6px 0 4px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+svg{width:100%;height:auto;display:block;overflow:visible}
+svg text{fill:var(--ink2);font-size:11px}
+.axis line,.axis path{stroke:var(--base)}.gridl{stroke:var(--grid)}
+.tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 9px;font-size:12.5px;
+     color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.12);display:none;z-index:9}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--grid)}
+th{color:var(--ink2);font-weight:600}td.num{text-align:right;font-variant-numeric:tabular-nums}
+.rule{display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:center;font-size:14px}
+.badge{font-size:12px;font-weight:650;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pass{color:var(--good)}.fail{color:var(--crit)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+footer{color:var(--muted);font-size:12.5px;margin-top:10px}
+button.theme{float:right;background:none;border:1px solid var(--border);color:var(--ink2);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12.5px}
+</style>
+</head>
+<body>
+<main>
+<button class="theme" id="theme">Toggle theme</button>
+<h1>Would your credit model have survived — and would you have noticed?</h1>
+<p class="lede">A model built on LendingClub loans from 2012–13 and used from 2015 kept ranking borrowers well, but defaults drifted well above
+what it expected. The standard stability alarm never fired. Aggregates only; every number traces to <code>reports/</code> in the repository.</p>
+<div class="tiles" id="tiles"></div>
+
+<section>
+<h2>The wrong alarm: stability stayed green while defaults rose</h2>
+<p class="sub">Each point sits at the date it could first be known. Top: population stability index of the champion score (no labels needed).
+Bottom: actual ÷ expected defaults by month 12 — reference model (if live from 2015) and the realistic as-of model.</p>
+<svg id="psi" viewBox="0 0 900 170" role="img" aria-label="PSI by date"></svg>
+<div class="legend"><span><i style="background:var(--s1)"></i>reference model</span><span><i style="background:var(--s2)"></i>as-of model (data to Jun 2014)</span><span><i style="background:var(--band);height:10px"></i>first worse loans issued → first alarm</span></div>
+<svg id="ae" viewBox="0 0 900 260" role="img" aria-label="actual over expected by date"></svg>
+</section>
+
+<div class="grid2">
+<section>
+<h2>Same score, more defaults</h2>
+<p class="sub">Share of loans defaulted by month 12, by issue quarter and score band (band 1 = riskiest; cut points fixed on 2012–13).</p>
+<svg id="bands" viewBox="0 0 440 260" role="img" aria-label="defaults by month 12 by band"></svg>
+<div class="legend" id="bandlegend"></div>
+</section>
+<section>
+<h2>Ranking power on unseen 2015 loans</h2>
+<p class="sub">Gini with 95% bootstrap interval.</p>
+<svg id="models" viewBox="0 0 440 230" role="img" aria-label="Gini by model"></svg>
+</section>
+</div>
+
+<div class="grid2">
+<section>
+<h2>Expected vs realised loss — 2015 loans</h2>
+<p class="sub">Undiscounted lifetime expected loss at origination vs realised net principal loss ($m). "Refit" = recalibrated on outcomes known at Dec 2014 (identified for months 1–21; later months from the reference model) — it widens the gap.</p>
+<svg id="ecl" viewBox="0 0 440 240" role="img" aria-label="expected vs realised loss"></svg>
+</section>
+<section>
+<h2>Pre-registered macro rule</h2>
+<p class="sub">Macro enters the model only if all three tests pass.</p>
+<div class="rule" id="macro"></div>
+<p class="sub" style="margin-top:12px" id="macrodec"></p>
+</section>
+</div>
+
+<section>
+<h2>Early warning at month 6 — confirmatory test on 60-month loans</h2>
+<p class="sub" id="mob6sub"></p>
+<svg id="mob6" viewBox="0 0 900 230" role="img" aria-label="month-6 actual over expected by quarter"></svg>
+<div class="legend"><span><i style="background:var(--s1);height:10px"></i>truth: deteriorated</span><span><i style="background:var(--base);height:10px"></i>truth: not deteriorated</span></div>
+</section>
+
+<footer>Data: LendingClub via Kaggle (Nathan George); unemployment: U.S. Bureau of Labor Statistics. Raw data is not included. Claims and their
+status (pre-registered / descriptive / exploratory / illustrative): notes/05_claims_and_limitations.md.</footer>
+</main>
+<div class="tip" id="tip"></div>
+<script>
+const D = {"tiles": [{"label": "Champion OOT Gini (2015)", "value": "36.7", "note": "scorecard 33.7 \u00b7 LC grade 35.7"}, {"label": "As-of model OOT Gini", "value": "33.0", "note": "only data known on 31 Dec 2014"}, {"label": "Peak actual / expected", "value": "1.46", "note": "defaults by month 12, champion"}, {"label": "Realised / predicted loss", "value": "1.18\u00d7", "note": "1.27\u00d7 after refitting on what was knowable at the reporting date"}], "timeline": {"psi": [{"x": "2014-03", "y": 0.0023449392, "q": "2014Q1"}, {"x": "2014-06", "y": 0.0052612349, "q": "2014Q2"}, {"x": "2014-09", "y": 0.005416002, "q": "2014Q3"}, {"x": "2014-12", "y": 0.0301319634, "q": "2014Q4"}, {"x": "2015-03", "y": 0.0206557852, "q": "2015Q1"}, {"x": "2015-06", "y": 0.0165901288, "q": "2015Q2"}, {"x": "2015-09", "y": 0.0090312451, "q": "2015Q3"}, {"x": "2015-12", "y": 0.0074440979, "q": "2015Q4"}, {"x": "2016-03", "y": 0.0083379396, "q": "2016Q1"}, {"x": "2016-06", "y": 0.0070335675, "q": "2016Q2"}, {"x": "2016-09", "y": 0.0127295213, "q": "2016Q3"}, {"x": "2016-12", "y": 0.0010034837, "q": "2016Q4"}, {"x": "2017-03", "y": 0.005357541, "q": "2017Q1"}, {"x": "2017-06", "y": 0.0065522544, "q": "2017Q2"}, {"x": "2017-09", "y": 0.0046422121, "q": "2017Q3"}, {"x": "2017-12", "y": 0.0291958257, "q": "2017Q4"}, {"x": "2018-03", "y": 0.0432868838, "q": "2018Q1"}, {"x": "2018-06", "y": 0.0283225237, "q": "2018Q2"}, {"x": "2018-09", "y": 0.0568168976, "q": "2018Q3"}, {"x": "2018-12", "y": 0.0563493594, "q": "2018Q4"}], "ae_ref": [{"x": "2015-09", "y": 0.9337544078, "q": "2014Q1"}, {"x": "2015-12", "y": 0.9846203329, "q": "2014Q2"}, {"x": "2016-03", "y": 1.0440710807, "q": "2014Q3"}, {"x": "2016-06", "y": 1.0496374154, "q": "2014Q4"}, {"x": "2016-09", "y": 1.0450633899, "q": "2015Q1"}, {"x": "2016-12", "y": 1.1270091516, "q": "2015Q2"}, {"x": "2017-03", "y": 1.1277068124, "q": "2015Q3"}, {"x": "2017-06", "y": 1.2225473501, "q": "2015Q4"}, {"x": "2017-09", "y": 1.3393313181, "q": "2016Q1"}, {"x": "2017-12", "y": 1.4313394182, "q": "2016Q2"}, {"x": "2018-03", "y": 1.4626315457, "q": "2016Q3"}, {"x": "2018-06", "y": 1.4440498845, "q": "2016Q4"}, {"x": "2018-09", "y": 1.3435309649, "q": "2017Q1"}, {"x": "2018-12", "y": 1.449906392, "q": "2017Q2"}, {"x": "2019-03", "y": 1.414608578, "q": "2017Q3"}], "ae_asof": [{"x": "2016-09", "y": 1.0209807394288892, "q": "2015Q1"}, {"x": "2016-12", "y": 1.0930307955614715, "q": "2015Q2"}, {"x": "2017-03", "y": 1.092850844344647, "q": "2015Q3"}, {"x": "2017-06", "y": 1.160079414483632, "q": "2015Q4"}, {"x": "2017-09", "y": 1.3022304305015582, "q": "2016Q1"}, {"x": "2017-12", "y": 1.3796479439624407, "q": "2016Q2"}, {"x": "2018-03", "y": 1.3994373940394662, "q": "2016Q3"}, {"x": "2018-06", "y": 1.3866413652238716, "q": "2016Q4"}, {"x": "2018-09", "y": 1.3191436473381912, "q": "2017Q1"}, {"x": "2018-12", "y": 1.4087637170191598, "q": "2017Q2"}, {"x": "2019-03", "y": 1.3636460054248776, "q": "2017Q3"}]}, "bands": {"quarters": ["2012Q3", "2012Q4", "2013Q1", "2013Q2", "2013Q3", "2013Q4", "2014Q1", "2014Q2", "2014Q3", "2014Q4", "2015Q1", "2015Q2", "2015Q3", "2015Q4", "2016Q1", "2016Q2", "2016Q3", "2016Q4", "2017Q1", "2017Q2", "2017Q3", "2017Q4", "2018Q1", "2018Q2"], "series": {"B1": [8.62, 8.54, 7.31, 8.05, 7.65, 7.02, 6.89, 7.33, 7.72, 8.22, 8.16, 8.61, 8.8, 9.45, 10.16, 10.51, 10.8, 9.73, 9.92, 10.25, 10.15, null, null, null], "B2": [5.63, 4.46, 5.13, 5.21, 4.53, 4.37, 4.45, 4.33, 5.0, 5.21, 5.06, 5.61, 5.51, 5.99, 6.69, 6.84, 6.77, 7.16, 6.28, 7.24, 7.02, null, null, null], "B3": [3.05, 3.67, 3.51, 2.97, 3.53, 3.19, 3.17, 3.66, 3.49, 3.61, 3.49, 4.14, 4.14, 4.37, 5.0, 5.37, 5.63, 5.58, 5.14, 5.49, 5.18, null, null, null], "B4": [3.3, 2.59, 2.15, 2.37, 2.37, 2.3, 2.15, 3.01, 2.96, 2.62, 2.51, 2.84, 2.73, 3.25, 3.66, 4.1, 4.1, 4.19, 3.65, 3.8, 3.86, null, null, null], "B5": [1.09, 1.69, 1.16, 1.38, 1.12, 1.09, 1.42, 1.1, 1.35, 1.22, 1.54, 1.32, 1.37, 1.55, 1.7, 2.12, 2.28, 2.24, 1.76, 1.93, 2.02, null, null, null]}}, "models": [{"model": "Monotone LightGBM (champion)", "gini": 0.36742186819701894, "gini_lo": 0.3626066522658915, "gini_hi": 0.3725348533541566, "ks": 0.26533603461356947}, {"model": "WoE scorecard", "gini": 0.3368030322085154, "gini_lo": 0.33143237410291276, "gini_hi": 0.34230983910588303, "ks": 0.24321435549195414}, {"model": "LendingClub sub-grade (benchmark)", "gini": 0.3572834766244488, "gini_lo": 0.351987716659088, "gini_hi": 0.36263004930276754, "ks": 0.26194575341328724}, {"model": "As-of model (data to Jun 2014)", "gini": 0.32986415814490244, "gini_lo": 0.32452732338557405, "gini_hi": 0.33531299528929276, "ks": 0.23928653784226206}], "ecl": [{"name": "reference A, undiscounted LGD", "pred": 232.41509554923954, "ratio": 1.1778578004826736, "ecl12": 99.58299710715326, "ecllife": 200.57012201675352}, {"name": "reference A, discounted LGD (k=12)", "pred": null, "ratio": null, "ecl12": 101.33511179557479, "ecllife": 204.09905634607858}, {"name": "refit at 2014-12-31 as pre-registered (MOB 1\u201321) + reference tail, discounted LGD (k=12)", "pred": 215.57536155884338, "ratio": 1.2698665156494449, "ecl12": 92.43843189942905, "ecllife": 188.3422833076681}, {"name": "(c) with as-of score and LGD from defaults known by 2014-06", "pred": 215.57340087576551, "ratio": 1.269878065338684, "ecl12": 91.31416976461944, "ecllife": 188.20444727902296}, {"name": "sensitivity: refit from 2009-01 vintages (full horizon; degraded pre-2012-09 score)", "pred": 162.3920998284586, "ratio": 1.6857466190274837, "ecl12": 77.51799529461154, "ecllife": 143.14748925844194}, {"name": "90-DPD default definition, discounted LGD (k=12)", "pred": 231.18337239199377, "ratio": 1.1841333155155502, "ecl12": 79.18958507901135, "ecllife": 198.78805220411223}], "realised": 273.7519332425977, "overlay": {"ovl12": 255.82037671054354, "gap12": 0.5662087974635922}, "macro": {"a": {"theta": -0.04518547542134361, "ci": [-0.0990318654752821, -0.0094779497389695], "pass": false}, "b": {"err_score_only": 0.02981090545654297, "err_macro": 0.021449211984872818, "rel_change": -0.2804911136627197, "logloss_score_only": 0.3941962718963623, "logloss_macro": 0.39235132932662964, "pass": true}, "c": {"multiplier": 0.8932735323905945, "mean_pd_baseline": 0.12480801343917847, "mean_pd_adverse": 0.11148769408464432, "pass": false}, "decision": "B FAILS -> Plan B: A + C"}, "mob6": {"res": {"n_truth_yes": 9, "n_truth_no": 6, "tp": 9, "tn": 4, "sensitivity": 1.0, "sensitivity_ci": [0.6637328831200572, 1.0], "specificity": 0.6666666666666666, "specificity_ci": [0.22277809550351213, 0.9567281317072583], "verdict": "FAIL", "first_flag_q": "2015Q1", "first_flag_knowable": "2016-03", "first_truth_q": "2015Q3", "first_truth_knowable": "2017-03"}, "quarters": ["2014Q1", "2014Q2", "2014Q3", "2014Q4", "2015Q1", "2015Q2", "2015Q3", "2015Q4", "2016Q1", "2016Q2", "2016Q3", "2016Q4", "2017Q1", "2017Q2", "2017Q3"], "ae6": [0.9081974367873683, 1.0361122771464975, 1.0757373868404052, 0.8503333990570364, 1.1434985127693642, 1.1760425452013838, 1.1711503115720627, 1.188615434007784, 1.390717256798612, 1.660548591951199, 1.4677227169802853, 1.4148088838390873, 1.592042087979714, 1.7184684787038318, 1.833388157387065], "truth": ["no", "no", "no", "no", "no", "no", "YES", "YES", "YES", "YES", "YES", "YES", "YES", "YES", "YES"]}};
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const tip = document.getElementById("tip");
+function showTip(ev, html){ tip.innerHTML = html; tip.style.display = "block"; const x = Math.min(ev.clientX + 14, innerWidth - 220); tip.style.left = x + "px"; tip.style.top = (ev.clientY + 14) + "px"; }
+function hideTip(){ tip.style.display = "none"; }
+const month = s => { const [y, m] = s.split("-").map(Number); return y * 12 + (m - 1); };
+const mlabel = v => `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][v % 12]} ${Math.floor(v / 12)}`;
+
+function frame(svg, W, H, m, x0, x1, y0, y1, yticks, xticks, xfmt){
+  svg.innerHTML = "";
+  const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r), Y = v => H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b);
+  yticks.forEach(t => { el("line", {x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), class: "gridl"}, svg); el("text", {x: m.l - 6, y: Y(t) + 4, "text-anchor": "end"}, svg).textContent = t; });
+  xticks.forEach(t => { const tx = el("text", {x: X(t), y: H - m.b + 16, "text-anchor": "middle"}, svg); tx.textContent = xfmt(t); });
+  el("line", {x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, stroke: css("--base")}, svg);
+  return {X, Y};
+}
+function hline(svg, s, y, W, m, label){ el("line", {x1: m.l, x2: W - m.r, y1: s.Y(y), y2: s.Y(y), stroke: css("--muted"), "stroke-dasharray": "4 4"}, svg);
+  el("text", {x: m.l + 4, y: s.Y(y) - 4}, svg).textContent = label; }
+function series(svg, s, pts, color, fmt){
+  const path = pts.map((p, i) => `${i ? "L" : "M"}${s.X(p.xv)},${s.Y(p.y)}`).join("");
+  el("path", {d: path, fill: "none", stroke: color, "stroke-width": 2}, svg);
+  pts.forEach(p => { const c = el("circle", {cx: s.X(p.xv), cy: s.Y(p.y), r: 4, fill: color, stroke: css("--panel"), "stroke-width": 2}, svg);
+    const hit = el("circle", {cx: s.X(p.xv), cy: s.Y(p.y), r: 12, fill: "transparent"}, svg);
+    hit.addEventListener("mousemove", e => showTip(e, fmt(p))); hit.addEventListener("mouseleave", hideTip); });
+}
+
+function render(){
+  // tiles
+  document.getElementById("tiles").innerHTML = D.tiles.map(t => `<div class="tile"><div class="l">${t.label}</div><div class="v">${t.value}</div><div class="n">${t.note}</div></div>`).join("");
+  // timeline
+  const T = D.timeline, allx = [...T.psi, ...T.ae_ref, ...T.ae_asof].map(p => month(p.x));
+  const x0 = Math.min(...allx) - 2, x1 = Math.max(...allx) + 2, xt = []; for (let v = Math.ceil(x0 / 12) * 12; v <= x1; v += 12) xt.push(v);
+  const m = {l: 44, r: 16, t: 10, b: 24}, band0 = month("2015-04"), band1 = month(T.ae_ref.find(p => p.y > 1.10).x);
+  const psi = document.getElementById("psi"), s1 = frame(psi, 900, 170, m, x0, x1, 0, 0.3, [0, 0.1, 0.2, 0.3], xt, v => Math.floor(v / 12));
+  el("rect", {x: s1.X(band0), y: m.t, width: s1.X(band1) - s1.X(band0), height: 170 - m.t - m.b, fill: css("--band")}, psi);
+  hline(psi, s1, 0.10, 900, m, "0.10 amber"); hline(psi, s1, 0.25, 900, m, "0.25 red");
+  series(psi, s1, T.psi.map(p => ({...p, xv: month(p.x)})), css("--s1"), p => `<b>${p.q}</b> PSI ${p.y.toFixed(3)}<br>known ${mlabel(month(p.x))}`);
+  const ae = document.getElementById("ae"), s2 = frame(ae, 900, 260, m, x0, x1, 0.8, 1.6, [0.8, 1.0, 1.2, 1.4, 1.6], xt, v => Math.floor(v / 12));
+  el("rect", {x: s2.X(band0), y: m.t, width: s2.X(band1) - s2.X(band0), height: 260 - m.t - m.b, fill: css("--band")}, ae);
+  hline(ae, s2, 1.10, 900, m, "1.10 amber"); hline(ae, s2, 1.25, 900, m, "1.25 red");
+  series(ae, s2, T.ae_ref.map(p => ({...p, xv: month(p.x)})), css("--s1"), p => `<b>${p.q}</b> reference A/E ${p.y.toFixed(2)}<br>known ${mlabel(month(p.x))}`);
+  series(ae, s2, T.ae_asof.map(p => ({...p, xv: month(p.x)})), css("--s2"), p => `<b>${p.q}</b> as-of A/E ${p.y.toFixed(2)}<br>known ${mlabel(month(p.x))}`);
+  // bands
+  const B = D.bands, bs = document.getElementById("bands"), mb = {l: 36, r: 10, t: 10, b: 28}, n = B.quarters.length;
+  const s3 = frame(bs, 440, 260, mb, 0, n - 1, 0, 12, [0, 4, 8, 12], [0, 8, 16, n - 1].filter((v, i, a) => a.indexOf(v) === i), i => B.quarters[i]);
+  const cols = ["--q5", "--q4", "--q3", "--q2", "--q1"];
+  Object.entries(B.series).forEach(([k, v], j) => series(bs, s3, v.map((y, i) => ({xv: i, y, q: B.quarters[i]})).filter(p => p.y !== null),
+    css(cols[j]), p => `<b>${p.q}</b> band ${k.slice(1)}: ${p.y.toFixed(2)}%`));
+  document.getElementById("bandlegend").innerHTML = Object.keys(B.series).map((k, j) => `<span><i style="background:var(${cols[j]})"></i>band ${k.slice(1)}${j === 0 ? " (riskiest)" : j === 4 ? " (safest)" : ""}</span>`).join("");
+  // models
+  const M = D.models, ms = document.getElementById("models"); ms.innerHTML = "";
+  const gx0 = 31, gx1 = 38.5, X = v => 210 + (v - gx0) / (gx1 - gx0) * 210;
+  [32, 34, 36, 38].forEach(t => { el("line", {x1: X(t), x2: X(t), y1: 6, y2: 200, class: "gridl"}, ms); el("text", {x: X(t), y: 218, "text-anchor": "middle"}, ms).textContent = t; });
+  M.forEach((r, i) => { const y = 28 + i * 48, c = i === 0 ? css("--s2") : i === 3 ? css("--s1") : css("--muted");
+    el("text", {x: 0, y: y + 4}, ms).textContent = r.model;
+    el("line", {x1: X(100 * r.gini_lo), x2: X(100 * r.gini_hi), y1: y, y2: y, stroke: c, "stroke-width": 2}, ms);
+    const d = el("circle", {cx: X(100 * r.gini), cy: y, r: 6, fill: c, stroke: css("--panel"), "stroke-width": 2}, ms);
+    const h = el("rect", {x: 0, y: y - 18, width: 440, height: 36, fill: "transparent"}, ms);
+    h.addEventListener("mousemove", e => showTip(e, `<b>${r.model}</b><br>Gini ${(100 * r.gini).toFixed(1)} [${(100 * r.gini_lo).toFixed(1)}, ${(100 * r.gini_hi).toFixed(1)}]<br>KS ${(100 * r.ks).toFixed(1)}`));
+    h.addEventListener("mouseleave", hideTip); });
+  // ecl
+  const labels = {"reference A, undiscounted LGD": "reference", "refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)": "refit at 2014-12", "90-DPD default definition, discounted LGD (k=12)": "90-DPD"};
+  const E = D.ecl.filter(e => e.pred !== null && e.pred !== undefined && labels[e.name]), es = document.getElementById("ecl"); es.innerHTML = "";
+  const ymax = 300, Yb = v => 200 - v / ymax * 180, bw = 70;
+  [0, 100, 200, 300].forEach(t => { el("line", {x1: 40, x2: 440, y1: Yb(t), y2: Yb(t), class: "gridl"}, es); el("text", {x: 34, y: Yb(t) + 4, "text-anchor": "end"}, es).textContent = t; });
+  E.forEach((e, i) => { const x = 60 + i * 120;
+    const r = el("rect", {x, y: Yb(e.pred), width: bw, height: 200 - Yb(e.pred), rx: 4, fill: css("--s1")}, es);
+    r.addEventListener("mousemove", ev => showTip(ev, `<b>${labels[e.name] || e.name}</b><br>predicted $${e.pred.toFixed(1)}m<br>realised / predicted ${e.ratio.toFixed(3)}`)); r.addEventListener("mouseleave", hideTip);
+    el("text", {x: x + bw / 2, y: 218, "text-anchor": "middle"}, es).textContent = labels[e.name] || e.name;
+    el("text", {x: x + bw / 2, y: Yb(e.pred) - 6, "text-anchor": "middle"}, es).textContent = `×${e.ratio.toFixed(2)}`; });
+  el("line", {x1: 50, x2: 430, y1: Yb(D.realised), y2: Yb(D.realised), stroke: css("--s2"), "stroke-width": 2}, es);
+  el("text", {x: 430, y: Yb(D.realised) - 6, "text-anchor": "end"}, es).textContent = `realised $${D.realised.toFixed(1)}m`;
+  // macro
+  const mc = D.macro, row = (name, detail, ok) => `<span>${name}</span><span style="color:var(--ink2)">${detail}</span><span class="badge ${ok ? "pass" : "fail"}">${ok ? "✓ PASS" : "✕ FAIL"}</span>`;
+  document.getElementById("macro").innerHTML =
+    row("(a) unemployment effect > 0", `θ = ${mc.a.theta.toFixed(3)} [${mc.a.ci[0].toFixed(3)}, ${mc.a.ci[1].toFixed(3)}]`, mc.a.pass) +
+    row("(b) out-of-time value", `${(100 * mc.b.rel_change).toFixed(1)}% calibration error`, mc.b.pass) +
+    row("(c) plausible stress", `adverse / baseline = ${mc.c.multiplier.toFixed(2)}`, mc.c.pass);
+  document.getElementById("macrodec").textContent = "Decision: macro does not enter — the 'adverse' scenario lowered PD, so the (b) pass was spurious.";
+  // mob6 60m
+  const R = D.mob6.res, q = D.mob6.quarters, v = D.mob6.ae6, tr = D.mob6.truth, ss = document.getElementById("mob6"); ss.innerHTML = "";
+  document.getElementById("mob6sub").textContent = `Pre-registered and pushed before computing. Sensitivity ${R.tp}/${R.n_truth_yes}, specificity ${R.tn}/${R.n_truth_no} (${(100 * R.specificity).toFixed(0)}% < 80%) → ${R.verdict}. Specificity not demonstrated (only ${R.n_truth_no} negative quarters).`;
+  const mm = {l: 44, r: 10, t: 10, b: 28}, Ys = y => 230 - mm.b - (y - 0.8) / (2.0 - 0.8) * (230 - mm.t - mm.b), bw2 = (900 - mm.l - mm.r) / q.length;
+  [0.8, 1.0, 1.4, 1.8].forEach(t => { el("line", {x1: mm.l, x2: 900 - mm.r, y1: Ys(t), y2: Ys(t), class: "gridl"}, ss); el("text", {x: mm.l - 6, y: Ys(t) + 4, "text-anchor": "end"}, ss).textContent = t; });
+  q.forEach((qq, i) => { const x = mm.l + i * bw2 + 3, c = tr[i] === "YES" ? css("--s1") : css("--base");
+    const r = el("rect", {x, y: Ys(v[i]), width: bw2 - 6, height: Ys(0.8) - Ys(v[i]), rx: 3, fill: c}, ss);
+    r.addEventListener("mousemove", e => showTip(e, `<b>${qq}</b> A/E6 ${v[i].toFixed(2)}<br>truth: ${tr[i] === "YES" ? "deteriorated" : "not deteriorated"}`)); r.addEventListener("mouseleave", hideTip);
+    if (i % 2 === 0) el("text", {x: x + (bw2 - 6) / 2, y: 230 - mm.b + 16, "text-anchor": "middle"}, ss).textContent = qq; });
+  [[1.10, "1.10 amber"], [1.25, "1.25 red"]].forEach(([y, l]) => { el("line", {x1: mm.l, x2: 900 - mm.r, y1: Ys(y), y2: Ys(y), stroke: css("--muted"), "stroke-dasharray": "4 4"}, ss); el("text", {x: 900 - mm.r, y: Ys(y) - 4, "text-anchor": "end"}, ss).textContent = l; });
+}
+document.getElementById("theme").addEventListener("click", () => {
+  const r = document.documentElement, dark = r.getAttribute("data-theme") ? r.getAttribute("data-theme") === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.setAttribute("data-theme", dark ? "light" : "dark"); render(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+render();
+</script>
+</body>
+</html>

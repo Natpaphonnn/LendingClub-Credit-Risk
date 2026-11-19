@@ -163,10 +163,22 @@ before computing). Results: `notes/10_extensions_results.md`.
 | MA-2 tie-break | no champion change | grid sensitivity reported (36.5–36.9) |
 | MA-3 macro bootstrap | subsample redrawn per replicate (correctness fix) | θ −0.038 [−0.094, −0.004] → B still FAIL |
 | MA-5 staging | illustration: stage 3 ≥ 3 missed, stage 2 1–2 missed (≈ 30 DPD proxy) | stage 2 1,571, stage 3 2,300 loans |
-| MA-6 ECL benchmark | refit at reporting date, discounted LGD, 90-DPD sensitivity | refit → 1.10× (vs 1.17×); LGD 90.4%; 90-DPD 12m ECL $80m |
-| MA-10 pre-registration evidence | private remote; pre-registrations pushed before runs | https://github.com/Natpaphonnn/LendingClub-Credit-Risk (private) |
+| MA-6 ECL benchmark | refit at reporting date, discounted LGD, 90-DPD sensitivity | refit → 1.10× (vs 1.17×) — **withdrawn after gate round 1 (R7-1/R2-1): artefact; corrected 1.27× vs 1.18×**; LGD 90.4%; 90-DPD 12m ECL $80m (now $79.2m) |
+| MA-10 pre-registration evidence | private remote | https://github.com/Natpaphonnn/LendingClub-Credit-Risk (private). **Correction (gate R1-1/R10-1):** only E1–E5 (4562602) and the gate rubric (9a493da) were pushed before computing; Phase 1–2 pre-registrations were first pushed after their results (order self-attested) |
 
 ## Re-run after extensions (2026-11-20)
 Two fresh runs from `data/raw` with the final code (incl. E1–E5): **byte-identical** (`reports/quality/runtime_runA.log`, `runtime_runB.log`;
 522–523 s each, rule B bootstrap now redraws the subsample per replicate). Tests **51/51**; claim re-check **36/36** (one doc rounding fixed:
 θ CI upper bound −0.00448 → "−0.004", not "−0.005"); note-number provenance 1,301/1,301 traced. `requirements.lock.txt` regenerated (adds pytest).
+
+## Bank gate round 1 and fixes (2026-11-20) — `reports/quality/gate_round1.md`
+- 10 independent reviewers, rubric notes/09 (9a493da, pushed first). Mean **7.13**; BLOCKING: R5-1 (LightGBM `"advanced"` monotone method violated the
+  pre-registered constraints on 22/34 features) and R7-1 / R2-1 (E5 refit at 2014-12 unidentified beyond MOB 21; 1.10× was an artefact) → **FAIL**.
+- Fixes (bug fixes; spec deviations logged in notes/10): `"intermediate"` monotone method + post-training sweep test; `hazard.check_identified`
+  in `fit_mnl` + tests; E5 (c) = refit for MOB 1–21 + reference tail, (c') as-of score sensitivity, (c2) 2009-start sensitivity; in-sample ECL
+  backtest, count × EAD × LGD decomposition, 12-month backtest; matched-bad-rate approval; reason codes by unrounded points; paired bootstrap CIs
+  for policy C; by-band A/E on validation; KS rows gated on knowability; staging memo row for ≥ 6 missed; raw-input checksum manifest
+  (`raw_inputs.sha256`) verified by run_all; provenance check extended to 01 and 10 (explained exceptions listed); stale limitations rewritten.
+- Effect: every M2-based number moved slightly (OOT Gini 36.8 → 36.7; ΔGini +3.1; M2 − LC +1.05 → +1.01); conclusions unchanged except
+  **E5 (refit widens, not closes, the ECL gap)** and **policy C** (MILP significantly worse than the cutoff at 5%; the cutoff level is what matters).
+  E1 verdict unchanged (FAIL).
