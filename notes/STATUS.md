@@ -18,6 +18,12 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 3. **Plausible stress size:** applying the 2008–09 unemployment path gives an adverse/baseline PD multiplier between 1.1× and 3×.
    This is a sanity range around the crisis-anchor ratio of ~1.5× seen in the audit; it is not an estimation target.
 
+## Decisions (Nat, 2026-11-19, after Phase 1)
+1. Write-up แสดง **scorecard (explainable) คู่กับ LightGBM (champion)**
+2. ทำ B **ตาม Plan B rule ที่เขียนไว้ก่อน Phase 1 เป๊ะ ๆ** — ถ้า a/b/c ข้อใดไม่ผ่าน → A + C; รายงานผล macro ไม่ว่าผ่านหรือไม่
+3. เพิ่ม **MOB-6 A/E** เข้า monitoring — เพราะค้นพบจาก vintage 2015 จึงต้อง pre-register thresholds ตอนนี้ และประเมินเฉพาะ
+   vintage ที่ไม่ได้ใช้ค้นพบ (2016–2017) พร้อมติด label ชัดเจน
+
 ## Done — Phase 0 (data audit) ✅
 - Data, sha256, license → notes/data_sources.md; findings → notes/01_data_audit.md; code src/audit/; local git (no remote)
 
