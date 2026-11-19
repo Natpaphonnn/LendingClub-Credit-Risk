@@ -1,0 +1,17 @@
+# Raw/derived data must never be committed (redistribution of LendingClub data is not allowed)
+data/
+*.csv
+*.csv.gz
+*.parquet
+*.zip
+*.pkl
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+.env
+kaggle.json
+*.gz
+*.xlsx
+*.duckdb
+*.kaggle-partial
