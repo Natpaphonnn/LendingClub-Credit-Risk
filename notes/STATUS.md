@@ -24,6 +24,13 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 3. เพิ่ม **MOB-6 A/E** เข้า monitoring — เพราะค้นพบจาก vintage 2015 จึงต้อง pre-register thresholds ตอนนี้ และประเมินเฉพาะ
    vintage ที่ไม่ได้ใช้ค้นพบ (2016–2017) พร้อมติด label ชัดเจน
 
+## Decisions (Nat, 2026-11-19, after Phase 2)
+1. เล่า **B ที่ fail เป็นจุดแข็ง** — pre-registered rule ที่ต้องผ่านครบสามข้อกัน spurious pass (adverse scenario ทำให้ PD ลดลง) ไว้ได้
+2. ทำ **management overlay แบบสั้น**: scale lifetime PD ด้วย early A/E (MOB-6 / MOB-12) แล้วดูว่าปิด under-provision 17% บน 2015 backtest ได้เท่าไร —
+   ติด label **illustrative / in-sample** (MOB-6 ค้นพบบน 2015 และทดสอบบน 2016–17 แล้ว จึงไม่มี vintage ที่ยังไม่เคยเห็นเหลือ)
+3. C: แสดง profit metric ทั้งสองแบบ, บอกตรง ๆ ว่า metric ที่ pre-register (undiscounted) **ผิด** (ไม่มี cost of funds),
+   และข้อสรุปทางธุรกิจคือ **"PD cutoff ที่ดีก็พอ"**
+
 ## Done — Phase 0 (data audit) ✅
 - Data, sha256, license → notes/data_sources.md; findings → notes/01_data_audit.md; code src/audit/; local git (no remote)
 
@@ -48,11 +55,17 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 - **C (MILP):** แพ้ approve-all บน metric ที่ pre-register (undiscounted profit $222m vs $230m); exploratory NPV @5%: C $46m vs approve-all $28m ≈ M2 cutoff $48m
 - **MOB-6 A/E (out-of-discovery 2016–17):** sensitivity 7/7, lead 6 เดือน; specificity ทดสอบไม่ได้
 
+## Done — Phase 3 prep ✅
+- **Overlay (illustrative, in-sample):** MOB-12 A/E overlay ปิด under-provision 58% ($234m → $257m vs realised $274m); MOB-6 ปิดได้ 11% — `reports/phase2/overlay.md`
+- **Story:** `notes/04_story.md` (9 ขั้นตามลำดับ, ทุกตัวเลขมี source file) — ภาษาอังกฤษสำหรับ draft article
+- **Claims & limitations:** `notes/05_claims_and_limitations.md` (26 claims พร้อม status PRE-REG / DESC / EXPL / ILLUS + limitations ครบ)
+- **Article figures (8):** `reports/figures/article/fig1–8_*.png` สร้างจาก `src/report/article_figures.py` (style เดียวกัน, title = message, source line)
+
 ## Next step
-- Phase 3 write-up (Medium + Zenn JP), browser demo, private repo — รอ Nat สั่ง
+- Phase 3 write-up: Medium (EN) + Zenn (JP) จาก 04_story.md, browser demo, private GitHub repo — รอ Nat สั่ง
 
 ## Open questions for Nat
-1. Write-up: เล่า B ที่ fail เป็นจุดแข็ง ("pre-registered rule กัน false positive ได้") ไหม? (แนะนำ: ใช่ — เป็นหนึ่งใน highlight)
-2. ECL ไม่มี forward-looking overlay: จะให้ pre-register "management overlay จาก early A/E" เป็น Phase 2.5 ไหม หรือปล่อยเป็น limitation?
-   (แนะนำ: ทำแบบสั้น ถ้ามีเวลา — ธนาคารไทยใช้ overlay จริง)
-3. C metric ที่ pre-register (undiscounted) เลือกไม่ดี — ใน write-up ให้แสดงทั้งสองแบบพร้อมคำอธิบาย (ตามที่ทำใน figure) โอเคไหม?
+1. Article ภาษาอังกฤษใช้ 04_story.md เป็นโครงได้เลยไหม หรืออยากตัดให้สั้นลง (เช่น เหลือ 6 ขั้น: 1, 2, 3+4, 6, 7, 8)?
+2. Browser demo: อยากให้เป็นอะไร — (ก) scorecard calculator + reason codes, (ข) monitoring dashboard แบบ interactive (PSI vs A/E timeline), หรือ (ค) ทั้งสองแบบ?
+   (แนะนำ: ข — เล่า "wrong alarm" ได้ชัดสุด และใช้แค่ aggregates)
+3. สร้าง private GitHub repo เมื่อไร? (ต้องให้ Nat สร้าง / login เอง)

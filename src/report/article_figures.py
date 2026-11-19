@@ -1,0 +1,268 @@
+"""Article figures (8), regenerated in one consistent style. Aggregates only.
+
+Usage: nice -n 19 .venv/bin/python -I src/report/article_figures.py
+Output: reports/figures/article/fig{1..8}_*.png
+"""
+import json
+import pickle
+import sys
+from pathlib import Path
+
+import duckdb
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "src" / "phase1"))
+sys.path.insert(0, str(ROOT / "src" / "phase2"))
+from config import ACC, ART, INTERIM, TRAIN, load_base, split_mask  # noqa: E402
+from hazard import cif, hazards  # noqa: E402
+
+OUT = ROOT / "reports" / "figures" / "article"
+OUT.mkdir(parents=True, exist_ok=True)
+REP1, REP2 = ROOT / "reports" / "phase1", ROOT / "reports" / "phase2"
+
+SURF, INK, INK2, MUTED, GRID, BASE = "#fcfcfb", "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7"
+BLUE, ORANGE, AQUA, YELLOW = "#2a78d6", "#eb6834", "#1baf7a", "#eda100"
+SEQ5 = ["#9ec5f4", "#5598e7", "#2a78d6", "#1c5cab", "#0d366b"]
+SOURCE = "Data: LendingClub via Kaggle (Nathan George); analysis: this project"
+plt.rcParams.update({
+    "figure.facecolor": SURF, "axes.facecolor": SURF, "axes.edgecolor": BASE, "axes.labelcolor": INK2,
+    "xtick.color": INK2, "ytick.color": INK2, "text.color": INK, "axes.grid": True, "grid.color": GRID,
+    "grid.linewidth": 0.6, "axes.spines.top": False, "axes.spines.right": False, "font.size": 11,
+    "axes.titlesize": 11, "axes.titleweight": "normal", "axes.titlelocation": "left", "lines.linewidth": 2.2,
+    "legend.frameon": False, "legend.fontsize": 10,
+})
+
+
+def finish(fig, title, subtitle, name, source=SOURCE):
+    h = fig.get_figheight()
+    fig.suptitle(title, x=0.012, y=1 - 0.10 / h, ha="left", va="top", fontsize=14, fontweight="bold", color=INK)
+    fig.text(0.012, 1 - 0.48 / h, subtitle, ha="left", va="top", fontsize=10.5, color=INK2)
+    fig.text(0.012, 0.08 / h, source, ha="left", fontsize=8.5, color=MUTED)
+    fig.tight_layout(rect=(0, 0.30 / h, 1, 1 - 0.80 / h))
+    fig.savefig(OUT / name, dpi=200)
+    plt.close(fig)
+    print("wrote", OUT / name)
+
+
+def thresh(ax, y, label, x_text=None, va="bottom"):
+    ax.axhline(y, color=MUTED, linewidth=1, linestyle="--", zorder=1)
+    xt = ax.get_xlim()[0] if x_text is None else x_text
+    ax.text(xt, y, f" {label}", color=INK2, fontsize=9, va=va, ha="left")
+
+
+mj = json.loads((REP1 / "metrics.json").read_text())
+mon = pd.DataFrame(json.loads((REP1 / "monitoring.json").read_text()))
+
+# ------------------------------------------------------------------ Fig 1: data traps
+con = duckdb.connect()
+v = con.execute(f"""SELECT year(strptime(issue_d,'%b-%Y')) yr,
+  sum((loan_status IN ('Fully Paid','Charged Off') OR loan_status LIKE 'Does not meet%')::INT) resolved,
+  sum((NOT (loan_status IN ('Fully Paid','Charged Off') OR loan_status LIKE 'Does not meet%'))::INT) open_
+  FROM '{ACC}' WHERE TRY_STRPTIME(issue_d,'%b-%Y') IS NOT NULL GROUP BY 1 ORDER BY 1""").df()
+fig, ax = plt.subplots(figsize=(9, 4.6))
+ax.bar(v.yr, v.resolved / 1e3, color=BLUE, width=0.7, label="outcome known (paid off / charged off)")
+ax.bar(v.yr, v.open_ / 1e3, bottom=v.resolved / 1e3, color=ORANGE, width=0.7, label="still open at data cut (Mar 2019)")
+for x, a, b in zip(v.yr, v.resolved, v.open_):
+    if x <= 2009:
+        ax.annotate(f"{int(a+b):,}", (x, (a + b) / 1e3), textcoords="offset points", xytext=(0, 4), ha="center", fontsize=9, color=INK2)
+ax.set_xticks(v.yr)
+ax.set_ylabel("loans issued (thousands)")
+ax.grid(axis="x", visible=False)
+ax.legend(loc="upper left")
+finish(fig, "Two traps before any model: 2007–08 is tiny, 2016–18 is unfinished",
+       "Accepted loans by issue year. The 2008 crisis cohort is ~3k loans; most 2016–18 loans had no final outcome yet.",
+       "fig1_data_traps.png")
+
+# ------------------------------------------------------------------ Fig 2: champion vs LC grade (OOT Gini with CI)
+fig, ax = plt.subplots(figsize=(9, 3.9))
+models = [("LC sub-grade (benchmark)", "LC_subgrade", MUTED), ("WoE scorecard (explainable)", "M1_scorecard", BLUE),
+          ("Monotone LightGBM (champion)", "M2_lgbm", ORANGE)]
+for i, (lab, k, c) in enumerate(models):
+    for s, mk, off in (("validation_2014", "o", 0.14), ("oot_2015", "D", -0.14)):
+        r = mj[s][k]
+        g, lo, hi = 100 * r["gini"], 100 * r["gini_lo"], 100 * r["gini_hi"]
+        ax.errorbar(g, i + off, xerr=[[g - lo], [hi - g]], fmt=mk, color=c, markersize=8, capsize=3, linewidth=1.5,
+                    markerfacecolor=c if s == "oot_2015" else SURF)
+        ax.text(hi + 0.15, i + off, f"{g:.1f}", va="center", fontsize=9.5, color=INK2)
+ax.set_yticks(range(3), [m[0] for m in models])
+ax.set_xlabel("Gini (×100), 95% bootstrap CI")
+ax.set_ylim(-0.6, 2.6)
+ax.grid(axis="y", visible=False)
+h1 = plt.Line2D([], [], marker="o", color=INK2, markerfacecolor=SURF, linestyle="", label="validation 2014")
+h2 = plt.Line2D([], [], marker="D", color=INK2, linestyle="", label="out-of-time 2015")
+ax.legend(handles=[h1, h2], loc="upper left")
+d = mj["oot_2015"]["delta_gini_M2_minus_M1"]
+finish(fig, "The champion beats LendingClub's own grades on unseen 2015 loans",
+       f"Application data only. LightGBM − scorecard = +{100*d['point']:.1f} Gini [{100*d['lo']:.1f}, {100*d['hi']:.1f}], above the pre-registered +2.0 bar.",
+       "fig2_champion_vs_lc.png")
+
+# ------------------------------------------------------------------ Fig 3: ranking survives, calibration drifts
+m3 = mon[mon.KS_M2.notna()]
+m4 = mon[mon.AE12_M2.notna()]
+fig, axes = plt.subplots(1, 2, figsize=(11, 4.4))
+ax = axes[0]
+x = np.arange(len(m3))
+ax.fill_between(x, 100 * m3.KS_M2_lo, 100 * m3.KS_M2_hi, color=ORANGE, alpha=0.18, linewidth=0)
+ax.plot(x, 100 * m3.KS_M2, color=ORANGE, marker="o", markersize=5)
+ax.set_ylim(15, 32)
+ax.set_xticks(x, m3.issue_q, rotation=45, ha="right", fontsize=9)
+thresh(ax, 0.9 * 100 * mj["validation_2014"]["M2_lgbm"]["ks"], "amber line (0.9 × validation KS)", va="top")
+ax.set_title("Ranking: KS on matured quarters (×100)")
+ax = axes[1]
+x = np.arange(len(m4))
+ax.plot(x, m4.AE12_M2, color=ORANGE, marker="o", markersize=5)
+ax.axhline(1.0, color=BASE, linewidth=1)
+ax.set_xticks(x, m4.issue_q, rotation=45, ha="right", fontsize=9)
+ax.set_ylim(0.85, 1.55)
+thresh(ax, 1.10, "1.10 amber")
+thresh(ax, 1.25, "1.25 red")
+ax.set_title("Level: actual / expected defaults by month 12")
+finish(fig, "The model kept ranking borrowers well — its default level drifted",
+       "Champion (LightGBM) by issue quarter. KS never breached its alarm; actual/expected defaults climbed to 1.45.",
+       "fig3_ranking_vs_level.png")
+
+# ------------------------------------------------------------------ Fig 4: PSI is the wrong alarm (calendar time)
+b = load_base(["issue_dt", "issue_q", "bad", "default_mob"]).join(pd.read_parquet(ART / "scores_m2.parquet"))
+b["d6"] = (b.default_mob <= 6).astype(float)
+trm = split_mask(b, TRAIN)
+r6 = b.loc[trm, "d6"].mean() / b.loc[trm, "bad"].mean()
+ae6 = []
+for q, g in b[b.issue_dt >= "2014-01-01"].groupby("issue_q"):
+    qe = g.issue_dt.max().to_period("Q").end_time.to_period("M").to_timestamp()
+    k = qe + pd.DateOffset(months=12)
+    if k <= pd.Timestamp("2019-03-01"):
+        ae6.append({"issue_q": q, "known": k, "ae6": g.d6.sum() / (g.pd_m2.sum() * r6)})
+ae6 = pd.DataFrame(ae6)
+mon["qe"] = pd.PeriodIndex(mon.issue_q, freq="Q").end_time.to_period("M").to_timestamp()
+mon["k_psi"] = mon.qe
+mon["k12"] = mon.qe + pd.DateOffset(months=18)
+fig, axes = plt.subplots(2, 1, figsize=(10, 6.4), sharex=True, gridspec_kw={"height_ratios": [1, 1.4]})
+ax = axes[0]
+ax.plot(mon.k_psi, mon.PSI_M2, color=ORANGE, marker="o", markersize=4)
+ax.set_ylim(0, 0.3)
+thresh(ax, 0.10, "0.10 amber", x_text=pd.Timestamp("2014-01-01"))
+thresh(ax, 0.25, "0.25 red", x_text=pd.Timestamp("2014-01-01"))
+ax.set_title("Population stability index of the champion score (no labels needed) — never alarmed")
+ax = axes[1]
+k12 = mon[mon.AE12_M2.notna()]
+ax.plot(k12.k12, k12.AE12_M2, color=BLUE, marker="o", markersize=4, label="defaults by month 12 (pre-registered)")
+disc = ae6[ae6.issue_q < "2016Q1"]
+test = ae6[ae6.issue_q >= "2015Q4"]
+ax.plot(disc.known, disc.ae6, color=AQUA, marker="o", markersize=4, linestyle=":", label="defaults by month 6 — discovery (2014–15)")
+ax.plot(test[test.issue_q >= "2016Q1"].known, test[test.issue_q >= "2016Q1"].ae6, color=AQUA, marker="o", markersize=4,
+        label="defaults by month 6 — out-of-discovery test (2016–17)")
+ax.axhline(1.0, color=BASE, linewidth=1)
+thresh(ax, 1.10, "1.10 amber", x_text=pd.Timestamp("2014-01-01"))
+thresh(ax, 1.25, "1.25 red", x_text=pd.Timestamp("2014-01-01"))
+first_bad, first_amber = pd.Timestamp("2015-04-01"), pd.Timestamp("2016-12-01")
+for a in axes:
+    a.axvspan(first_bad, first_amber, color=YELLOW, alpha=0.12, linewidth=0)
+ax.text(pd.Timestamp("2015-05-01"), 1.30, "first worse vintage issued (Apr 2015)\n→ first month-12 alarm (Dec 2016):\n~545k loans booked meanwhile",
+        fontsize=9, color=INK2, va="bottom")
+ax.set_ylim(0.85, 1.9)
+ax.set_title("Actual / expected defaults, plotted at the date each value became knowable")
+ax.legend(loc="upper left", fontsize=9)
+finish(fig, "Population stability is the wrong alarm: it never fired",
+       "Each point sits at the calendar date it could first be known. Only label-based checks caught the drift — 12–18 months late.",
+       "fig4_alarm_timeline.png")
+
+# ------------------------------------------------------------------ Fig 5: default at MOB 12 by risk band
+b1 = load_base(["issue_dt", "issue_q", "default_mob"]).join(pd.read_parquet(ART / "scores_m1.parquet", columns=["score_m1"]))
+cuts = np.quantile(b1.loc[split_mask(b1, TRAIN), "score_m1"], [0.2, 0.4, 0.6, 0.8])
+b1["band"] = 1 + np.searchsorted(cuts, b1.score_m1.to_numpy(), side="right")
+b1["d12"] = (b1.default_mob <= 12).astype(float)
+b1["ql"] = b1.issue_dt.dt.to_period("Q").dt.end_time.dt.to_period("M").dt.to_timestamp()
+obs = b1[b1.ql + pd.DateOffset(months=12) <= pd.Timestamp("2018-09-01")]
+t5 = obs.groupby(["issue_q", "band"]).d12.mean().unstack()
+t5 = t5[t5.index >= "2012Q4"]
+fig, ax = plt.subplots(figsize=(10, 4.8))
+x = np.arange(len(t5))
+labels = {1: "band 1 (riskiest 20% at training)", 2: "band 2", 3: "band 3", 4: "band 4", 5: "band 5 (safest 20%)"}
+for bnd, col in zip([5, 4, 3, 2, 1], SEQ5):
+    ax.plot(x, 100 * t5[bnd], color=col, marker="o", markersize=4, label=labels[bnd])
+ax.set_xticks(x, t5.index, rotation=45, ha="right", fontsize=9)
+ax.set_ylabel("defaulted by month 12, %")
+ax.legend(loc="upper left", fontsize=9, ncol=2)
+finish(fig, "Same score, more defaults: the drift hit every risk band",
+       "Share of loans defaulted by month 12, by issue quarter and scorecard band (cut points fixed on 2012–13 training data).",
+       "fig5_bands_mob12.png")
+
+# ------------------------------------------------------------------ Fig 6: prepayment as competing risk
+p2 = pd.read_parquet(INTERIM / "p2_loans.parquet")
+p15 = p2[(p2.yr == 2015) & (p2.issue_dt <= "2015-09-01")].reset_index(drop=True)      # fully observable to MOB 36
+with open(INTERIM / "p2" / "model_A.pkl", "rb") as fh:
+    mA = pickle.load(fh)
+hd, hp = hazards(mA["scaler"].loan_cols(p15), mA["B"])
+_, _, C = cif(hd, hp)
+naive = 1 - np.cumprod(1 - hd, axis=1)
+dm = p15.default_mob.astype("float64").fillna(999).to_numpy()
+act = np.array([(dm <= m).mean() for m in range(1, 37)])
+mob = np.arange(1, 37)
+fig, ax = plt.subplots(figsize=(9, 4.6))
+ax.plot(mob, 100 * naive.mean(0), color=MUTED, linestyle="--", label="model ignoring prepayment")
+ax.plot(mob, 100 * C.mean(0), color=BLUE, label="model with prepayment as competing risk")
+ax.plot(mob, 100 * act, color=ORANGE, label="actual")
+for arr, col, dy in ((naive.mean(0), MUTED, 0), (C.mean(0), BLUE, -0.4), (act, ORANGE, 0.4)):
+    ax.text(36.4, 100 * arr[-1] + dy, f"{100*arr[-1]:.1f}%", color=col, fontsize=10, va="center")
+ax.set_xlim(0, 39)
+ax.set_xticks([6, 12, 18, 24, 30, 36])
+ax.set_xlabel("months on book")
+ax.set_ylabel("cumulative default, %")
+ax.legend(loc="upper left")
+finish(fig, "Ignore prepayment and lifetime PD is overstated by a third",
+       "Loans issued Jan–Sep 2015 (observable to month 36). Model trained on 2012–13; its gap to actual is the 2015 drift.",
+       "fig6_prepayment_competing_risk.png")
+
+# ------------------------------------------------------------------ Fig 7: ECL under-provision + overlay
+ov = json.loads((REP2 / "overlay.json").read_text())
+q = pd.DataFrame(ov["by_quarter"])
+fig, ax = plt.subplots(figsize=(9.5, 4.6))
+x = np.arange(len(q))
+w = 0.27
+ax.bar(x - w, q["EL_pred $m"], width=w, color=BLUE, label="expected loss at origination (model)")
+ax.bar(x, q["EL_ovl12 $m"], width=w, color=BLUE, alpha=0.45, hatch="//", edgecolor=BLUE, linewidth=0,
+       label="with month-12 overlay (illustrative, in-sample)")
+ax.bar(x + w, q["realised $m"], width=w, color=ORANGE, label="actual loss")
+for i, rr in q.iterrows():
+    ax.text(i + w, rr["realised $m"] + 1, f"×{rr['realised/pred']:.2f}", ha="center", fontsize=9, color=INK2)
+ax.set_xticks(x, q.issue_q)
+ax.set_ylabel("$ million (net principal loss)")
+ax.set_ylim(0, q["realised $m"].max() * 1.25)
+ax.grid(axis="x", visible=False)
+ax.legend(loc="upper left", fontsize=9)
+tot = ov["total"]
+finish(fig, f"Provisions fell {100*(tot['realised/pred']-1):.0f}% short; a month-12 overlay closes {100*tot['gap closed MOB12']:.0f}% of the gap",
+       f"2015 loans. Overlay = expected loss × month-12 actual/expected (month-6 version closes {100*tot['gap closed MOB6']:.0f}%). "
+       "Illustrative, in-sample.",
+       "fig7_ecl_backtest_overlay.png")
+
+# ------------------------------------------------------------------ Fig 8: simple cutoff ≈ MILP
+pc = json.loads((REP2 / "policy_C.json").read_text())["0.05"]["table"]
+pc = pd.DataFrame(pc)
+pc = pc[pc.set == "OOT 2015"].reset_index(drop=True)
+name = {"C: MILP cells": "MILP-optimised policy", "approve all": "approve everyone",
+        "Phase 1 M2 cutoff (PD ≤ 0.2039)": "simple PD cutoff (champion)", "Phase 1 M1 cutoff (score ≥ 532)": "scorecard cutoff"}
+pc["lab"] = [f"{name.get(p, p)}  ({a:.0f}% approved)" for p, a in zip(pc.policy, pc["approval %"])]
+order = [2, 0, 3, 1]
+pc = pc.iloc[order].reset_index(drop=True)
+fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True)
+for ax, col, ttl in ((axes[0], "realised profit $m", "Pre-registered (wrong: no funding cost)"),
+                     (axes[1], "EXPLORATORY realised NPV $m", "Corrected: NPV at 5% funding cost")):
+    cols = [ORANGE if "MILP" in lb else (BLUE if "simple" in lb else MUTED) for lb in pc.lab]
+    ax.barh(pc.lab, pc[col], color=cols)
+    for i, vv in enumerate(pc[col]):
+        ax.text(vv, i, f" ${vv:.0f}m", va="center", fontsize=10)
+    ax.set_xlim(0, pc[col].max() * 1.22)
+    ax.set_title(ttl, fontsize=10.5)
+    ax.set_xlabel("$ million, 2015 loans")
+    ax.grid(axis="y", visible=False)
+axes[0].invert_yaxis()
+finish(fig, "A good PD cutoff is enough: the optimiser adds nothing",
+       "Without funding cost, 'approve everyone' looks best. With it, the MILP (86% approved) ≈ the simple champion cutoff (82%).",
+       "fig8_policy_cutoff_vs_milp.png")
