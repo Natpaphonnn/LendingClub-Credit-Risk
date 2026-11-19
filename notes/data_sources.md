@@ -40,11 +40,27 @@ The dataset also contains uncompressed copies (`accepted_2007_to_2018q4.csv/…`
 |---|---|---|
 | https://zenodo.org/records/11295916 (doi:10.5281/zenodo.11295916) | CC BY 4.0 | Not needed so far. Cite it if it is ever used. |
 
-## 4. Planned external data (not yet downloaded)
+## 4. External data — BLS LAUS state unemployment (used in Phase 2 B)
 
-| Dataset | Source | License | Use |
-|---|---|---|---|
-| State & national unemployment rate (LAUS / UNRATE) | BLS via FRED | US public domain (BLS); FRED series terms to be checked when downloaded | Item B (macro-linked PD / stress test) |
+| Field | Value |
+|---|---|
+| Dataset | Local Area Unemployment Statistics (LAUS), state unemployment rate, monthly, **seasonally adjusted** |
+| Publisher | U.S. Bureau of Labor Statistics |
+| Series | `LASST{FIPS}0000000000003` × 51 (50 states + DC), 2007-01 → 2018-12 (144 months each, 7,344 rows) |
+| Access | BLS Public Data API v1 (no key), `src/phase2/fetch_bls.py`, 6 requests on 2026-11-19 ~15:00 UTC |
+| License | **Public domain** — BLS copyright page (https://www.bls.gov/opub/copyright-information.htm): "everything that we publish … is in the public domain"; BLS asks to be cited → credit line: "Unemployment data: U.S. Bureau of Labor Statistics, LAUS" |
+| Files | data/raw/macro/bls_laus_b{0,1,2}_{2007_2016,2017_2018}.json (raw API responses); tidy: data/interim/state_unemployment.parquet |
+| Note | FRED (`{ST}UR`, the same BLS data) was tried first; fredgraph.csv timed out for scripted requests → used BLS directly (primary source). Values are the **current revised** LAUS series, not the real-time vintages a lender would have seen in 2015–16 (limitation) |
+
+sha256 of raw responses:
+```
+17e444ebe1c560ff643e1f1e13e0fd51a092e1536b1fe63a39e412f60774a3fb  bls_laus_b0_2007_2016.json
+5a19d91de5037db2be983d3a103992fe92c8088365df56d86492ada0eb0639f5  bls_laus_b0_2017_2018.json
+6e0dd408ba3cf4ef54caf0ba30be3e2f5724bc1308fce3b807e3bf630f097ee2  bls_laus_b1_2007_2016.json
+ea94ebc9c235f555b2920cfef141f8df20be5c0b66499c940f50a2c089b9266f  bls_laus_b1_2017_2018.json
+1b19c85a7a094e7127bb8c6cd0a7e742a6548c760e93d176baee81a11dab93ec  bls_laus_b2_2007_2016.json
+cd034186345fda83e4cf6c9d657ed15effbfc8bd5da7c7f7a2df50f3b2a1a71b  bls_laus_b2_2017_2018.json
+```
 
 ## Derived local files (git-ignored, not for upload)
 
