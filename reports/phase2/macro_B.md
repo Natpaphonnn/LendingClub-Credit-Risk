@@ -4,7 +4,7 @@
 
 | rule | statistic | threshold | result |
 |---|---|---|---|
-| (a) sign + significance | θ = γ_u + γ_Δ12u (default) = -0.0379, 95% block-bootstrap CI [-0.0884, -0.0051] | θ > 0 and CI > 0 | FAIL |
+| (a) sign + significance | θ = γ_u + γ_Δ12u (default) = -0.0379, 95% block-bootstrap CI [-0.0935, -0.0045] | θ > 0 and CI > 0 | FAIL |
 | (b) OOT value | cell error macro 2.121 pp vs score-only 2.909 pp (-27.1%); log loss 0.39246 vs 0.39415 | ≤ −10% and log loss not worse | PASS |
 | (c) stress size | adverse/baseline lifetime PD multiplier = 0.911 (mean PD 12.55% → 11.43%) | 1.1 – 3.0 | FAIL |
 
@@ -12,12 +12,13 @@
 
 Hessian standard errors are not shown: the fit uses a weighted non-event subsample and ignores clustering, so they are not valid for
 inference (independent review MA-3). The bootstrap keeps the 25% subsample fixed (as pre-registered); θ also moved from −0.0185 to −0.0379
-when the frozen M2 score was re-fit in the deterministic re-run (same rule outcome: FAIL), so treat the CI's exact position as fragile.
+when the frozen M2 score was re-fit in the deterministic re-run (same rule outcome: FAIL). Since E3 (notes/08_prereg_extensions.md) every
+bootstrap replicate redraws the 25% non-event subsample from the full panel before resampling issue quarters.
 
 | fit | loans | issue quarters | γ_u default | γ_Δ12u default | θ default | γ_u prepay | γ_Δ12u prepay |
 |---|---:|---:|---|---|---|---|---|
-| primary 2009-2014 | 333,745 | 24 | -0.0619 | 0.0240 | **-0.0379 [-0.0884, -0.0051]** | -0.0452 | -0.0369 |
-| sensitivity 2012-09..2014 | 283,253 | 10 | -0.0055 | 0.0342 | **0.0287 [-0.0139, 0.0568]** | -0.0454 | -0.0370 |
+| primary 2009-2014 | 333,745 | 24 | -0.0619 | 0.0240 | **-0.0379 [-0.0935, -0.0045]** | -0.0452 | -0.0369 |
+| sensitivity 2012-09..2014 | 283,253 | 10 | -0.0055 | 0.0342 | **0.0287 [-0.0116, 0.0609]** | -0.0454 | -0.0370 |
 
 (sensitivity row = pre-registered robustness, not part of the rule)
 

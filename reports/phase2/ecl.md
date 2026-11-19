@@ -31,24 +31,21 @@ LGD by M2-PD quintile band (1 = safest; train cut points), sensitivity only: B1 
 |      4 |   56478 |     674.809 |               15.412 |             17.745 |                51.226 |             63.15  |                  1.233 |             21.282 |            44.291 |
 |      5 |   66925 |     788.802 |               28.261 |             26.621 |               118.217 |            118.291 |                  1.001 |             53.716 |           100.488 |
 
-## Allowance at reporting date 2015-12-31 (stage logic stated plainly)
+## Allowance at reporting date 2015-12-31 — EX-POST ILLUSTRATION (monthly DPD is not in the data)
 
-| stage                                                                 |   loans |   gross EAD $m |   allowance $m |   coverage % |
-|:----------------------------------------------------------------------|--------:|---------------:|---------------:|-------------:|
-| Stage 1 (performing; 12-month ECL)                                    |  263610 |       2992.31  |        112.293 |         3.75 |
-| Stage 2 (SICR) — NOT allocable: no monthly DPD / refreshed PD in data |       0 |          0     |          0     |       nan    |
-| memo: if ALL performing were Stage 2 (lifetime ECL) — upper bound     |  263610 |       2992.31  |        174.963 |         5.85 |
-| Stage 3 (defaulted by Dec-2015; LGD × EAD)                            |    3871 |         42.141 |         37.426 |        88.81 |
-| derecognised (prepaid by Dec-2015)                                    |   15453 |          0     |          0     |       nan    |
+| stage                                                                    |   loans |   gross EAD $m |   allowance $m |   coverage % |
+|:-------------------------------------------------------------------------|--------:|---------------:|---------------:|-------------:|
+| Stage 1 (performing, no missed instalment visible; 12-month ECL)         |  263610 |       2992.31  |        112.293 |         3.75 |
+| Stage 2 (1–2 missed instalments ≈ ≥ 30 DPD, ex-post proxy; lifetime ECL) |    1571 |         17.089 |          1.537 |         9    |
+| Stage 3 (≥ 3 missed instalments ≈ 90 DPD; LGD × EAD at default)          |    2300 |         25.053 |         22.25  |        88.81 |
+| derecognised (prepaid by the report month)                               |   15453 |          0     |          0     |       nan    |
 
-- Stage 1 = performing at Dec-2015 → 12-month ECL from remaining life (hazards conditional on survival to Dec-2015).
-- Stage 2 needs a significant-increase-in-credit-risk test (30 DPD backstop or a refreshed lifetime PD vs origination). LC data has
-  no monthly delinquency history and no refreshed scores, so stage 2 **cannot be allocated**; the memo row shows the lifetime-ECL upper bound.
-- Stage 3 = default month (last payment + 1) ≤ Dec-2015 → allowance = LGD × scheduled EAD at that point (simplification).
-- **EX-POST / HINDSIGHT (independent review MA-5):** stage 3 membership uses the *final* status (the loan later charged off). At the
-  reporting date 1,571 of the 3,871 stage-3 loans had fewer than 3 missed payments (< 90 DPD), so a real bank would
-  not yet have classed them as credit-impaired; the same last-payment proxy could flag ≥ 30 DPD for stage 2, which this table does not do.
-  Treat this table as an illustration of the stage mechanics, not as an allowance a lender could have booked at Dec-2015.
+- Stage definitions (notes/08_prereg_extensions.md §E4): m = instalments due by Dec-2015 and not paid, visible **only for loans that ultimately
+  charged off** (delinquent loans that later cured are invisible → stage 2 is understated). Approximation: 1 missed instalment ≈ 30 DPD, 3 ≈ 90 DPD.
+- Stage 1 → 12-month ECL; stage 2 → lifetime ECL; both from hazards conditional on survival (not conditioned on delinquency → stage 2 allowance
+  understated). Stage 3 → LGD × outstanding principal at the first missed payment.
+- This uses the final status (hindsight); it illustrates stage mechanics and is not an allowance a lender could have booked at Dec-2015.
+  A refit-at-reporting-date version is in reports/phase2/ecl_benchmark.md.
 
 ## Macro scenarios
 

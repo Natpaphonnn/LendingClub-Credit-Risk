@@ -25,37 +25,32 @@
  },
  "staging": {
   "stage": [
-   "Stage 1 (performing; 12-month ECL)",
-   "Stage 2 (SICR) \u2014 NOT allocable: no monthly DPD / refreshed PD in data",
-   "  memo: if ALL performing were Stage 2 (lifetime ECL) \u2014 upper bound",
-   "Stage 3 (defaulted by Dec-2015; LGD \u00d7 EAD)",
-   "derecognised (prepaid by Dec-2015)"
+   "Stage 1 (performing, no missed instalment visible; 12-month ECL)",
+   "Stage 2 (1\u20132 missed instalments \u2248 \u2265 30 DPD, ex-post proxy; lifetime ECL)",
+   "Stage 3 (\u2265 3 missed instalments \u2248 90 DPD; LGD \u00d7 EAD at default)",
+   "derecognised (prepaid by the report month)"
   ],
   "loans": [
    263610,
-   0,
-   263610,
-   3871,
+   1571,
+   2300,
    15453
   ],
   "gross EAD $m": [
    2992.3097835644694,
-   0.0,
-   2992.3097835644694,
-   42.141490066791796,
+   17.08876882463447,
+   25.052721242157332,
    0.0
   ],
   "allowance $m": [
    112.29262845222878,
-   0.0,
-   174.9626564020501,
-   37.42634639412752,
+   1.5371653877612916,
+   22.249612480204306,
    0.0
   ],
   "coverage %": [
    3.75,
-   NaN,
-   5.85,
+   9.0,
    88.81,
    NaN
   ]

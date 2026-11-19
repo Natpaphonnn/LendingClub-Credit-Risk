@@ -16,7 +16,7 @@ for s in build_loans fit_A rule_B ecl policy_C mob6_test; do nice -n 19 .venv/bi
 1. **A ใช้ได้:** competing-risks hazard (default vs prepayment, Current = censored) fit บน 2012-09–2013-12 ให้ A/E ≈ 1.00 ใน train
    และ 0.98–1.02 บน validation 2014 แต่ under-predict ตาม drift ที่เห็นใน Phase 1: OOT 2015 A/E 1.07–1.11, 2016 1.26–1.39, 2017 1.44 (MOB 12).
    ถ้าไม่สน prepayment, lifetime PD จะ over-state จาก 13.6% → 18.2% (+34% relative)
-2. **B ไม่ผ่าน Plan B rule → เปลี่ยนเป็น A + C** (ตามกฎที่เขียนไว้ก่อน Phase 1): (a) FAIL — θ ไม่เป็นบวก: −0.038 [−0.088, −0.005] (ก่อน deterministic re-run: −0.019 [−0.063, 0.011] — ตำแหน่ง CI เปราะ);
+2. **B ไม่ผ่าน Plan B rule → เปลี่ยนเป็น A + C** (ตามกฎที่เขียนไว้ก่อน Phase 1): (a) FAIL — θ ไม่เป็นบวก: −0.038 [−0.094, −0.004] (E3: subsample สุ่มใหม่ทุก replicate; ก่อน deterministic re-run: −0.019 [−0.063, 0.011] — ตำแหน่ง CI เปราะ);
    (b) PASS แบบ "ถูกด้วยเหตุผลผิด"; (c) FAIL — adverse/baseline = 0.91 (adverse ทำให้ PD **ลดลง**) → macro signal ถูก confound กับ drift ของ LC
 3. **ECL (score-only, ไม่มี forward-looking overlay):** 2015 portfolio funded $3.62bn → day-1 12m ECL $101m (2.8%), lifetime ECL $203m (5.6%).
    Backtest (ไม่ใช่ provision ที่ book จริง): realised net loss **$274m vs predicted lifetime EL $235m (realised = 1.17× predicted; พลาด 14% ของ realised)**
@@ -55,7 +55,7 @@ Data: BLS LAUS state unemployment (SA), 51 series, 2007–2018, ผ่าน BLS
 
 | rule | statistic | threshold | result |
 |---|---|---|---|
-| (a) sign + significance | θ = γ_u + γ_Δ12u (default) = **−0.0379**, 95% block-bootstrap CI (24 issue quarters, B=200) [−0.0884, −0.0051] | θ > 0, CI > 0 | **FAIL** |
+| (a) sign + significance | θ = γ_u + γ_Δ12u (default) = **−0.0379**, 95% block-bootstrap CI (24 issue quarters, B=200, subsample redrawn per replicate — E3) [−0.0935, −0.0045] | θ > 0, CI > 0 | **FAIL** |
 | (b) OOT value | cell error 2.12 pp (macro) vs 2.91 pp (score-only) = −27.1%; log loss 0.39246 vs 0.39415 | ≤ −10%, log loss ไม่แย่ลง | PASS |
 | (c) stress size | adverse/baseline lifetime PD = **0.911** (12.55% → 11.43%) | 1.1–3.0 | **FAIL** |
 
@@ -92,11 +92,13 @@ Backtest by quarter: ×1.09 (2015Q1), ×1.18, ×1.15, ×1.22 (2015Q4). By risk b
 **Allowance ณ 2015-12-31 (stage logic):**
 | stage | loans | gross EAD | allowance | coverage |
 |---|---:|---:|---:|---:|
-| Stage 1 (performing, 12m ECL) | 263,610 | $2,992.3m | $112.3m | 3.75% |
-| Stage 2 (SICR) | **ไม่สามารถ allocate ได้** — ไม่มี monthly DPD / refreshed PD | – | – | – |
-| memo: ถ้า performing ทั้งหมดเป็น Stage 2 (upper bound) | 263,610 | $2,992.3m | $175.0m | 5.85% |
-| Stage 3 (first missed payment due ≤ Dec-2015; LGD × EAD at default) — **ใช้ hindsight**: 1,571 loans ยัง < 90 DPD ณ reporting date | 3,871 | $42.1m | $37.4m | 88.8% |
+| Stage 1 (no missed instalment visible; 12m ECL) | 263,610 | $2,992.3m | $112.3m | 3.75% |
+| Stage 2 (1–2 missed instalments ≈ ≥ 30 DPD, ex-post proxy; lifetime ECL) — E4 | 1,571 | $17.1m | $1.5m | 9.0% |
+| Stage 3 (≥ 3 missed instalments ≈ 90 DPD; LGD × EAD at default) — E4 | 2,300 | $25.1m | $22.3m | 88.8% |
 | derecognised (prepaid ≤ Dec-2015) | 15,453 | – | – | – |
+
+**Ex-post illustration** (E4, notes/08_prereg_extensions.md): monthly DPD ไม่มีในข้อมูล; missed instalments เห็นได้เฉพาะ loans ที่สุดท้าย charge off
+(delinquency ที่ cure ภายหลังมองไม่เห็น → stage 2 understated). Version ที่ refit ณ 2015-12-31 + discounted LGD: notes/10_extensions_results.md
 
 ## C — Profit-optimal policy (prereg §C; ทำเพราะ B fail) — `reports/phase2/policy_C.md`, `p2_C_policy.png`
 
@@ -144,7 +146,7 @@ Thresholds (>1.10 amber, >1.25 red) registered ใน commit 1203ada — หล�
 - **Macro (B) ล้มเหลว** — unemployment อธิบาย drift ของ LC ไม่ได้ (ทิศผิด); ECL จึงไม่มี forward-looking component
 - **Lifetime EL ต่ำกว่า realised loss (realised = 1.17×)** สำหรับ 2015 vintage (ratio 1.36–1.52 ใน band ที่ปลอดภัย) — model ที่ calibrate บน 2012–13 ไม่รู้เรื่อง drift
 - **C แพ้ approve-all บน metric ที่ pre-register** — เพราะ metric (undiscounted) ไม่เหมาะ; exploratory metric ที่ถูกกว่าบอกว่า C ≈ PD cutoff ธรรมดา
-- **Stage 2 ทำไม่ได้** (ไม่มี behavioural data); stage 3 ใช้ default month แบบ ex-post
+- **Staging เป็น ex-post illustration เท่านั้น** (E4): monthly DPD ไม่มี; stage 2/3 ใช้ missed instalments จาก final status (hindsight)
 - MOB-6: specificity ทดสอบไม่ได้
 - Event timing จาก last_pymnt_d (approximation); defaults ที่ last payment หลัง MOB 35 ถูก censor ที่ 36 (หายาก)
 
@@ -156,6 +158,8 @@ Thresholds (>1.10 amber, >1.25 red) registered ใน commit 1203ada — หล�
    lifetime PD 13.4% → 13.6%; decisions ไม่เปลี่ยน. ตัวเลขทั้งหมดในเอกสารนี้เป็นของ run ใหม่
 5. **MOB-6 relabel** (review CR-1) — ไม่ใช่ confirmatory test; ข้อเสนอ test ใหม่อยู่ใน notes/06_quality_report.md (รอ Nat ตัดสิน)
 6. **Staging/ECL caveats** (review MA-5, MA-6) — ระบุ hindsight ของ stage 3 และการไม่ refit; การแก้จริงต้องเปลี่ยน spec → รอ Nat
+8. **E3–E5 (Nat decisions, pre-registered 4562602):** bootstrap ของ rule (a) สุ่ม subsample ใหม่ทุก replicate (CI [−0.0935, −0.0045], ยัง FAIL);
+   staging เปลี่ยนเป็นนิยาม E4; ECL benchmark อยู่ใน notes/10_extensions_results.md
 7. **Bug fix (off-by-one) ใน staging ณ 2015-12-31:** code เดิมนับ payments due เกิน 1 เดือน → stage 3 รวม loans ที่ first missed payment
    due Jan-2016 (ขัดกับ prereg "≤ Dec-2015"). แก้ให้ตรง prereg: stage 3 4,828 → 3,871 loans, stage 1 allowance $112.1m → $112.3m (3.91% → 3.75%);
    day-1 ECL และ backtest ไม่กระทบ (tests/test_riskutils.py::test_stage3_requires_first_missed_payment_due_by_report)

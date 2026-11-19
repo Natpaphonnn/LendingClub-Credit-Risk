@@ -35,6 +35,12 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 - ทำงานให้ถูกต้องระดับ bank-grade **ก่อน** write-up / demo: reproducibility → correctness audit + tests → independent review → แก้ critical/major
   (ห้ามเปลี่ยน spec หลังเห็นผล — อะไรที่จะเป็น spec change ให้ log เป็น deviation และรายงาน Nat)
 
+## Decisions (Nat, 2026-11-19, final — on the 7 review items)
+1. YES confirmatory MOB-6 test on never-computed data (60m), pre-registered and pushed first · 2. YES as-of model (12-month bad) reported next to the reference ·
+3. NO champion change; report the grid sensitivity · 4. YES redraw the subsample in every bootstrap replicate; re-apply the Plan B rule ·
+5. YES staging illustration (stage 3 ≥ 3 missed, stage 2 ≈ 30 DPD proxy) · 6. YES ECL benchmark (refit, discounted LGD, 90-DPD) ·
+7. YES private repo, push every pre-registration before its run. Then: rerun from raw → 10-reviewer gate → package → demo → article
+
 ## Done — Phase 0 (data audit) ✅
 - Data, sha256, license → notes/data_sources.md; findings → notes/01_data_audit.md; code src/audit/; local git (no remote)
 
@@ -49,11 +55,11 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 ## Done — Phase 2 (A + Plan B → A + C, ECL) ✅ — notes/03_phase2_results.md
 - A: competing-risks lifetime PD — A/E 1.01 train, 0.98–1.02 (2014), 1.07–1.11 (2015), 1.26–1.39 (2016), 1.44 (2017);
   censor prepayment แทน → lifetime PD 18.2% vs 13.6%
-- B FAIL → A + C: (a) θ −0.038 [−0.088, −0.005] (ไม่เป็นบวก; run ก่อนหน้า −0.019 [−0.063, 0.011]), (b) PASS แบบหลอก (−27.1%), (c) 0.91
+- B FAIL → A + C: (a) θ −0.038 [−0.094, −0.004] (ไม่เป็นบวก; E3 bootstrap; run ก่อนหน้า −0.019 [−0.063, 0.011]), (b) PASS แบบหลอก (−27.1%), (c) 0.91
 - ECL 2015 (score-only, LGD 88.8%): day-1 12m $100.7m (2.8%), lifetime $202.7m (5.6%); backtest realised $273.8m = 1.17× predicted EL $234.9m;
-  overlay MOB-12 ปิด gap 54% (illustrative). Staging: ex-post เท่านั้น (stage 3 3,871 loans, 1,571 ยัง < 90 DPD)
+  overlay MOB-12 ปิด gap 54% (illustrative). Staging (E4, ex-post): stage 2 1,571 loans, stage 3 2,300 loans
 - C: บน metric ที่ pre-register (ผิด — ไม่มี cost of funds) approve-all ชนะ; exploratory NPV@5%: PD cutoff $47.4m ≈ MILP $45.6m
-- MOB-6 A/E: **descriptive/exploratory เท่านั้น** (relabel หลัง review CR-1)
+- MOB-6 A/E (36m): descriptive เท่านั้น; confirmatory test บน 60m = FAIL (E1)
 
 ## Done — Phase 3 prep ✅ — notes/04_story.md, notes/05_claims_and_limitations.md, reports/figures/article/fig1–8
 
@@ -62,14 +68,15 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 - Tests 48/48 pass; claim re-check all PASS; note-number provenance (02–05 + STATUS + README) traced; leakage & split proof
 - Independent review: 1 critical + 10 major — แก้ที่ไม่ต้องเปลี่ยน spec แล้ว; ที่ต้องเปลี่ยน spec รอ Nat (ด้านล่าง)
 
-## Next step
-- รอ Nat ตัดสิน deviations ที่ต้องเปลี่ยน spec (ด้านล่าง) → แล้วค่อย Phase 3 write-up / demo / private repo
+## Done — Extensions E1–E5 ✅ — notes/10_extensions_results.md (pre-registered: notes/08_prereg_extensions.md, commit 4562602, pushed first)
+- E1 MOB-6 confirmatory test (60m): **FAIL** — sensitivity 9/9, specificity 4/6 (67% < 80%)
+- E2 as-of model: OOT Gini 33.1 (−3.65 vs reference); realistic first amber Jun 2017, red Sep 2017; PSI never alarmed
+- E3 macro bootstrap fix: θ −0.038 [−0.094, −0.004] → B still fails → A + C
+- E4 staging illustration: stage 2 1,571 loans, stage 3 2,300 loans (ex-post)
+- E5 ECL benchmark: refit at 2014-12 → realised = 1.10× predicted (vs 1.17×); discounted LGD 90.4%; 90-DPD 12m ECL $80m
 
-## Open questions for Nat (spec changes proposed by the review — NOT done)
-1. **MOB-6 confirmatory test (CR-1):** pre-register ใหม่บนข้อมูลที่ยังไม่เคยคำนวณ A/E6 (เช่น 60-month loans หรือ expectation ที่ re-reference) — ทำไหม?
-2. **As-of rebuild (MA-1):** model ที่ใช้ bad window 12 เดือน / hazard ที่ censor ณ 2014-12 เพื่อให้ timeline จริง — หรือคง reframing ("deployed from 2015")?
-3. **Tie-break rule สำหรับ LightGBM grid (MA-2):** เช่น simplest config ภายใน 1e-3 log loss — ใช้ไหม (จะเปลี่ยน champion config)?
-4. **Macro bootstrap (MA-3):** สุ่ม subsample ใหม่ในทุก bootstrap replicate — re-run rule (a) ไหม? (verdict FAIL ไม่น่าเปลี่ยน)
-5. **Staging (MA-5):** stage 3 = ≥ 3 missed payments, stage 2 = ex-post 30 DPD proxy — ทำไหม หรือคงเป็น illustration?
-6. **ECL benchmark (MA-6):** refit A ณ 2014-12 / 2015-12, discounted LGD, 90-DPD default sensitivity — ทำไหม?
-7. **Pre-registration evidence (MA-10):** push pre-reg commits ไป private remote (หรือ timestamp ภายนอก) ก่อนรันครั้งถัดไป — ต้องให้ Nat สร้าง repo
+## Repo
+- Private: https://github.com/Natpaphonnn/LendingClub-Credit-Risk (no data files tracked)
+
+## Next step
+- Rerun from raw (byte-identical) → 10-reviewer gate (notes/09_gate_rubric.md) → package → demo → article draft (notes/07_article_draft.md)

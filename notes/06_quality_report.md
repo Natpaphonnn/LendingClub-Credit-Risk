@@ -152,3 +152,21 @@ population; default timing from last payment date; i.i.d. bootstrap; A/E thresho
 ## Files
 `scripts/run_all.sh` · `requirements.lock.txt` · `src/lib/riskutils.py` · `tests/` · `src/quality/{check_claims,check_note_numbers,leakage_split_proof,grid_sensitivity}.py` ·
 `reports/quality/{claims_check,note_numbers_check,leakage_split_proof,grid_sensitivity}.md`, `runtime_run{1,2,3}.log`, `runtime_final.log`
+
+## Addendum — deferred items resolved (Nat's final decisions, 2026-11-19)
+All 7 spec-changing items were decided by Nat and pre-registered in `notes/08_prereg_extensions.md` (commit 4562602, pushed to the private remote
+before computing). Results: `notes/10_extensions_results.md`.
+| item | decision | result |
+|---|---|---|
+| CR-1 MOB-6 confirmatory test | 60-month loans, never computed | **FAIL** — sensitivity 9/9, specificity 4/6 (67% < 80%) |
+| MA-1 as-of model | 12-month bad, data to 2014-06, reported next to the reference | OOT Gini 33.1 (−3.65); realistic first alarm Jun 2017 |
+| MA-2 tie-break | no champion change | grid sensitivity reported (36.5–36.9) |
+| MA-3 macro bootstrap | subsample redrawn per replicate (correctness fix) | θ −0.038 [−0.094, −0.004] → B still FAIL |
+| MA-5 staging | illustration: stage 3 ≥ 3 missed, stage 2 1–2 missed (≈ 30 DPD proxy) | stage 2 1,571, stage 3 2,300 loans |
+| MA-6 ECL benchmark | refit at reporting date, discounted LGD, 90-DPD sensitivity | refit → 1.10× (vs 1.17×); LGD 90.4%; 90-DPD 12m ECL $80m |
+| MA-10 pre-registration evidence | private remote; pre-registrations pushed before runs | https://github.com/Natpaphonnn/LendingClub-Credit-Risk (private) |
+
+## Re-run after extensions (2026-11-20)
+Two fresh runs from `data/raw` with the final code (incl. E1–E5): **byte-identical** (`reports/quality/runtime_runA.log`, `runtime_runB.log`;
+522–523 s each, rule B bootstrap now redraws the subsample per replicate). Tests **51/51**; claim re-check **36/36** (one doc rounding fixed:
+θ CI upper bound −0.00448 → "−0.004", not "−0.005"); note-number provenance 1,301/1,301 traced. `requirements.lock.txt` regenerated (adds pytest).

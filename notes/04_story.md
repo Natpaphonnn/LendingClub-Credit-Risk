@@ -8,12 +8,12 @@
 
 **Timeline caveat (state it up front in the article).** The model is trained on the *full* 36-month outcomes of loans issued
 Sep 2012 – Dec 2013. In reality those outcomes were only complete around 2017, so no lender could have had this exact model in 2015.
-We treat it as a model "deployed from 2015" and date every alarm relative to that counterfactual deployment. An as-of rebuild (short
-bad window) is proposed as future work, not done. *(05 limitations; 06_quality_report.md MA-1)*
+We therefore report two models: the **reference** model (full labels; alarms dated relative to a counterfactual 2015 deployment) and an
+**as-of** model built only from what a lender knew on 31 Dec 2014 (12-month bad window, outcomes to Jun 2014). *(notes/10_extensions_results.md E2)*
 
 **One-line answer:** It kept ranking borrowers well (and beat LendingClub's own grades), but actual defaults drifted up to 47% above
 what it expected; the standard stability alarm never fired, label-based checks fired 12–18 months after the first worse loans were
-issued, macro data could not explain it, and the lifetime expected loss came in below the loss actually realised (realised = 1.17× predicted).
+issued (about two years with the realistic as-of model), macro data could not explain it, and the lifetime expected loss came in below the loss actually realised (realised = 1.17× predicted).
 
 **How the work was done (one paragraph in the article):** time-based splits only; model comparisons and decision rules were written
 down and committed to git before fitting (Phase 1: commit 652b889; Phase 2: commit 1203ada — local commits only, so the order is
@@ -39,7 +39,8 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
 - Trained on 36-month loans issued Sep 2012 – Dec 2013 (120,683), tuned on 2014, tested on 2015 (282,787), application data only.
 - **Out-of-time Gini: monotone LightGBM 36.8 [36.3, 37.3] vs WoE scorecard 33.7 [33.1, 34.2] vs LC sub-grade 35.7 [35.2, 36.3].**
   Paired ΔGini (LightGBM − scorecard) **+3.1 [2.8, 3.4]**, above the pre-registered bar of +2.0 with CI > 0 → LightGBM is champion.
-  Against LC's sub-grade (descriptive benchmark, not pre-registered): **++1.05 [0.56, 1.48]**. Every one of the 12 grid configs beats the scorecard by ≥ 2.8.
+  Against LC's sub-grade (descriptive benchmark, not pre-registered): **++1.05 [0.56, 1.48]**. Every one of the 12 grid configs beats the scorecard by ≥ 2.8. The realistic as-of model (12-month bad, data to Jun 2014) scores
+  **33.1 [32.6, 33.7]** — 3.65 below the reference: part of the reference's edge is labels a 2014 lender could not have had. *(10_extensions_results.md E2)*
   *(notes/02_phase1_results.md §4; reports/phase1/evaluation.md; reports/quality/grid_sensitivity.md)*
 - Business translation: at the same 11% bad-rate target set on 2014, the champion approves **82.1% vs 77.4%** (+4.7 pp). *(02_phase1_results.md §5)*
 - Both models are shown side by side: the scorecard (14 characteristics, PDO 20) is the explainable one; reason codes for declines
@@ -63,8 +64,10 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
 - Relative to a 2015 deployment (see timeline caveat): the first worse vintage was issued Apr–Jun 2015; the first pre-registered
   label-based alarm (month-12 A/E amber) could only be known in **Dec 2016**; red in Sep 2017 for the champion (Jun 2017 for the scorecard).
   Meanwhile **~545k loans** (36-month, 2015Q2–2016Q4) were booked. A/E thresholds are conventions without statistical bounds. *(02_phase1_results.md §7)*
+- With the **as-of model** a lender really could have had in Jan 2015 (PD12 well calibrated at first, A/E 1.01 for 2015Q1), the first amber is for
+  2015Q4 vintages, knowable **Jun 2017**; red for 2016Q1, knowable **Sep 2017**; its PSI never left green (max 0.079). *(reports/phase4/asof_model.md)*
 
-## 5. A possibly earlier signal: defaults by month 6 (exploratory only)
+## 5. An earlier signal? Defaults by month 6 — sensitive, but failed the confirmatory test
 *Figure 4 (green line)*
 - Found exploratorily: the month-6 A/E would have gone amber for 2015Q2 by **Jun 2016**, 6 months before the month-12 alarm.
   *(reports/phase1/exploratory_early_signal.md)*
@@ -74,6 +77,9 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
   thresholds were registered, every quarter was deteriorated (so any always-on alarm would also "catch" them all), and the 6-month lead is
   true by construction. The signal level also depends on how "expected" is built (0.91–1.09 for 2015 under the lifetime model). A genuine
   test needs a new pre-registration on unseen data. *(mob6_test.md; 06_quality_report.md CR-1, MA-7)*
+- **That test was then run** (pre-registered and pushed to the remote before computing): on 60-month loans, never analysed before, the month-6
+  signal caught **9/9** deteriorated quarters but raised **2 false alarms in 6** (specificity 67% < 80%) → **FAIL** by the pre-registered criterion.
+  The false alarms were quarters at 1.13–1.14× the reference default rate, just under the 1.2× truth line. *(reports/phase4/mob6_60m_test.md)*
 
 ## 6. Lifetime PD needs prepayment as a competing risk
 *Figure 6 — `fig6_prepayment_competing_risk.png`*
@@ -88,8 +94,8 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
 *(table in article; reports/phase2/macro_B.md)*
 - Rule written before Phase 1, before any macro data: macro goes in only if (a) the unemployment effect is positive with CI > 0, (b) it cuts
   out-of-time calibration error ≥ 10%, and (c) a 2008–09 stress gives a 1.1×–3× PD multiplier.
-- Result with BLS state unemployment: **(a) FAIL** — θ is not positive (−0.038 [−0.088, −0.005] in the final run; −0.019 [−0.063, 0.011]
-  before the deterministic re-run, so the CI's exact position is fragile); **(b) PASS** (−27.1%); **(c) FAIL** multiplier **0.91** —
+- Result with BLS state unemployment: **(a) FAIL** — θ is not positive (−0.038 [−0.094, −0.004] with the subsample redrawn in every bootstrap replicate;
+  −0.019 [−0.063, 0.011] before the deterministic re-run, so the CI's exact position is fragile); **(b) PASS** (−27.1%); **(c) FAIL** multiplier **0.91** —
   the "adverse" scenario *lowered* PD.
 - The (b) pass is spurious: unemployment fell 2009–2014 while LendingClub's defaults rose, so the model learned "lower unemployment = more
   default" (level coefficient −0.062). Requiring all three tests blocked it → Plan B (survival + profit policy). *(03_phase2_results.md §B)*
@@ -101,12 +107,14 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
 - Backtest (not a booked provision): undiscounted lifetime expected loss at origination **$235m vs realised net loss $274m (realised = 1.17×
   predicted; the model missed 14% of realised loss)**; the ratio is highest in the safest band (×1.52), while the largest dollar gaps sit in the
   middle bands. *(reports/phase2/ecl.md)*
-- The gap mixes two things: the drift, and the fact that the PD was never re-fitted or recalibrated at the reporting date (a bank would). A
-  refit benchmark is proposed, not done. *(06_quality_report.md MA-6)*
+- The gap mixes two things: the drift, and the fact that the PD was not re-fitted at the reporting date. **Refitting at 31 Dec 2014** (outcomes to
+  Jun 2014) raises predicted lifetime loss to $249m and moves the ratio to **1.10×** — about a third of the gap was missing recalibration.
+  Discounting recoveries at the loan rate raises LGD from 88.8% to 90.4%; a 90-DPD default definition lowers 12-month ECL ($80m vs $102m) but
+  barely changes lifetime loss (1.17×). *(reports/phase2/ecl_benchmark.md; 10_extensions_results.md E5)*
 - Illustrative, in-sample overlay (scale expected loss by observed A/E): **month-12 overlay closes 54%** of the gap ($256m), knowable
   Sep 2016 – Jun 2017; the month-6 version closes only 6%. *(reports/phase2/overlay.md)*
-- Staging is shown only as mechanics: Stage 2 is not allocated (no delinquency history) and the Stage 3 count uses hindsight
-  (1,571 of the 3,871 "Stage 3" loans had < 90 DPD at Dec-2015). *(ecl.md)*
+- Staging is shown only as an **ex-post illustration** (monthly DPD is not in the data): at Dec-2015, 1,571 loans with 1–2 missed instalments
+  (≈ ≥ 30 DPD) go to Stage 2 and 2,300 with ≥ 3 (≈ 90 DPD) to Stage 3; delinquencies that later cured are invisible. *(ecl.md; 10 E4)*
 
 ## 9. A good PD cutoff is enough
 *Figure 8 — `fig8_policy_cutoff_vs_milp.png`*

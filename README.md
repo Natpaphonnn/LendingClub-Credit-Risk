@@ -2,35 +2,59 @@
 
 **A credit model built on 2012–13 loans and used from 2015: did it survive — and would you have noticed in time?**
 
-Application scorecard vs monotone LightGBM, monitoring (PSI/CSI, KS, actual/expected by vintage), vintage analysis, competing-risks
-lifetime PD, a pre-registered macro test, a TFRS 9-style ECL backtest and a profit-based approval policy — on public LendingClub data
-(36-month loans, 2012–2018), with time-based splits, leakage controls and pre-registered decision rules.
+A bank-style credit-risk project on public LendingClub data (36-month loans, 2012–2018): WoE scorecard vs monotone LightGBM, monitoring
+(PSI/CSI, KS, actual/expected by vintage), vintage analysis, competing-risks lifetime PD, a pre-registered macro test, a TFRS 9-style ECL
+backtest with a refit benchmark, and a profit-based approval policy. Time-based splits, leakage controls, pre-registered decision rules
+(pushed before each confirmatory run), byte-identical reproducibility and an independent review gate.
 
-Headline results (details and status of each claim: `notes/05_claims_and_limitations.md`):
-- Out-of-time Gini (2015): monotone LightGBM 36.8, WoE scorecard 33.7, LendingClub sub-grade 35.7.
-- Ranking held, calibration drifted: actual/expected defaults by month 12 rose to 1.47; population stability (PSI) never alarmed.
+## Headline results (status of every claim: `notes/05_claims_and_limitations.md`)
+- Out-of-time Gini (2015): monotone LightGBM **36.8**, WoE scorecard 33.7, LendingClub sub-grade 35.7. A realistic **as-of** model that only uses
+  information available on 31 Dec 2014 (12-month bad window) scores 33.1.
+- Ranking held, calibration drifted: actual/expected defaults by month 12 rose to 1.47; population stability (PSI) never alarmed. With the as-of
+  model the first alarm would have been knowable in **Jun 2017**, about two years after the first worse vintage.
+- A month-6 early-warning signal was sensitive (9/9) but **failed** its pre-registered confirmatory test on 60-month loans (specificity 67% < 80%).
 - Treating prepayment as censoring overstates lifetime PD by about a third (18.2% vs 13.6%).
-- State unemployment failed the pre-registered macro rule (the "adverse" scenario lowered PD).
-- Lifetime expected loss at origination under-predicted the 2015 vintage's realised loss (realised = 1.17× predicted).
+- State unemployment failed the pre-registered macro rule (the "adverse" scenario lowered PD) → no forward-looking macro overlay.
+- Lifetime expected loss under-predicted the 2015 vintage's realised loss (realised = 1.17× predicted; 1.10× with a refit at the reporting date).
 
-Known limitations (look-ahead in the development sample, hindsight in staging, no refit at the reporting date, exploratory-only
-early-warning evidence) are listed in `notes/05_claims_and_limitations.md` and `notes/06_quality_report.md`.
+Known limitations: `notes/05_claims_and_limitations.md`; validation history: `notes/06_quality_report.md`; gate results: `reports/quality/`.
 
 ## Reproduce
-Requires the raw Kaggle files in `data/raw/` (not included) and the BLS responses fetched by `src/phase2/fetch_bls.py`.
-```
-uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.lock.txt
-bash scripts/run_all.sh            # full pipeline from data/raw, deterministic (~6–7 min)
-.venv/bin/python -m pytest -q tests
-.venv/bin/python -I src/quality/check_claims.py
-```
+1. **Data (not included — never redistributed).** Accept the terms of the Kaggle dataset "All Lending Club loan data" (wordsforthewise) and download:
+   ```
+   kaggle datasets download wordsforthewise/lending-club -f accepted_2007_to_2018Q4.csv.gz -p data/raw
+   kaggle datasets download wordsforthewise/lending-club -f rejected_2007_to_2018Q4.csv.gz -p data/raw
+   ```
+   Data dictionary: `curl -L -o data/raw/dictionary/LCDataDictionary.xlsx https://ndownloader.figshare.com/files/35685971`.
+   Checksums: `notes/data_sources.md`. BLS unemployment is fetched by the pipeline (`src/phase2/fetch_bls.py`, public API, no key).
+2. **Environment** (Python 3.12, pinned):
+   ```
+   uv venv --python 3.12 .venv
+   uv pip install --python .venv/bin/python -r requirements.lock.txt
+   ```
+3. **Run** (deterministic; ~8–9 min on a laptop, `nice 19`):
+   ```
+   bash scripts/run_all.sh
+   .venv/bin/python -m pytest -q tests
+   .venv/bin/python -I src/quality/check_claims.py        # re-derives every claim in notes/05
+   .venv/bin/python -I src/quality/check_note_numbers.py  # traces every number in the notes to a report
+   ```
+   Two fresh runs produce byte-identical `reports/` (see `notes/06_quality_report.md`).
 
 ## Layout
-`src/audit` (Phase 0) · `src/phase1` (scorecard, LightGBM, monitoring, vintage) · `src/phase2` (hazard, macro rule, ECL, policy) ·
-`src/lib/riskutils.py` (tested helpers) · `src/quality` (claim / provenance / leakage checks) · `notes/` (plans, pre-registrations,
-results, story, quality report) · `reports/` (aggregates and figures only).
+| path | content |
+|---|---|
+| `src/audit` | Phase 0 data audit (parquet conversion, leakage map, profiling) |
+| `src/phase1` | scorecard, LightGBM, evaluation, monitoring, vintage |
+| `src/phase2` | competing-risks hazard, macro rule, ECL (+ benchmark), profit policy, overlay |
+| `src/phase4` | as-of model, confirmatory 60m early-warning test |
+| `src/lib/riskutils.py` | small tested helpers for error-prone logic |
+| `src/quality` | claim re-check, number provenance, leakage/split proof, grid sensitivity |
+| `src/report` | article figures, demo data |
+| `notes/` | plan, pre-registrations (02, 03, 08), results (01–03, 10), story, claims, quality report, gate rubric, article draft |
+| `reports/` | aggregates and figures only · `demo/` static dashboard (aggregates only) |
 
-## Data
-Data: LendingClub, via Kaggle dataset by Nathan George (wordsforthewise). Unemployment data: U.S. Bureau of Labor Statistics, LAUS.
-Data dictionary: Figshare copy, doi:10.6084/m9.figshare.20016077.v1 (CC BY 4.0). Raw and row-level data are not included in this
-repository and are never published; see `notes/data_sources.md`.
+## Data and credits
+Data: LendingClub, via Kaggle dataset by Nathan George (wordsforthewise). Unemployment data: U.S. Bureau of Labor Statistics, LAUS (public domain).
+Data dictionary: Figshare copy, doi:10.6084/m9.figshare.20016077.v1 (CC BY 4.0). Raw and row-level data are not included in this repository and
+are never published; see `notes/data_sources.md`.

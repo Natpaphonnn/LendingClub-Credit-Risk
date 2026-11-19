@@ -86,45 +86,9 @@ by_q = port.groupby("issue_q").apply(agg, include_groups=False).reset_index()
 by_b = port.groupby("band").apply(agg, include_groups=False).reset_index()
 tot = agg(port)
 
-# ---- staging at reporting date 2015-12-31
-rep = pd.Timestamp("2015-12-01")
-# payments fall due at issue + t (MOB t); by Dec-2015, `age` payments have fallen due -> next exposure month is MOB age+1.
-# (Fixed off-by-one in quality step: previously age included +1, which put Jan-2016 first-missed payments into stage 3.)
-age = payments_due(port.issue_dt, "2015-12-01")
-d_age = port.default_mob.astype("float64").to_numpy()      # MOB of first missed payment (NaN if no default)
-p_age = np.where(port.event.to_numpy() == 2, port["T"].to_numpy(), np.inf)
-stage3 = is_def & (d_age <= age)             # first missed payment due on or before Dec-2015 (pre-registered)
-gone = (~stage3) & (p_age <= age)            # paid off on or before Dec-2015
-perf = ~stage3 & ~gone
-s_prev, hd = A["s_prev"], A["hd"]
-ecl12_rep = np.zeros(len(port))
-ecl_life_rep = np.zeros(len(port))
-for i in np.where(perf)[0]:
-    a = int(age[i])
-    if a >= H:
-        continue
-    sa = s_prev[i, a]                       # survival to start of MOB a+1 (index a)
-    md_c = s_prev[i, a:] * hd[i, a:] / sa   # conditional marginal default for MOB a+1..36
-    df_c = (1 + r[i, 0]) ** -np.arange(1, H - a + 1)
-    loss = md_c * LGD * EAD[i, a:] * df_c
-    ecl12_rep[i], ecl_life_rep[i] = loss[:12].sum(), loss.sum()
-ead_rep = np.array([EAD[i, min(int(age[i]), H - 1)] for i in range(len(port))])          # performing: balance at reporting
-d_idx = np.clip(np.nan_to_num(d_age, nan=1).astype(int) - 1, 0, H - 1)
-ead_rep = np.where(stage3, EAD[np.arange(len(port)), d_idx], ead_rep)                # stage 3: balance at default month
-st3_alloc = (LGD * ead_rep * stage3).sum()
-missed_at_rep = age - d_age + 1                     # payments missed by Dec-2015 (first missed = MOB d_age, due issue + d_age)
-n_lt90 = int((stage3 & (missed_at_rep < 3)).sum())
-staging = pd.DataFrame([
-    {"stage": "Stage 1 (performing; 12-month ECL)", "loans": int(perf.sum()), "gross EAD $m": ead_rep[perf].sum() / 1e6,
-     "allowance $m": ecl12_rep[perf].sum() / 1e6},
-    {"stage": "Stage 2 (SICR) — NOT allocable: no monthly DPD / refreshed PD in data", "loans": 0, "gross EAD $m": 0.0,
-     "allowance $m": 0.0},
-    {"stage": "  memo: if ALL performing were Stage 2 (lifetime ECL) — upper bound", "loans": int(perf.sum()),
-     "gross EAD $m": ead_rep[perf].sum() / 1e6, "allowance $m": ecl_life_rep[perf].sum() / 1e6},
-    {"stage": "Stage 3 (defaulted by Dec-2015; LGD × EAD)", "loans": int(stage3.sum()),
-     "gross EAD $m": ead_rep[stage3].sum() / 1e6, "allowance $m": st3_alloc / 1e6},
-    {"stage": "derecognised (prepaid by Dec-2015)", "loans": int(gone.sum()), "gross EAD $m": 0.0, "allowance $m": 0.0}])
-staging["coverage %"] = (100 * staging["allowance $m"] / staging["gross EAD $m"].replace(0, np.nan)).round(2)
+# ---- staging at reporting date 2015-12-31 — E4 definitions (notes/08_prereg_extensions.md), EX-POST illustration
+from ecl_lib import staging_e4  # noqa: E402
+staging = staging_e4(port, mA, LGD, "2015-12-01")
 
 # ---- scenarios (only if B passed)
 scen_md, scen = "", {}
@@ -176,18 +140,16 @@ LGD by M2-PD quintile band (1 = safest; train cut points), sensitivity only: {',
 
 {r2(by_b).to_markdown(index=False)}
 
-## Allowance at reporting date 2015-12-31 (stage logic stated plainly)
+## Allowance at reporting date 2015-12-31 — EX-POST ILLUSTRATION (monthly DPD is not in the data)
 
 {r2(staging).to_markdown(index=False)}
 
-- Stage 1 = performing at Dec-2015 → 12-month ECL from remaining life (hazards conditional on survival to Dec-2015).
-- Stage 2 needs a significant-increase-in-credit-risk test (30 DPD backstop or a refreshed lifetime PD vs origination). LC data has
-  no monthly delinquency history and no refreshed scores, so stage 2 **cannot be allocated**; the memo row shows the lifetime-ECL upper bound.
-- Stage 3 = default month (last payment + 1) ≤ Dec-2015 → allowance = LGD × scheduled EAD at that point (simplification).
-- **EX-POST / HINDSIGHT (independent review MA-5):** stage 3 membership uses the *final* status (the loan later charged off). At the
-  reporting date {n_lt90:,} of the {int(stage3.sum()):,} stage-3 loans had fewer than 3 missed payments (< 90 DPD), so a real bank would
-  not yet have classed them as credit-impaired; the same last-payment proxy could flag ≥ 30 DPD for stage 2, which this table does not do.
-  Treat this table as an illustration of the stage mechanics, not as an allowance a lender could have booked at Dec-2015.
+- Stage definitions (notes/08_prereg_extensions.md §E4): m = instalments due by Dec-2015 and not paid, visible **only for loans that ultimately
+  charged off** (delinquent loans that later cured are invisible → stage 2 is understated). Approximation: 1 missed instalment ≈ 30 DPD, 3 ≈ 90 DPD.
+- Stage 1 → 12-month ECL; stage 2 → lifetime ECL; both from hazards conditional on survival (not conditioned on delinquency → stage 2 allowance
+  understated). Stage 3 → LGD × outstanding principal at the first missed payment.
+- This uses the final status (hindsight); it illustrates stage mechanics and is not an allowance a lender could have booked at Dec-2015.
+  A refit-at-reporting-date version is in reports/phase2/ecl_benchmark.md.
 
 {scen_md}
 """

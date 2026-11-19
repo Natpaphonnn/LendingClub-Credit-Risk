@@ -24,6 +24,8 @@ for s in build_dataset train_scorecard train_lgbm evaluate monitoring vintage ex
 4. **Vintage curves:** default ที่ MOB 12 สูงขึ้น**ในทุก risk band** (B1: ~7% ใน 2013 → ~10.5% ใน 2016; B5: ~1.1% → ~2.2%)
    ขณะที่ characteristics ของผู้กู้ดู "ดีขึ้น" (utilization ลด) → นี่คือ **concept drift** (score→PD เปลี่ยน) ไม่ใช่ population shift
    ซึ่งเป็นเหตุผลที่ PSI มองไม่เห็น → ต่อเข้ากับ Phase 2 B (macro / forward-looking) ได้ตรง ๆ
+6. **As-of model (added later, notes/10_extensions_results.md E2):** model ที่ใช้เฉพาะข้อมูล ณ 2014-12-31 (bad 12 เดือน) ได้ OOT Gini 33.1
+   (ต่ำกว่า reference 3.65) และ alarm ครั้งแรกที่รู้ได้จริงคือ Jun 2017
 5. **D (reason codes + monotone):** ทำแล้วทั้งสอง model; top-1 reason ตรงกัน 48%, M1 top-1 อยู่ใน M2 top-4 90%
 
 ---

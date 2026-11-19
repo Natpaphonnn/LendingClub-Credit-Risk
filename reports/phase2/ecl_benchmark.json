@@ -1,0 +1,90 @@
+{
+ "(a) reference A, undiscounted LGD": {
+  "scenario": "(a) reference A, undiscounted LGD",
+  "mean 12m PD %": 4.279447555541992,
+  "mean lifetime PD %": 13.564178466796875,
+  "day-1 12m ECL $m": 100.70073189030363,
+  "lifetime ECL $m": 202.74487316371935,
+  "backtest: pred EL (undisc.) $m": 234.93018941779573,
+  "realised / predicted": 1.1652479995057683
+ },
+ "(b) reference A, discounted LGD (k=12)": {
+  "scenario": "(b) reference A, discounted LGD (k=12)",
+  "mean 12m PD %": 4.279447555541992,
+  "mean lifetime PD %": 13.564178466796875,
+  "day-1 12m ECL $m": 102.4725125838386,
+  "lifetime ECL $m": 206.31207118998176
+ },
+ "(c) refit at 2014-12-31, discounted LGD (k=12)": {
+  "scenario": "(c) refit at 2014-12-31, discounted LGD (k=12)",
+  "mean 12m PD %": 4.005120277404785,
+  "mean lifetime PD %": 15.137685775756836,
+  "day-1 12m ECL $m": 93.36994391481265,
+  "lifetime ECL $m": 214.5868827516842,
+  "backtest: pred EL (undisc.) $m": 249.02683792103628,
+  "realised / predicted": 1.0992868701541376
+ },
+ "(d) 90-DPD default definition, discounted LGD (k=12)": {
+  "scenario": "(d) 90-DPD default definition, discounted LGD (k=12)",
+  "mean 12m PD %": 3.2797913551330566,
+  "mean lifetime PD %": 13.237560272216797,
+  "day-1 12m ECL $m": 80.06779605496466,
+  "lifetime ECL $m": 200.91732402085688,
+  "backtest: pred EL (undisc.) $m": 233.65565220043135,
+  "realised / predicted": 1.1716041562211879
+ },
+ "LGD_undiscounted": 0.8881116053278834,
+ "LGD_discounted": {
+  "6": 0.8962364676474271,
+  "12": 0.9037374586385022,
+  "24": 0.9171005621946087
+ },
+ "realised_loss_m": 273.7519332425977,
+ "refit_2014": {
+  "n_loans": 181130,
+  "defaults": 4965,
+  "prepays": 17447
+ },
+ "refit_2015": {
+  "n_loans": 384980,
+  "defaults": 17198,
+  "prepays": 68765
+ },
+ "model_90dpd": {
+  "n_loans": 120683,
+  "defaults": 14557,
+  "prepays": 61594
+ },
+ "staging_refit_2015": {
+  "stage": [
+   "Stage 1 (performing, no missed instalment visible; 12-month ECL)",
+   "Stage 2 (1\u20132 missed instalments \u2248 \u2265 30 DPD, ex-post proxy; lifetime ECL)",
+   "Stage 3 (\u2265 3 missed instalments \u2248 90 DPD; LGD \u00d7 EAD at default)",
+   "derecognised (prepaid by the report month)"
+  ],
+  "loans": [
+   263610,
+   1571,
+   2300,
+   15453
+  ],
+  "gross EAD $m": [
+   2992.3097835644694,
+   17.08876882463447,
+   25.052721242157332,
+   0.0
+  ],
+  "allowance $m": [
+   102.09249595750478,
+   1.457658061124262,
+   22.641082627366085,
+   0.0
+  ],
+  "coverage %": [
+   3.41,
+   8.53,
+   90.37,
+   NaN
+  ]
+ }
+}

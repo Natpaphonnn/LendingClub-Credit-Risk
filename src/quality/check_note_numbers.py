@@ -19,7 +19,8 @@ NUM = re.compile(r"(?<![\w.])([−\-+]?\$?\d{1,3}(?:,\d{3})+(?:\.\d+)?|[−\-+]?
 
 # historical outputs quoted on purpose in "before → after" disclosure tables (read straight from git, not from disk)
 HISTORICAL = [("5b35a6e", "reports/phase1/metrics.json"), ("5b35a6e", "reports/phase1/evaluation.md"),
-              ("4f0a078", "reports/phase2/ecl.md"), ("e43a338", "reports/phase2/macro_B.json"), ("fbb20bf", "reports/phase2/overlay.json")]
+              ("4f0a078", "reports/phase2/ecl.md"), ("e43a338", "reports/phase2/macro_B.json"), ("fbb20bf", "reports/phase2/overlay.json"),
+              ("ed56d91", "reports/phase2/ecl.md")]
 QUALITY_SOURCES = ["grid_sensitivity.md", "leakage_split_proof.md"]
 
 
@@ -71,6 +72,8 @@ def is_skip(tok, line, x, d):
         return True                                       # years
     if re.search(rf"{re.escape(tok)}(Q\d|-\d\d)", line) or re.search(rf"\d-{re.escape(tok)}\b", line):
         return True                                       # quarter labels / dates
+    if re.search(r"https?://\S*" + re.escape(tok.lstrip("$")), line):
+        return True                                       # part of a URL
     if re.search(r"(--python|python|Python)\s*" + re.escape(tok), line):
         return True                                       # software versions
     if re.search(r"(commit|C\d+|§|step|Phase|phase|figure|Figure|fig|#)\s*" + re.escape(tok), line):

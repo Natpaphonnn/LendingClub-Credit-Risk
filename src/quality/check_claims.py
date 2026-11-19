@@ -175,7 +175,7 @@ chk("C18", "A/E train (mean @12/24/36); 2014 min/max; 2015 min/max; 2016 min/max
     ["1.01", "0.98", "1.02", "1.07", "1.11", "1.26", "1.39", "1.44"],
     [np.mean(f("train 2012Q4-13", A3)), min(f("valid 2014", A3)), max(f("valid 2014", A3)), min(f("OOT 2015", A3)), max(f("OOT 2015", A3)),
      min(f("2016", A3)), max(f("2016", A3)), f("2017", A3)[0]], "survival_A.md", "parsed")
-chk("C19", "θ [CI]; rule b rel. change %; stress multiplier", ["-0.038", "-0.088", "-0.005", "-27.1", "0.91"],
+chk("C19", "θ [CI]; rule b rel. change %; stress multiplier", ["-0.038", "-0.094", "-0.004", "-27.1", "0.91"],
     [mb["rule_a"]["theta"], mb["rule_a"]["ci"][0], mb["rule_a"]["ci"][1], 100 * mb["rule_b"]["rel_change"], mb["rule_c"]["multiplier"]],
     "macro_B.json", "read")
 rows[-1]["result"] = rows[-1]["result"] if (not mb["rule_a"]["pass"] and mb["rule_b"]["pass"] and not mb["rule_c"]["pass"]) else "FAIL"
@@ -201,6 +201,53 @@ chk("C25", "undiscounted profit approve-all / MILP $m", ["230.3", "222.3"],
 chk("C26", "NPV@5% cutoff / MILP / approve-all $m", ["47.4", "45.6", "28.4"],
     [P.loc["M2 cutoff", "EXPLORATORY realised NPV $m"], P.loc["C: MILP cells", "EXPLORATORY realised NPV $m"],
      P.loc["approve all", "EXPLORATORY realised NPV $m"]], "policy_C.json", "read")
+
+# ---- extensions (notes/08_prereg_extensions.md; results notes/10_extensions_results.md)
+R4 = ROOT / "reports" / "phase4"
+p60 = pd.read_parquet(ROOT / "data" / "interim" / "p4_60m.parquet")
+p60["issue_dt"] = pd.to_datetime(p60.issue_dt)
+ref60 = p60[(p60.issue_dt >= "2012-09-01") & (p60.issue_dt <= "2013-12-01")]
+d6r, d12r = default_by_mob(ref60.default_mob, 6), default_by_mob(ref60.default_mob, 12)
+r6_60, ref12_60 = d6r.mean() / ref60.pd_m2.mean(), d12r.mean()
+tp = tn = npos = nneg = 0
+for qq in [f"{y}Q{k}" for y in range(2014, 2018) for k in (1, 2, 3, 4)][:15]:
+    gq = p60[p60.issue_q == qq]
+    ae6 = default_by_mob(gq.default_mob, 6).sum() / (gq.pd_m2.sum() * r6_60)
+    truth = default_by_mob(gq.default_mob, 12).mean() >= 1.2 * ref12_60
+    npos += truth
+    nneg += (not truth)
+    tp += truth and ae6 > 1.10
+    tn += (not truth) and ae6 <= 1.10
+chk("C27", "60m MOB-6 test: sensitivity / specificity / specificity %", ["9/9", "4/6", "67"],
+    [f"{tp}/{npos}", f"{tn}/{nneg}", 100 * tn / nneg], "p4_60m.parquet", "re-derived from row-level 60m table")
+v27 = json.loads((R4 / "mob6_60m_test.json").read_text())["results"]["M2"]["verdict"]
+rows[-1]["result"] = rows[-1]["result"] if v27 == "FAIL" else "FAIL"
+aj = json.loads((R4 / "asof_model.json").read_text())
+sa_ = pd.read_parquet(ROOT / "data" / "interim" / "p4" / "scores_asof.parquet")
+bo = b.join(sa_)
+oo_ = bo[split_mask(bo, OOT) & bo.bad.notna()]
+dga = aj["oot_delta_gini_asof_minus_M2"]
+chk("C28", "as-of Gini [CI]; ΔGini vs reference [CI]", ["33.1", "32.6", "33.7", "-3.65", "-3.95", "-3.37"],
+    [g(oo_.bad, oo_.pd12_asof), 100 * aj["oot_final"]["asof_PD12"]["gini_lo"], 100 * aj["oot_final"]["asof_PD12"]["gini_hi"],
+     g(oo_.bad, oo_.pd12_asof) - g(oo_.bad, oo_.pd_m2), 100 * dga["lo"], 100 * dga["hi"]], "asof_model.json + sklearn", "points re-derived")
+mo = pd.DataFrame(aj["monitoring"])
+chk("C29", "as-of first amber knowable / first red knowable / max PSI", ["Jun 2017", "Sep 2017", "0.079"],
+    [fmt_m(aj["first_amber"]["knowable"]), fmt_m(aj["first_red"]["knowable"]), mo.PSI.max()], "asof_model.json", "read")
+rows[-1]["result"] = rows[-1]["result"] if (aj["first_amber"]["issue_q"], aj["first_red"]["issue_q"]) == ("2015Q4", "2016Q1") else "FAIL"
+eb_ = json.loads((R2 / "ecl_benchmark.json").read_text())
+c_ = eb_["(c) refit at 2014-12-31, discounted LGD (k=12)"]
+a_ = eb_["(a) reference A, undiscounted LGD"]
+chk("C30", "refit pred EL $m / realised $m / ratio refit / ratio reference", ["249.0", "273.8", "1.10", "1.17"],
+    [c_["backtest: pred EL (undisc.) $m"], eb_["realised_loss_m"], c_["realised / predicted"], a_["realised / predicted"]], "ecl_benchmark.json", "read")
+d_ = eb_["(d) 90-DPD default definition, discounted LGD (k=12)"]
+b_ = eb_["(b) reference A, discounted LGD (k=12)"]
+chk("C31", "LGD discounted / undiscounted %; 12m ECL 90-DPD / reference (disc.) $m; 90-DPD backtest ratio",
+    ["90.4", "88.8", "80.1", "102.5", "1.17"],
+    [100 * eb_["LGD_discounted"]["12"], 100 * eb_["LGD_undiscounted"], d_["day-1 12m ECL $m"], b_["day-1 12m ECL $m"], d_["realised / predicted"]],
+    "ecl_benchmark.json", "read")
+stg = pd.DataFrame(ecl["staging"])
+chk("C32", "stage 2 loans / stage 3 loans / stage 1 allowance $m / coverage %", ["1,571", "2,300", "112.3", "3.75"],
+    [stg.loans[1], stg.loans[2], stg["allowance $m"][0], stg["coverage %"][0]], "ecl.json", "read")
 
 # ---- the 'up to 47% above expected' figure (notes/04_story.md one-line answer + fig3 subtitle)
 trm = split_mask(b, TRAIN)
