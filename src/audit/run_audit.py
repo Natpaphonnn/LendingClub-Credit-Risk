@@ -161,11 +161,14 @@ SELECT yr, min(fico) AS fico_min, round(100*avg((fico<660)::INT),2) AS pct_below
 FROM acc GROUP BY yr ORDER BY yr"""))
 
 con.execute("""CREATE TEMP TABLE g AS
-SELECT CASE WHEN yr<=2009 THEN '2007-09' WHEN yr<=2012 THEN '2010-12' WHEN yr<=2015 THEN '2013-15' ELSE '2016-18' END AS era,
-  fico, count(*) n, avg(rate) AS mean_rate, mode(sub_grade) AS modal_subgrade,
-  avg((sub_grade = mode_sg)::INT) AS share_modal
-FROM (SELECT *, mode(sub_grade) OVER (PARTITION BY CASE WHEN yr<=2009 THEN 1 WHEN yr<=2012 THEN 2 WHEN yr<=2015 THEN 3 ELSE 4 END, fico) AS mode_sg FROM acc)
-WHERE fico BETWEEN 640 AND 800 GROUP BY 1,2""")
+WITH b AS (SELECT CASE WHEN yr<=2009 THEN '2007-09' WHEN yr<=2012 THEN '2010-12' WHEN yr<=2015 THEN '2013-15' ELSE '2016-18' END AS era,
+                  fico, sub_grade, rate FROM acc WHERE fico BETWEEN 640 AND 800),
+c AS (SELECT era, fico, sub_grade, count(*) k FROM b GROUP BY 1,2,3),
+m AS (SELECT era, fico, arg_max(sub_grade, k * 1000 - rank_sg) AS modal_subgrade, max(k) AS kmax
+      FROM (SELECT *, dense_rank() OVER (PARTITION BY era, fico ORDER BY sub_grade) AS rank_sg FROM c) GROUP BY 1,2)
+SELECT b.era, b.fico, count(*) n, avg(rate) AS mean_rate, any_value(m.modal_subgrade) AS modal_subgrade,
+       any_value(m.kmax) / count(*) AS share_modal
+FROM b JOIN m USING (era, fico) GROUP BY 1,2""")  # deterministic mode: most frequent, ties -> alphabetically first
 g = q("SELECT * FROM g ORDER BY era, fico")
 g["jump_vs_prev_bin_pp"] = g.groupby("era")["mean_rate"].diff().round(2)
 g["mean_rate"] = g["mean_rate"].round(2)
@@ -195,8 +198,8 @@ FROM f GROUP BY 1 ORDER BY 1"""),
     "rate is a deterministic function of grade+date, and grade is NOT a sharp function of FICO.")
 
 rp = q("""
-WITH m AS (SELECT sub_grade, issue_dt, mode(rate) AS r, count(*) n, count(DISTINCT rate) AS n_rates
-           FROM acc WHERE rate IS NOT NULL GROUP BY 1,2),
+WITH rc AS (SELECT sub_grade, issue_dt, rate, count(*) k FROM acc WHERE rate IS NOT NULL GROUP BY 1,2,3),
+m AS (SELECT sub_grade, issue_dt, arg_max(rate, k * 1e6 - rate) AS r, sum(k) n, count(*) AS n_rates FROM rc GROUP BY 1,2),
 c AS (SELECT *, lag(r) OVER (PARTITION BY sub_grade ORDER BY issue_dt) AS prev_r FROM m)
 SELECT year(issue_dt) AS yr, count(DISTINCT CASE WHEN r<>prev_r THEN issue_dt END) AS months_with_any_reprice,
   sum((r<>prev_r)::INT) AS subgrade_month_reprices, round(avg(abs(r-prev_r)) FILTER (WHERE r<>prev_r),2) AS mean_abs_change_pp,

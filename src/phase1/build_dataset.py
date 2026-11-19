@@ -16,10 +16,11 @@ sql = f"""
 COPY (
 WITH a AS (
   SELECT *, strptime(issue_d, '%b-%Y')::DATE AS issue_dt, TRY_STRPTIME(last_pymnt_d, '%b-%Y')::DATE AS lp_dt
-  FROM '{ACC}'
+  FROM read_parquet('{ACC}', file_row_number=true)
   WHERE TRY_STRPTIME(issue_d, '%b-%Y') IS NOT NULL
 )
 SELECT
+  TRY_CAST(id AS BIGINT) AS id,
   issue_dt,
   year(issue_dt) AS yr,
   year(issue_dt)::VARCHAR || 'Q' || quarter(issue_dt)::VARCHAR AS issue_q,
@@ -42,6 +43,7 @@ WHERE trim(term) = '36 months'
   AND application_type = 'Individual'
   AND loan_status NOT LIKE 'Does not meet%'
   AND issue_dt >= DATE '2012-09-01'
+ORDER BY file_row_number
 ) TO '{BASE}' (FORMAT parquet, COMPRESSION zstd)
 """
 con = duckdb.connect()

@@ -12,6 +12,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import ART, ASOF, CHARGEOFF_LAG_M, FIG, REP, TRAIN, load_base, split_mask  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src" / "lib"))
+from riskutils import as_float, default_by_mob  # noqa: E402
 from plotstyle import SEQ_BLUE, plt, save  # noqa: E402
 
 df = load_base(["issue_dt", "issue_q", "default_mob"])
@@ -33,7 +35,7 @@ def curves(sub):
         mo = int(g.mob_obs.iloc[0])
         if mo < 1:
             continue
-        d = g.default_mob.fillna(999).to_numpy()
+        d = np.where(default_by_mob(g.default_mob, 36) > 0, as_float(g.default_mob), 999)
         cnt = np.bincount(np.minimum(d, 37).astype(int), minlength=38)[1:37]
         out[q] = (np.cumsum(cnt) / len(g))[:mo]
     return out

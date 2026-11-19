@@ -18,6 +18,8 @@ sys.path.insert(0, str(ROOT / "src" / "phase1"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import ART, FIG, INTERIM, REP  # noqa: E402
 from hazard import cif, hazards  # noqa: E402
+sys.path.insert(0, str(ROOT / "src" / "lib"))
+from riskutils import annuity_schedule  # noqa: E402
 from plotstyle import S, plt, save  # noqa: E402
 
 ART2, REP2 = INTERIM / "p2", ROOT / "reports" / "phase2"
@@ -44,11 +46,10 @@ def m1_score(d):
 def exp_npv(d, annual_rate):
     hd, hp = hazards(mA["scaler"].loan_cols(d), mA["B"])
     s_prev, _, _ = cif(hd, hp)
-    r = (d.int_rate.to_numpy() / 1200.0)[:, None]
     P = d.funded_amnt.to_numpy()[:, None]
     t = np.arange(1, H + 1)[None, :]
-    pmt = P * r / (1 - (1 + r) ** -H)
-    ead = P * (1 + r) ** (t - 1) - pmt * ((1 + r) ** (t - 1) - 1) / r
+    pmt, ead = annuity_schedule(d.funded_amnt.to_numpy(), d.int_rate.to_numpy(), H)
+    pmt = pmt[:, None]
     df = (1 + annual_rate) ** (-t / 12)
     cash = s_prev * ((1 - hd - hp) * pmt + hp * ead + hd * (1 - LGD) * ead)
     return (df * cash).sum(1) - P[:, 0]
@@ -105,7 +106,7 @@ for rate in (0.05, 0.03, 0.08):
     for nm, d in (("validation 2014", va), ("OOT 2015", oo)):
         rows.append({"set": nm, **evaluate(d, d.cell.isin(approved).to_numpy(), "C: MILP cells")})
         rows.append({"set": nm, **evaluate(d, np.ones(len(d), bool), "approve all")})
-        rows.append({"set": nm, **evaluate(d, (d.pd_m2 <= CUT2).to_numpy(), "Phase 1 M2 cutoff (PD ≤ 0.2039)")})
+        rows.append({"set": nm, **evaluate(d, (d.pd_m2 <= CUT2).to_numpy(), f"Phase 1 M2 cutoff (PD ≤ {CUT2:.4f})")})
         rows.append({"set": nm, **evaluate(d, (d.m1 >= CUT1).to_numpy(), f"Phase 1 M1 cutoff (score ≥ {CUT1})")})
     grid = pd.DataFrame({"decile (0 = lowest PD)": np.repeat(range(10), 3), "amount band": ["≤10k", "10–20k", ">20k"] * 10,
                          "n (2014)": g.n.to_numpy(), "mean PD %": 100 * g.pd_sum.to_numpy() / np.maximum(g.n.to_numpy(), 1),

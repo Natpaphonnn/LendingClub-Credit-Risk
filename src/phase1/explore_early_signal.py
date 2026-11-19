@@ -12,6 +12,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import ART, ASOF, CHARGEOFF_LAG_M, REP, TRAIN, load_base, split_mask  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src" / "lib"))
+from riskutils import default_by_mob  # noqa: E402
 
 df = load_base(["issue_dt", "issue_q", "bad", "default_mob"])
 df = df.join(pd.read_parquet(ART / "scores_m1.parquet", columns=["pd_m1"])).join(pd.read_parquet(ART / "scores_m2.parquet"))
@@ -19,7 +21,7 @@ df["q_end"] = df.issue_dt.dt.to_period("Q").dt.end_time.dt.to_period("M").dt.to_
 trm = split_mask(df, TRAIN)
 rows = []
 for mob in (6, 9):
-    df[f"d{mob}"] = (df.default_mob <= mob).astype(float)
+    df[f"d{mob}"] = default_by_mob(df.default_mob, mob)
     r = df.loc[trm, f"d{mob}"].mean() / df.loc[trm, "bad"].mean()
     for q, d in df[df.issue_dt >= pd.Timestamp("2014-01-01")].groupby("issue_q"):
         known = d.q_end.iloc[0] + pd.DateOffset(months=mob + CHARGEOFF_LAG_M)

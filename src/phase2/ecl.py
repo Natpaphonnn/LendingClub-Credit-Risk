@@ -18,6 +18,8 @@ sys.path.insert(0, str(ROOT / "src" / "phase1"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import FIG, INTERIM, SEED  # noqa: E402
 from hazard import cif, hazards  # noqa: E402
+sys.path.insert(0, str(ROOT / "src" / "lib"))
+from riskutils import annuity_schedule, lgd_ead_at_default  # noqa: E402
 from plotstyle import S, plt, save  # noqa: E402
 
 ART2, REP2 = INTERIM / "p2", ROOT / "reports" / "phase2"
@@ -32,9 +34,8 @@ b_passed = mB["decision"].startswith("B PASSES")
 
 # ---- LGD (train defaults)
 dft = trn[trn.loan_status.isin(["Charged Off", "Default"])].copy()
-dft["ead_d"] = dft.funded_amnt - dft.total_rec_prncp
+dft["lgd"], dft["ead_d"] = lgd_ead_at_default(dft.funded_amnt, dft.total_rec_prncp, dft.recoveries, dft.collection_recovery_fee)
 dft = dft[dft.ead_d > 0]
-dft["lgd"] = (1 - (dft.recoveries - dft.collection_recovery_fee) / dft.ead_d).clip(0, 1)
 LGD = float((dft.lgd * dft.ead_d).sum() / dft.ead_d.sum())
 rng = np.random.default_rng(SEED + 11)
 bs = []
@@ -49,10 +50,8 @@ lgd_band = dft.groupby("band").apply(lambda g: (g.lgd * g.ead_d).sum() / g.ead_d
 
 # ---- EAD schedule and discount factors
 r = (port.int_rate.to_numpy() / 1200.0)[:, None]
-P = port.funded_amnt.to_numpy()[:, None]
 t = np.arange(1, H + 1)[None, :]
-pmt = P * r / (1 - (1 + r) ** -H)
-EAD = P * (1 + r) ** (t - 1) - pmt * ((1 + r) ** (t - 1) - 1) / r      # balance at start of month t
+_, EAD = annuity_schedule(port.funded_amnt.to_numpy(), port.int_rate.to_numpy(), H)   # balance at start of month t
 DF = (1 + r) ** (-t)
 
 

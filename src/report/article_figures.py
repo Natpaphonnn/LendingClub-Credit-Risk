@@ -21,6 +21,8 @@ sys.path.insert(0, str(ROOT / "src" / "phase1"))
 sys.path.insert(0, str(ROOT / "src" / "phase2"))
 from config import ACC, ART, INTERIM, TRAIN, load_base, split_mask  # noqa: E402
 from hazard import cif, hazards  # noqa: E402
+sys.path.insert(0, str(ROOT / "src" / "lib"))
+from riskutils import default_by_mob  # noqa: E402
 
 OUT = ROOT / "reports" / "figures" / "article"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -124,12 +126,12 @@ thresh(ax, 1.10, "1.10 amber")
 thresh(ax, 1.25, "1.25 red")
 ax.set_title("Level: actual / expected defaults by month 12")
 finish(fig, "The model kept ranking borrowers well — its default level drifted",
-       "Champion (LightGBM) by issue quarter. KS never breached its alarm; actual/expected defaults climbed to 1.45.",
+       f"Champion (LightGBM) by issue quarter. KS never breached its alarm; actual/expected defaults climbed to {m4.AE12_M2.max():.2f}.",
        "fig3_ranking_vs_level.png")
 
 # ------------------------------------------------------------------ Fig 4: PSI is the wrong alarm (calendar time)
 b = load_base(["issue_dt", "issue_q", "bad", "default_mob"]).join(pd.read_parquet(ART / "scores_m2.parquet"))
-b["d6"] = (b.default_mob <= 6).astype(float)
+b["d6"] = default_by_mob(b.default_mob, 6)
 trm = split_mask(b, TRAIN)
 r6 = b.loc[trm, "d6"].mean() / b.loc[trm, "bad"].mean()
 ae6 = []
@@ -160,10 +162,15 @@ ax.plot(test[test.issue_q >= "2016Q1"].known, test[test.issue_q >= "2016Q1"].ae6
 ax.axhline(1.0, color=BASE, linewidth=1)
 thresh(ax, 1.10, "1.10 amber", x_text=pd.Timestamp("2014-01-01"))
 thresh(ax, 1.25, "1.25 red", x_text=pd.Timestamp("2014-01-01"))
-first_bad, first_amber = pd.Timestamp("2015-04-01"), pd.Timestamp("2016-12-01")
+fb_q = mon[mon.deterioration == "YES"].issue_q.iloc[0]                       # first deteriorated vintage (pre-registered truth)
+fa = mon[mon.flag_AE12_M2.isin(["AMBER", "RED"])].iloc[0]                    # first champion month-12 alarm
+first_bad = pd.Period(fb_q, freq="Q").start_time
+first_amber = pd.Timestamp(fa.k12)
+alarm_q = str(pd.Period(first_amber, freq="Q"))
+n_booked = int(b[(b.issue_q >= fb_q) & (b.issue_q <= alarm_q)].shape[0])
 for a in axes:
     a.axvspan(first_bad, first_amber, color=YELLOW, alpha=0.12, linewidth=0)
-ax.text(pd.Timestamp("2015-05-01"), 1.30, "first worse vintage issued (Apr 2015)\n→ first month-12 alarm (Dec 2016):\n~545k loans booked meanwhile",
+ax.text(first_bad + pd.DateOffset(months=1), 1.30, f"first worse vintage issued ({first_bad:%b %Y})\n→ first month-12 alarm ({first_amber:%b %Y}):\n~{n_booked/1e3:.0f}k loans booked meanwhile",
         fontsize=9, color=INK2, va="bottom")
 ax.set_ylim(0.85, 1.9)
 ax.set_title("Actual / expected defaults, plotted at the date each value became knowable")
@@ -176,7 +183,7 @@ finish(fig, "Population stability is the wrong alarm: it never fired",
 b1 = load_base(["issue_dt", "issue_q", "default_mob"]).join(pd.read_parquet(ART / "scores_m1.parquet", columns=["score_m1"]))
 cuts = np.quantile(b1.loc[split_mask(b1, TRAIN), "score_m1"], [0.2, 0.4, 0.6, 0.8])
 b1["band"] = 1 + np.searchsorted(cuts, b1.score_m1.to_numpy(), side="right")
-b1["d12"] = (b1.default_mob <= 12).astype(float)
+b1["d12"] = default_by_mob(b1.default_mob, 12)
 b1["ql"] = b1.issue_dt.dt.to_period("Q").dt.end_time.dt.to_period("M").dt.to_timestamp()
 obs = b1[b1.ql + pd.DateOffset(months=12) <= pd.Timestamp("2018-09-01")]
 t5 = obs.groupby(["issue_q", "band"]).d12.mean().unstack()
@@ -201,8 +208,7 @@ with open(INTERIM / "p2" / "model_A.pkl", "rb") as fh:
 hd, hp = hazards(mA["scaler"].loan_cols(p15), mA["B"])
 _, _, C = cif(hd, hp)
 naive = 1 - np.cumprod(1 - hd, axis=1)
-dm = p15.default_mob.astype("float64").fillna(999).to_numpy()
-act = np.array([(dm <= m).mean() for m in range(1, 37)])
+act = np.array([default_by_mob(p15.default_mob, m).mean() for m in range(1, 37)])
 mob = np.arange(1, 37)
 fig, ax = plt.subplots(figsize=(9, 4.6))
 ax.plot(mob, 100 * naive.mean(0), color=MUTED, linestyle="--", label="model ignoring prepayment")
@@ -215,7 +221,7 @@ ax.set_xticks([6, 12, 18, 24, 30, 36])
 ax.set_xlabel("months on book")
 ax.set_ylabel("cumulative default, %")
 ax.legend(loc="upper left")
-finish(fig, "Ignore prepayment and lifetime PD is overstated by a third",
+finish(fig, f"Ignore prepayment and lifetime PD is overstated by {100*(naive.mean(0)[-1]/C.mean(0)[-1]-1):.0f}%",
        "Loans issued Jan–Sep 2015 (observable to month 36). Model trained on 2012–13; its gap to actual is the 2015 drift.",
        "fig6_prepayment_competing_risk.png")
 
@@ -247,8 +253,10 @@ pc = json.loads((REP2 / "policy_C.json").read_text())["0.05"]["table"]
 pc = pd.DataFrame(pc)
 pc = pc[pc.set == "OOT 2015"].reset_index(drop=True)
 name = {"C: MILP cells": "MILP-optimised policy", "approve all": "approve everyone",
-        "Phase 1 M2 cutoff (PD ≤ 0.2039)": "simple PD cutoff (champion)", "Phase 1 M1 cutoff (score ≥ 532)": "scorecard cutoff"}
-pc["lab"] = [f"{name.get(p, p)}  ({a:.0f}% approved)" for p, a in zip(pc.policy, pc["approval %"])]
+        "M2": "simple PD cutoff (champion)", "M1": "scorecard cutoff"}
+key = lambda p: "M2" if p.startswith("Phase 1 M2") else "M1" if p.startswith("Phase 1 M1") else p  # noqa: E731
+pc["lab"] = [f"{name.get(key(p), p)}  ({a:.0f}% approved)" for p, a in zip(pc.policy, pc["approval %"])]
+appr = dict(zip(pc.policy.map(key), pc["approval %"]))
 order = [2, 0, 3, 1]
 pc = pc.iloc[order].reset_index(drop=True)
 fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True)
@@ -264,5 +272,5 @@ for ax, col, ttl in ((axes[0], "realised profit $m", "Pre-registered (wrong: no 
     ax.grid(axis="y", visible=False)
 axes[0].invert_yaxis()
 finish(fig, "A good PD cutoff is enough: the optimiser adds nothing",
-       "Without funding cost, 'approve everyone' looks best. With it, the MILP (86% approved) ≈ the simple champion cutoff (82%).",
+       f"Without funding cost, 'approve everyone' looks best. With it, the MILP ({appr['C: MILP cells']:.0f}% approved) ≈ the simple champion cutoff ({appr['M2']:.0f}%).",
        "fig8_policy_cutoff_vs_milp.png")

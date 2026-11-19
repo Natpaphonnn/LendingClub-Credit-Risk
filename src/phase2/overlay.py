@@ -23,6 +23,8 @@ sys.path.insert(0, str(ROOT / "src" / "phase1"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import INTERIM  # noqa: E402
 from hazard import cif, hazards  # noqa: E402
+sys.path.insert(0, str(ROOT / "src" / "lib"))
+from riskutils import annuity_schedule, default_by_mob  # noqa: E402
 
 ART2, REP2 = INTERIM / "p2", ROOT / "reports" / "phase2"
 H = 36
@@ -37,15 +39,13 @@ _, md, C = cif(hd, hp)
 r = (port.int_rate.to_numpy() / 1200.0)[:, None]
 P = port.funded_amnt.to_numpy()[:, None]
 t = np.arange(1, H + 1)[None, :]
-pmt = P * r / (1 - (1 + r) ** -H)
-EAD = P * (1 + r) ** (t - 1) - pmt * ((1 + r) ** (t - 1) - 1) / r
+_, EAD = annuity_schedule(port.funded_amnt.to_numpy(), port.int_rate.to_numpy(), H)
 port["el_pred"] = (md * LGD * EAD).sum(1)
 port["cif6"], port["cif12"] = C[:, 5], C[:, 11]
 is_def = port.loan_status.isin(["Charged Off", "Default"])
 port["loss"] = np.where(is_def, port.funded_amnt - port.total_rec_prncp - port.recoveries + port.collection_recovery_fee, 0.0)
-dmob = port.default_mob.astype("float64").fillna(999)   # Int64 nullable -> float; non-default = never
-port["d6"] = (dmob <= 6).astype(float)
-port["d12"] = (dmob <= 12).astype(float)
+port["d6"] = default_by_mob(port.default_mob, 6)      # nullable-safe (bug fixed here in Phase 3 prep)
+port["d12"] = default_by_mob(port.default_mob, 12)
 port["q_end"] = port.issue_dt.dt.to_period("Q").dt.end_time.dt.to_period("M").dt.to_timestamp()
 
 rows = []

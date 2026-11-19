@@ -16,15 +16,17 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src" / "phase1"))
 from config import ACC, ART, CATEGORICAL, FEATURES, INTERIM, NUMERIC  # noqa: E402
+sys.path.insert(0, str(ROOT / "src" / "lib"))
+from riskutils import code_events  # noqa: E402
 
 OUT = INTERIM / "p2_loans.parquet"
 num = ",\n  ".join(f"TRY_CAST({c} AS DOUBLE)::FLOAT AS {c}" for c in NUMERIC)
 sql = f"""
 WITH a AS (
   SELECT *, strptime(issue_d, '%b-%Y')::DATE AS issue_dt, TRY_STRPTIME(last_pymnt_d, '%b-%Y')::DATE AS lp_dt
-  FROM '{ACC}' WHERE TRY_STRPTIME(issue_d, '%b-%Y') IS NOT NULL
+  FROM read_parquet('{ACC}', file_row_number=true) WHERE TRY_STRPTIME(issue_d, '%b-%Y') IS NOT NULL
 )
-SELECT issue_dt, year(issue_dt) AS yr, year(issue_dt)::VARCHAR || 'Q' || quarter(issue_dt)::VARCHAR AS issue_q,
+SELECT TRY_CAST(id AS BIGINT) AS id, issue_dt, year(issue_dt) AS yr, year(issue_dt)::VARCHAR || 'Q' || quarter(issue_dt)::VARCHAR AS issue_q,
   loan_status, addr_state, grade, sub_grade,
   CASE WHEN loan_status IN ('Charged Off','Default') THEN 1 WHEN loan_status = 'Fully Paid' THEN 0 END::FLOAT AS bad,
   date_diff('month', issue_dt, lp_dt) AS lp_mob,
@@ -44,6 +46,7 @@ SELECT issue_dt, year(issue_dt) AS yr, year(issue_dt)::VARCHAR || 'Q' || quarter
 FROM a
 WHERE trim(term) = '36 months' AND application_type = 'Individual' AND loan_status NOT LIKE 'Does not meet%'
   AND issue_dt >= DATE '2009-01-01'
+ORDER BY file_row_number
 """
 con = duckdb.connect()
 con.execute("SET memory_limit='4GB'; SET threads=4;")
@@ -59,23 +62,11 @@ for c in CATEGORICAL:
 df["pd_m2"] = booster.predict(X).astype(np.float32)
 df["lp"] = np.log(df.pd_m2 / (1 - df.pd_m2)).astype(np.float32)
 
-# event coding (prereg §A)
-W = df.W.to_numpy()
-T = W.copy().astype(float)
-y = np.zeros(len(df), dtype=np.int8)
-is_def = df.loan_status.isin(["Charged Off", "Default"]).to_numpy()
-d = df.default_mob.to_numpy(dtype=float)
-m = is_def & (d <= W)
-T[m], y[m] = d[m], 1
-is_fp = (df.loan_status == "Fully Paid").to_numpy()
-p = np.maximum(df.lp_mob.to_numpy(dtype=float), 1)
-mp = is_fp & (p <= np.minimum(33, W))
-T[mp], y[mp] = p[mp], 2
-mm = is_fp & (p > 33) & (p <= W)      # matured normally -> censored at payoff
-T[mm] = p[mm]
+# event coding (prereg §A) — tested helper (tests/test_riskutils.py::test_code_events)
+T, y = code_events(df.loan_status.to_numpy(), df.lp_mob, df.default_mob, df.W)
 df["T"], df["event"] = T, y
 df = df[df.W >= 1].reset_index(drop=True)
-keep = ["issue_dt", "yr", "issue_q", "loan_status", "addr_state", "grade", "sub_grade", "bad", "lp_mob", "default_mob",
+keep = ["id", "issue_dt", "yr", "issue_q", "loan_status", "addr_state", "grade", "sub_grade", "bad", "lp_mob", "default_mob",
         "W", "T", "event", "funded_amnt", "int_rate", "installment", "total_rec_prncp", "recoveries",
         "collection_recovery_fee", "total_pymnt", "pd_m2", "lp"] + FEATURES
 df[keep].to_parquet(OUT)

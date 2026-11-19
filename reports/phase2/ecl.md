@@ -4,40 +4,40 @@ PD: A model (score-only competing-risks hazard, fit 2012-09..2013-12). **LGD = 8
 (EAD-weighted, 15,007 train defaults; LGD_i = 1 − (recoveries − collection fee) / (funded − principal received)).
 EAD = scheduled annuity balance; prepayment via competing risk. Discount = EIR (int_rate/12).
 
-LGD by M2-PD quintile band (1 = safest; train cut points), sensitivity only: B1 87.4%, B2 88.8%, B3 89.1%, B4 88.7%, B5 89.0%
+LGD by M2-PD quintile band (1 = safest; train cut points), sensitivity only: B1 87.5%, B2 89.0%, B3 88.7%, B4 88.9%, B5 88.9%
 
 ## Portfolio totals (day 1 = at origination; all loans Stage 1 at origination)
 
 |   loans |   funded $m |   pred lifetime PD % |   actual default % |   pred EL (undisc) $m |   realised loss $m |   realised / predicted |   day-1 ECL 12m $m |   lifetime ECL $m |
 |--------:|------------:|---------------------:|-------------------:|----------------------:|-------------------:|-----------------------:|-------------------:|------------------:|
-|  282934 |      3622.8 |               13.427 |             14.876 |               233.805 |            273.752 |                  1.171 |            100.361 |           201.756 |
+|  282934 |      3622.8 |               13.564 |             14.876 |                234.93 |            273.752 |                  1.165 |            100.701 |           202.745 |
 
 ## Backtest by issue quarter — predicted lifetime EL (undiscounted, at origination) vs realised net principal loss
 
 | issue_q   |   loans |   funded $m |   pred lifetime PD % |   actual default % |   pred EL (undisc) $m |   realised loss $m |   realised / predicted |   day-1 ECL 12m $m |   lifetime ECL $m |
 |:----------|--------:|------------:|---------------------:|-------------------:|----------------------:|-------------------:|-----------------------:|-------------------:|------------------:|
-| 2015Q1    |   56569 |     728.872 |               13.813 |             14.833 |                48.747 |             53.625 |                  1.1   |             20.961 |            41.944 |
-| 2015Q2    |   64222 |     815.616 |               13.691 |             15.381 |                54.116 |             64.268 |                  1.188 |             23.27  |            46.578 |
-| 2015Q3    |   73572 |     952.461 |               13.249 |             14.578 |                60.69  |             70.016 |                  1.154 |             26.01  |            52.354 |
-| 2015Q4    |   88571 |    1125.85  |               13.136 |             14.785 |                70.253 |             85.843 |                  1.222 |             30.12  |            60.88  |
+| 2015Q1    |   56569 |     728.872 |               13.974 |             14.833 |                49.041 |             53.625 |                  1.093 |             21.066 |            42.202 |
+| 2015Q2    |   64222 |     815.616 |               13.85  |             15.381 |                54.473 |             64.268 |                  1.18  |             23.394 |            46.892 |
+| 2015Q3    |   73572 |     952.461 |               13.364 |             14.578 |                60.919 |             70.016 |                  1.149 |             26.069 |            52.556 |
+| 2015Q4    |   88571 |    1125.85  |               13.262 |             14.785 |                70.497 |             85.843 |                  1.218 |             30.171 |            61.094 |
 
 ## Backtest by risk band (M2 PD quintile on train; 5 = riskiest)
 
 |   band |   loans |   funded $m |   pred lifetime PD % |   actual default % |   pred EL (undisc) $m |   realised loss $m |   realised / predicted |   day-1 ECL 12m $m |   lifetime ECL $m |
 |-------:|--------:|------------:|---------------------:|-------------------:|----------------------:|-------------------:|-----------------------:|-------------------:|------------------:|
-|      1 |   54145 |     801.595 |                3.387 |              4.591 |                11.764 |             16.849 |                  1.432 |              4.372 |            10.635 |
-|      2 |   51729 |     680.502 |                6.863 |              9.126 |                21.502 |             30.35  |                  1.411 |              8.369 |            19.099 |
-|      3 |   52967 |     659.587 |               10.333 |             13.061 |                32.444 |             43.661 |                  1.346 |             13.038 |            28.428 |
-|      4 |   56020 |     671.565 |               15.101 |             17.578 |                49.974 |             61.866 |                  1.238 |             20.792 |            43.215 |
-|      5 |   68073 |     809.547 |               27.428 |             26.614 |               118.121 |            121.027 |                  1.025 |             53.791 |           100.38  |
+|      1 |   53740 |     795.191 |                3.151 |              4.533 |                10.921 |             16.599 |                  1.52  |              4.063 |             9.877 |
+|      2 |   52073 |     692.969 |                6.712 |              9.068 |                21.42  |             30.78  |                  1.437 |              8.332 |            19.037 |
+|      3 |   53718 |     671.024 |               10.372 |             13.204 |                33.147 |             44.931 |                  1.356 |             13.307 |            29.051 |
+|      4 |   56478 |     674.809 |               15.412 |             17.745 |                51.226 |             63.15  |                  1.233 |             21.282 |            44.291 |
+|      5 |   66925 |     788.802 |               28.261 |             26.621 |               118.217 |            118.291 |                  1.001 |             53.716 |           100.488 |
 
 ## Allowance at reporting date 2015-12-31 (stage logic stated plainly)
 
 | stage                                                                 |   loans |   gross EAD $m |   allowance $m |   coverage % |
 |:----------------------------------------------------------------------|--------:|---------------:|---------------:|-------------:|
-| Stage 1 (performing; 12-month ECL)                                    |  259319 |       2864.66  |        111.485 |         3.89 |
+| Stage 1 (performing; 12-month ECL)                                    |  259319 |       2864.66  |        112.117 |         3.91 |
 | Stage 2 (SICR) — NOT allocable: no monthly DPD / refreshed PD in data |       0 |          0     |          0     |       nan    |
-| memo: if ALL performing were Stage 2 (lifetime ECL) — upper bound     |  259319 |       2864.66  |        166.87  |         5.83 |
+| memo: if ALL performing were Stage 2 (lifetime ECL) — upper bound     |  259319 |       2864.66  |        167.9   |         5.86 |
 | Stage 3 (defaulted by Dec-2015; LGD × EAD)                            |    4828 |         52.125 |         46.293 |        88.81 |
 | derecognised (prepaid by Dec-2015)                                    |   18787 |          0     |          0     |       nan    |
 

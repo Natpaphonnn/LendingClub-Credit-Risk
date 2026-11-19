@@ -4,16 +4,16 @@
 
 | rule | statistic | threshold | result |
 |---|---|---|---|
-| (a) sign + significance | θ = γ_u + γ_Δ12u (default) = -0.0185, 95% block-bootstrap CI [-0.0633, 0.0106] | θ > 0 and CI > 0 | FAIL |
-| (b) OOT value | cell error macro 2.098 pp vs score-only 2.752 pp (-23.7%); log loss 0.39231 vs 0.39370 | ≤ −10% and log loss not worse | PASS |
-| (c) stress size | adverse/baseline lifetime PD multiplier = 0.959 (mean PD 12.71% → 12.19%) | 1.1 – 3.0 | FAIL |
+| (a) sign + significance | θ = γ_u + γ_Δ12u (default) = -0.0379, 95% block-bootstrap CI [-0.0884, -0.0051] | θ > 0 and CI > 0 | FAIL |
+| (b) OOT value | cell error macro 2.121 pp vs score-only 2.909 pp (-27.1%); log loss 0.39246 vs 0.39415 | ≤ −10% and log loss not worse | PASS |
+| (c) stress size | adverse/baseline lifetime PD multiplier = 0.911 (mean PD 12.55% → 11.43%) | 1.1 – 3.0 | FAIL |
 
 ## Macro coefficients (log-odds per 1 pp; SE from Newton Hessian, bracket = bootstrap CI by issue quarter, B=200)
 
 | fit | loans | issue quarters | γ_u default | γ_Δ12u default | θ default | γ_u prepay | γ_Δ12u prepay |
 |---|---:|---:|---|---|---|---|---|
-| primary 2009-2014 | 333,745 | 24 | -0.0508 (0.0035) | 0.0324 (0.0085) | **-0.0185 [-0.0633, 0.0106]** | -0.0465 | -0.0386 |
-| sensitivity 2012-09..2014 | 283,253 | 10 | -0.0043 (0.0054) | 0.0381 (0.0107) | **0.0338 [-0.0107, 0.0625]** | -0.0449 | -0.0367 |
+| primary 2009-2014 | 333,745 | 24 | -0.0619 (0.0035) | 0.0240 (0.0085) | **-0.0379 [-0.0884, -0.0051]** | -0.0452 | -0.0369 |
+| sensitivity 2012-09..2014 | 283,253 | 10 | -0.0055 (0.0054) | 0.0342 (0.0107) | **0.0287 [-0.0139, 0.0568]** | -0.0454 | -0.0370 |
 
 (sensitivity row = pre-registered robustness, not part of the rule)
 
@@ -21,22 +21,22 @@
 
 | issue_q   | region    |     n |   obs |   pred_score_only |   pred_macro |
 |:----------|:----------|------:|------:|------------------:|-------------:|
-| 2015Q1    | Midwest   |  9996 | 14.63 |             12.55 |        13.22 |
-| 2015Q1    | Northeast | 10919 | 15.34 |             12.16 |        12.74 |
-| 2015Q1    | South     | 19813 | 15.09 |             12.6  |        13.23 |
-| 2015Q1    | West      | 15840 | 14.3  |             12.52 |        12.9  |
-| 2015Q2    | Midwest   | 11272 | 14.57 |             12.36 |        13.08 |
-| 2015Q2    | Northeast | 13086 | 15.68 |             12.11 |        12.76 |
-| 2015Q2    | South     | 23120 | 15.63 |             12.52 |        13.2  |
-| 2015Q2    | West      | 16744 | 15.35 |             12.32 |        12.79 |
-| 2015Q3    | Midwest   | 13112 | 14.63 |             12.16 |        12.97 |
-| 2015Q3    | Northeast | 15051 | 14.81 |             11.71 |        12.4  |
-| 2015Q3    | South     | 26046 | 14.94 |             12.06 |        12.78 |
-| 2015Q3    | West      | 19358 | 13.89 |             11.9  |        12.41 |
-| 2015Q4    | Midwest   | 16001 | 14.09 |             11.87 |        12.73 |
-| 2015Q4    | Northeast | 18014 | 14.67 |             11.36 |        12.1  |
-| 2015Q4    | South     | 31924 | 15.39 |             11.81 |        12.57 |
-| 2015Q4    | West      | 22491 | 14.61 |             11.55 |        12.14 |
+| 2015Q1    | Midwest   |  9996 | 14.63 |             12.42 |        13.24 |
+| 2015Q1    | Northeast | 10919 | 15.34 |             12.02 |        12.71 |
+| 2015Q1    | South     | 19813 | 15.09 |             12.44 |        13.19 |
+| 2015Q1    | West      | 15840 | 14.3  |             12.39 |        12.87 |
+| 2015Q2    | Midwest   | 11272 | 14.57 |             12.22 |        13.08 |
+| 2015Q2    | Northeast | 13086 | 15.68 |             11.97 |        12.75 |
+| 2015Q2    | South     | 23120 | 15.63 |             12.36 |        13.17 |
+| 2015Q2    | West      | 16744 | 15.35 |             12.19 |        12.78 |
+| 2015Q3    | Midwest   | 13112 | 14.63 |             12.01 |        12.97 |
+| 2015Q3    | Northeast | 15051 | 14.81 |             11.54 |        12.35 |
+| 2015Q3    | South     | 26046 | 14.94 |             11.89 |        12.75 |
+| 2015Q3    | West      | 19358 | 13.89 |             11.75 |        12.38 |
+| 2015Q4    | Midwest   | 16001 | 14.09 |             11.69 |        12.72 |
+| 2015Q4    | Northeast | 18014 | 14.67 |             11.18 |        12.06 |
+| 2015Q4    | South     | 31924 | 15.39 |             11.62 |        12.54 |
+| 2015Q4    | West      | 22491 | 14.61 |             11.38 |        12.1  |
 
 ## Context: state unemployment (BLS LAUS, SA), min / median / max across 51 states
 

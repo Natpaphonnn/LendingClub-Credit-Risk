@@ -12,13 +12,15 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src" / "phase1"))
 from config import ART, ASOF, CHARGEOFF_LAG_M, TRAIN, load_base, split_mask  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src" / "lib"))
+from riskutils import default_by_mob  # noqa: E402
 
 REP2 = ROOT / "reports" / "phase2"
 df = load_base(["issue_dt", "issue_q", "bad", "default_mob"])
 df = df.join(pd.read_parquet(ART / "scores_m1.parquet", columns=["pd_m1"])).join(pd.read_parquet(ART / "scores_m2.parquet"))
 df["q_end"] = df.issue_dt.dt.to_period("Q").dt.end_time.dt.to_period("M").dt.to_timestamp()
-df["d6"] = (df.default_mob <= 6).astype(float)
-df["d12"] = (df.default_mob <= 12).astype(float)
+df["d6"] = default_by_mob(df.default_mob, 6)
+df["d12"] = default_by_mob(df.default_mob, 12)
 trm = split_mask(df, TRAIN)
 r6 = df.loc[trm, "d6"].mean() / df.loc[trm, "bad"].mean()
 d12_train = df.loc[trm, "d12"].mean()

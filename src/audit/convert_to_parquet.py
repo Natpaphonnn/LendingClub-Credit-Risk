@@ -16,7 +16,7 @@ raw, interim = Path(sys.argv[1]), Path(sys.argv[2])
 interim.mkdir(parents=True, exist_ok=True)
 
 con = duckdb.connect()
-con.execute("SET memory_limit='4GB'; SET threads=4; SET preserve_insertion_order=false;")
+con.execute("SET memory_limit='4GB'; SET threads=4; SET preserve_insertion_order=true;")  # keep CSV row order (reproducibility)
 con.execute(f"SET temp_directory='{interim / '_duckdb_tmp'}'")
 
 stems = sys.argv[3:] or ["accepted_2007_to_2018Q4", "rejected_2007_to_2018Q4"]

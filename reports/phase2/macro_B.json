@@ -2,55 +2,55 @@
  "primary": {
   "label": "primary 2009-2014",
   "n_loans": 333745,
-  "n_rows": 2234998,
+  "n_rows": 2234692,
   "n_quarters": 24,
-  "gamma_u_default": -0.050843763232821346,
-  "gamma_u_default_se": 0.0035458238128615533,
-  "gamma_d12_default": 0.03237337266621508,
-  "gamma_d12_default_se": 0.008479497358569472,
-  "gamma_u_prepay": -0.04654206162218102,
-  "gamma_d12_prepay": -0.038579088849216334,
-  "theta": -0.018470390566606265,
-  "theta_lo": -0.06331120369552065,
-  "theta_hi": 0.010583374418125477,
-  "theta_boot_sd": 0.019088328940403944
+  "gamma_u_default": -0.061945022377554365,
+  "gamma_u_default_se": 0.003546697153802746,
+  "gamma_d12_default": 0.02401909988205374,
+  "gamma_d12_default_se": 0.008464978690719134,
+  "gamma_u_prepay": -0.04518230583308043,
+  "gamma_d12_prepay": -0.03687678558499597,
+  "theta": -0.03792592249550063,
+  "theta_lo": -0.08844313432810214,
+  "theta_hi": -0.005051061988821074,
+  "theta_boot_sd": 0.020846636009788415
  },
  "sensitivity": {
   "label": "sensitivity 2012-09..2014",
   "n_loans": 283253,
-  "n_rows": 1881074,
+  "n_rows": 1881027,
   "n_quarters": 10,
-  "gamma_u_default": -0.004261375165234866,
-  "gamma_u_default_se": 0.005445936960467756,
-  "gamma_d12_default": 0.0380501094602691,
-  "gamma_d12_default_se": 0.010734402410934056,
-  "gamma_u_prepay": -0.0449330335144755,
-  "gamma_d12_prepay": -0.036713495610754036,
-  "theta": 0.033788734295034234,
-  "theta_lo": -0.010707337420450104,
-  "theta_hi": 0.062461614000596626,
-  "theta_boot_sd": 0.018131277915673854
+  "gamma_u_default": -0.0054974116269639155,
+  "gamma_u_default_se": 0.005443278413619265,
+  "gamma_d12_default": 0.03424563176040447,
+  "gamma_d12_default_se": 0.010732487061978746,
+  "gamma_u_prepay": -0.04535307796310182,
+  "gamma_d12_prepay": -0.037023485327782164,
+  "theta": 0.02874822013344055,
+  "theta_lo": -0.013887182667994019,
+  "theta_hi": 0.05678383036873123,
+  "theta_boot_sd": 0.0180844511474395
  },
  "rule_a": {
-  "theta": -0.018470390566606265,
+  "theta": -0.03792592249550063,
   "ci": [
-   -0.06331120369552065,
-   0.010583374418125477
+   -0.08844313432810214,
+   -0.005051061988821074
   ],
   "pass": false
  },
  "rule_b": {
-  "err_score_only": 0.027516990900039673,
-  "err_macro": 0.020982973277568817,
-  "rel_change": -0.23745393753051758,
-  "logloss_score_only": 0.39370203018188477,
-  "logloss_macro": 0.39230647683143616,
+  "err_score_only": 0.029085885733366013,
+  "err_macro": 0.021205514669418335,
+  "rel_change": -0.270934522151947,
+  "logloss_score_only": 0.3941541612148285,
+  "logloss_macro": 0.3924550414085388,
   "pass": true
  },
  "rule_c": {
-  "multiplier": 0.9591166973114014,
-  "mean_pd_baseline": 0.12710756063461304,
-  "mean_pd_adverse": 0.12191098183393478,
+  "multiplier": 0.9106948375701904,
+  "mean_pd_baseline": 0.1255359649658203,
+  "mean_pd_adverse": 0.11432494968175888,
   "pass": false
  },
  "decision": "B FAILS -> Plan B: A + C"
