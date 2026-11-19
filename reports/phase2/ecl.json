@@ -1,0 +1,65 @@
+{
+ "LGD": 0.8881116053278834,
+ "LGD_CI": [
+  0.8856026704180832,
+  0.890201630061423
+ ],
+ "LGD_by_band": {
+  "1": 0.8739877169999822,
+  "2": 0.887863041927658,
+  "3": 0.8906606961054108,
+  "4": 0.8873723850974897,
+  "5": 0.8895054926911656
+ },
+ "n_train_defaults": 15007,
+ "total": {
+  "loans": 282934.0,
+  "funded $m": 3622.795975,
+  "pred lifetime PD %": 13.42664623260498,
+  "actual default %": 14.875907455448974,
+  "pred EL (undisc) $m": 233.8051767350474,
+  "realised loss $m": 273.7519332425977,
+  "realised / predicted": 1.1708548846752813,
+  "day-1 ECL 12m $m": 100.36107427949541,
+  "lifetime ECL $m": 201.75613256909813
+ },
+ "staging": {
+  "stage": [
+   "Stage 1 (performing; 12-month ECL)",
+   "Stage 2 (SICR) \u2014 NOT allocable: no monthly DPD / refreshed PD in data",
+   "  memo: if ALL performing were Stage 2 (lifetime ECL) \u2014 upper bound",
+   "Stage 3 (defaulted by Dec-2015; LGD \u00d7 EAD)",
+   "derecognised (prepaid by Dec-2015)"
+  ],
+  "loans": [
+   259319,
+   0,
+   259319,
+   4828,
+   18787
+  ],
+  "gross EAD $m": [
+   2864.6646961501833,
+   0.0,
+   2864.6646961501833,
+   52.12523857582215,
+   0.0
+  ],
+  "allowance $m": [
+   111.48531620083067,
+   0.0,
+   166.8700774415278,
+   46.29302930967233,
+   0.0
+  ],
+  "coverage %": [
+   3.89,
+   NaN,
+   5.83,
+   88.81,
+   NaN
+  ]
+ },
+ "scenarios": {},
+ "b_passed": false
+}

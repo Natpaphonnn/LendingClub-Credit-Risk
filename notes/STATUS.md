@@ -37,13 +37,22 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 - **Vintage:** default ที่ MOB 12 สูงขึ้นในทุก M1-score band (concept drift ไม่ใช่ mix shift)
 - Reason codes: scorecard "points below max" + LightGBM TreeSHAP; top-1 ตรงกัน 48%
 
-## Next step — Phase 2 (A + B)
-- Pre-register Phase 2 (survival / competing risks; macro data จาก BLS LAUS + ทดสอบตาม Plan B rule) ก่อน fit
-- ดาวน์โหลด BLS state unemployment → บันทึกใน notes/data_sources.md
+## Done — Phase 2 (A + Plan B → A + C, ECL, MOB-6 test) ✅ — รายละเอียด: notes/03_phase2_results.md
+- Pre-register: notes/03_prereg_phase2.md (commit 1203ada) ก่อนดาวน์โหลด macro / fit
+- **A (competing-risks lifetime PD):** A/E 1.00 train, 0.98–1.02 valid 2014; under-predict OOT 2015 (1.09–1.12) และ 2016–17 (1.26–1.42).
+  ไม่สน prepayment → lifetime PD over-state 13.4% → 18.0%
+- **B FAIL → Plan B (A + C):** (a) θ = −0.019 [−0.063, 0.011] FAIL; (b) PASS แต่ด้วยเหตุผลผิด (level coef ติดลบ = time-trend confounding);
+  (c) adverse/baseline 0.96 FAIL. Macro data: BLS LAUS (public domain)
+- **ECL 2015 portfolio** (score-only, LGD 88.8%): day-1 12m ECL $100m (2.8%), lifetime $202m (5.6%); realised loss $274m vs predicted EL $234m (×1.17);
+  Stage 2 allocate ไม่ได้ (ไม่มี DPD รายเดือน) — ระบุชัด
+- **C (MILP):** แพ้ approve-all บน metric ที่ pre-register (undiscounted profit $222m vs $230m); exploratory NPV @5%: C $46m vs approve-all $28m ≈ M2 cutoff $48m
+- **MOB-6 A/E (out-of-discovery 2016–17):** sensitivity 7/7, lead 6 เดือน; specificity ทดสอบไม่ได้
+
+## Next step
+- Phase 3 write-up (Medium + Zenn JP), browser demo, private repo — รอ Nat สั่ง
 
 ## Open questions for Nat
-1. Write-up: M2 LightGBM ชนะตามกฎ — จะให้แสดง scorecard คู่กันในฐานะ "explainable / regulatory alternative" ไหม?
-   (แนะนำ: แสดงคู่กัน เพราะธนาคารมักต้องมีทั้งสองแบบ)
-2. Phase 2 B: Phase 1 ชี้ว่า drift ปี 2015–16 ไม่ใช่ population shift และ US unemployment ช่วงนั้นกำลังลดลง → macro signal น่าจะอ่อน
-   และ Plan B rule อาจถูก trigger (→ A + C). ทำ B ตามกฎก่อนแล้วค่อยตัดสินไหม? (แนะนำ: ทำตามกฎ)
-3. จะเพิ่ม MOB-6 A/E เข้า monitoring framework แบบ pre-register ใน Phase 2 ไหม? (exploratory evidence: เร็วกว่า 6 เดือน)
+1. Write-up: เล่า B ที่ fail เป็นจุดแข็ง ("pre-registered rule กัน false positive ได้") ไหม? (แนะนำ: ใช่ — เป็นหนึ่งใน highlight)
+2. ECL ไม่มี forward-looking overlay: จะให้ pre-register "management overlay จาก early A/E" เป็น Phase 2.5 ไหม หรือปล่อยเป็น limitation?
+   (แนะนำ: ทำแบบสั้น ถ้ามีเวลา — ธนาคารไทยใช้ overlay จริง)
+3. C metric ที่ pre-register (undiscounted) เลือกไม่ดี — ใน write-up ให้แสดงทั้งสองแบบพร้อมคำอธิบาย (ตามที่ทำใน figure) โอเคไหม?
