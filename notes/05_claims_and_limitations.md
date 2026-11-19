@@ -1,4 +1,4 @@
-# 05 — Claims (with evidence) and limitations — 2026-11-19
+# 05 — Claims (with evidence) and limitations — 2026-11-19 (revised after independent validation; see notes/06_quality_report.md)
 
 > สำหรับ Nat: เขียนภาษาอังกฤษเพื่อใช้เป็น appendix ของ article ได้ตรง ๆ. ทุก claim ระบุ **status**:
 > **PRE-REG** = pre-registered test/rule (confirmatory) · **DESC** = descriptive fact from data · **EXPL** = exploratory (not pre-registered) ·
@@ -10,10 +10,10 @@
 |---|---|---|---|---|
 | C1 | The 2007–08 crisis cohort is too small to test a "2007 → 2008" model. | 603 + 2,393 loans of 2,260,668 | DESC | notes/01_data_audit.md §2; reports/audit/audit_tables.md "Volume by issue year" |
 | C2 | 36-month vintages after 2015 are unfinished; naive bad rates on resolved loans are biased. | resolved: 2015 99.9%, 2016 71.8%, 2017 40.1%, 2018 12.0%; 2016Q1 vs Q2 bad-among-resolved 16.1% vs 22.4% | DESC | 01_data_audit.md §3; audit_tables.md "Matured check by issue quarter" |
-| C3 | A quarter of the columns leak post-origination information. | 38 POST + 9 LC-decision of 151 | DESC | 01_data_audit.md §4; reports/audit/column_catalogue.md; src/audit/leakage_map.py |
+| C3 | 31% of the columns must not enter an application model: post-origination leakage or LendingClub's own decisions. | 38 POST + 9 LC-decision of 151 | DESC | 01_data_audit.md §4; reports/audit/column_catalogue.md; src/audit/leakage_map.py |
 | C4 | The free-text description field vanishes in 2014. | desc present 25% in 2014-03, 0.3% in 2014-04, 0 after | DESC | 01_data_audit.md §7; audit_tables.md "7b" |
 | C5 | Monotone LightGBM beats the WoE scorecard out of time (pre-registered rule met). | Gini 36.8 [36.3, 37.3] vs 33.7 [33.1, 34.2]; ΔGini +3.1 [2.8, 3.4] | PRE-REG | notes/02_phase1_results.md §4; reports/phase1/evaluation.md; metrics.json |
-| C6 | The champion beats LendingClub's own sub-grade on 2015. | 36.8 vs 35.7 [35.2, 36.3] (benchmark, not a pre-registered test) | DESC (benchmark) | evaluation.md (LC_subgrade row) |
+| C6 | The champion beats LendingClub's own sub-grade on 2015. | 36.8 vs 35.7 [35.2, 36.3]; paired difference +1.05 [0.56, 1.48] (benchmark, not a pre-registered test) | DESC (benchmark) | evaluation.md (LC_subgrade row, OOT note) |
 | C7 | At the same bad-rate target the champion approves more applicants. | 82.1% vs 77.4% on 2014 (11% target) | PRE-REG (cutoff rule) | 02_phase1_results.md §5; evaluation.md "Cutoff rule" |
 | C8 | Ranking did not degrade on matured 2014–15 quarters. | KS (champion) 25.9–27.1, never < 0.9 × 26.4 | PRE-REG (monitoring threshold) | reports/phase1/monitoring.md §3 |
 | C9 | Calibration drifted: 2015 PD under-predicted and the 2014 cutoff breached appetite. | CITL −1.75 pp [−1.87, −1.63]; approved bad 11.91% [11.78, 12.04] vs 11% target | PRE-REG | evaluation.md; 02_phase1_results.md §4–5 |
@@ -21,15 +21,15 @@
 | C11 | The only PSI amber (scorecard, 2018) came from applicants getting better. | PSI 0.11–0.12; % below cutoff 21% → 10% | DESC | monitoring.md §1 |
 | C12 | CSI alerts pointed to "safer" applicants. | median revol_util 59% → 41%; Source Verified 16% → 35–47% (2014–18 quarters) | DESC | 02_phase1_results.md §7; monitoring.md §5–6 |
 | C13 | The drift was concept drift: defaults rose in every score band. | band 1 @MOB12 7.0% → 10.8%; band 5 1.1% → 2.3% (2013Q4 → 2016Q3) | DESC (vintage, pre-registered method) | reports/phase1/vintage.md |
-| C14 | The first pre-registered label alarm came 18 months after the first worse vintage; ~545k loans booked meanwhile. | month-12 A/E amber for 2015Q2, knowable Dec 2016; red Sep 2017 (champion) / Jun 2017 (scorecard); 544,642 loans 2015Q2–2016Q4 | PRE-REG (signal + truth definitions) | monitoring.md §2, §4; 02_phase1_results.md §7 |
+| C14 | Relative to a counterfactual 2015 deployment, the first pre-registered label alarm came 18 months after the first worse vintage; ~545k loans booked meanwhile. | month-12 A/E amber for 2015Q2, knowable Dec 2016; red Sep 2017 (champion) / Jun 2017 (scorecard); 544,642 loans 2015Q2–2016Q4 | PRE-REG (signal + truth definitions) | monitoring.md §2, §4; 02_phase1_results.md §7 |
 | C15 | Month-6 A/E would have flagged 2015Q2 six months earlier. | amber knowable Jun 2016 | EXPL (discovered here) | reports/phase1/exploratory_early_signal.md |
-| C16 | Month-6 A/E caught every deteriorated quarter in unseen 2016–17 vintages, 6 months ahead. | 7/7, lead 6 months; specificity untestable | PRE-REG (thresholds fixed before test) | reports/phase2/mob6_test.md |
-| C17 | Ignoring prepayment overstates lifetime PD by about a third. | 18.2% vs 13.6% (2015 portfolio; actual 14.9%) | PRE-REG (demo specified in prereg) | notes/03_phase2_results.md §A; reports/phase2/survival_A.md |
+| C16 | Month-6 A/E is red in every 2016–17 quarter; in the discovery period the champion's version caught 1 of 2 deteriorated quarters with no false alarms. Not a confirmatory test (values seen before thresholds were registered; lead time 6 months by construction). | 7/7; discovery M2 1/2 sensitivity, 6/6 specificity | DESC / EXPL (relabelled after review CR-1) | reports/phase2/mob6_test.md |
+| C17 | Treating prepayment as censoring (same hazards) overstates lifetime PD by about a third. | 18.2% vs 13.6% (2015 portfolio; actual 14.9%) | PRE-REG (demo specified in prereg) | notes/03_phase2_results.md §A; reports/phase2/survival_A.md |
 | C18 | The competing-risks model is well calibrated in time but inherits the drift out of time. | A/E 1.01 train, 0.98–1.02 (2014), 1.07–1.11 (2015), 1.26–1.39 (2016), 1.44 (2017) | PRE-REG (evaluation spec) | survival_A.md |
-| C19 | State unemployment failed the pre-registered macro rule; the adverse scenario lowered PD. | (a) θ −0.038 [−0.088, −0.005] FAIL; (b) −27.1% PASS; (c) 0.91 FAIL | PRE-REG | reports/phase2/macro_B.md |
-| C20 | The (b) pass is spurious time-trend confounding. | level coefficient −0.062 (SE 0.0035); unemployment fell while defaults rose | Interpretation of PRE-REG output | macro_B.md; 03_phase2_results.md §B |
-| C21 | Lifetime ECL under-provisioned the 2015 vintage by 17%. | predicted EL $234.9m vs realised $273.8m (×1.17) | PRE-REG (backtest spec) | reports/phase2/ecl.md |
-| C22 | Under-provision is concentrated in the safest borrowers. | ×1.52 (safest band) → ×1.00 (riskiest) | PRE-REG (by-band backtest) | ecl.md |
+| C19 | State unemployment failed the pre-registered macro rule; the adverse scenario lowered PD. | (a) θ −0.038 [−0.088, −0.005] FAIL (not positive; before the deterministic re-run −0.019 [−0.063, 0.011]); (b) −27.1% PASS; (c) 0.91 FAIL | PRE-REG | reports/phase2/macro_B.md |
+| C20 | The (b) pass is spurious time-trend confounding. | level coefficient −0.062; unemployment fell while defaults rose | Interpretation of PRE-REG output | macro_B.md; 03_phase2_results.md §B |
+| C21 | Lifetime expected loss at origination under-predicted the 2015 vintage's realised loss (a backtest, not a booked provision). | predicted EL $234.9m vs realised $273.8m (×1.17; 14% of realised loss missed) | PRE-REG (backtest spec) | reports/phase2/ecl.md |
+| C22 | The realised/predicted ratio is highest for the safest borrowers (largest dollar gaps in the middle bands). | ×1.52 (safest band) → ×1.00 (riskiest) | PRE-REG (by-band backtest) | ecl.md |
 | C23 | ECL size at origination. | 12m $100.7m (2.8%); lifetime $202.7m (5.6%); LGD 88.8% [88.6, 89.0] | PRE-REG | ecl.md |
 | C24 | A month-12 early-performance overlay closes 54% of the gap (month-6: 6%). | $256.0m / $237.3m vs $273.8m | ILLUS | reports/phase2/overlay.md |
 | C25 | The pre-registered profit metric was wrong; under it approve-all "wins". | undiscounted: approve-all $230.3m vs MILP $222.3m | PRE-REG (result) + our admission | reports/phase2/policy_C.md |
@@ -80,6 +80,23 @@
 **Policy (C)**
 - Pre-registered profit metric omitted cost of funds (our error); the corrected metric is exploratory with approximate cash timing.
 - 30 coarse cells; the bad-rate constraint uses model PD, which under-predicted after the drift; 5% funding rate is an assumption (3% and 8% shown).
+
+**Added after independent validation (notes/06_quality_report.md)**
+- **Timeline look-ahead (MA-1):** training labels are full 36-month outcomes of 2012–13 vintages, complete only around 2017; alarm dates
+  are relative to a counterfactual 2015 deployment. An as-of rebuild (short bad window / censored hazard as at 2014-12) is proposed, not done.
+- **Re-run and selection noise (MA-2):** a deterministic re-run changed the selected LightGBM config (num_leaves 15 → 63); the grid's
+  validation log-loss spread is 0.0006, so selection is near-noise. All 12 configs keep the conclusions (reports/quality/grid_sensitivity.md).
+- **Macro CI fragility (MA-3):** θ moved −0.019 → −0.038 between runs; the bootstrap keeps the 25% subsample fixed (as pre-registered).
+- **MOB-6 not confirmatory (CR-1, MA-7):** see C16.
+- **Staging uses hindsight (MA-5):** stage 3 is decided from the final status; many stage-3 loans had < 90 DPD at the reporting date.
+- **No refit at reporting date (MA-6):** default = first missed payment (not 90 DPD); LGD undiscounted, no downturn adjustment;
+  recoveries include debt-sale proceeds; EAD excludes accrued interest. The ×1.17 gap mixes drift with the absence of recalibration.
+- **Pre-registration evidence is local (MA-10):** commits are local and self-timestamped; code and results were sometimes committed in the
+  same second. Order is self-attested, not externally verifiable.
+- **Statistics:** bootstrap CIs resample loans i.i.d. (no quarter clustering); A/E thresholds have no binomial/traffic-light bounds.
+- **Not checked:** fair-lending / disparate impact (e.g. `purpose` as a decline reason); post-training monotonicity test of the LightGBM model;
+  unseen categorical values are not monitored.
+- **Provenance check is lenient:** it accepts any report value that rounds to the token; the claim checker is the strict test.
 
 **Process notes (fixed issues, for transparency)**
 - Audit: `desc` SQL keyword and `avg()` skipping NULLs inflated text shares in the first run — fixed before reporting.

@@ -35,16 +35,20 @@ LGD by M2-PD quintile band (1 = safest; train cut points), sensitivity only: B1 
 
 | stage                                                                 |   loans |   gross EAD $m |   allowance $m |   coverage % |
 |:----------------------------------------------------------------------|--------:|---------------:|---------------:|-------------:|
-| Stage 1 (performing; 12-month ECL)                                    |  259319 |       2864.66  |        112.117 |         3.91 |
+| Stage 1 (performing; 12-month ECL)                                    |  263610 |       2992.31  |        112.293 |         3.75 |
 | Stage 2 (SICR) — NOT allocable: no monthly DPD / refreshed PD in data |       0 |          0     |          0     |       nan    |
-| memo: if ALL performing were Stage 2 (lifetime ECL) — upper bound     |  259319 |       2864.66  |        167.9   |         5.86 |
-| Stage 3 (defaulted by Dec-2015; LGD × EAD)                            |    4828 |         52.125 |         46.293 |        88.81 |
-| derecognised (prepaid by Dec-2015)                                    |   18787 |          0     |          0     |       nan    |
+| memo: if ALL performing were Stage 2 (lifetime ECL) — upper bound     |  263610 |       2992.31  |        174.963 |         5.85 |
+| Stage 3 (defaulted by Dec-2015; LGD × EAD)                            |    3871 |         42.141 |         37.426 |        88.81 |
+| derecognised (prepaid by Dec-2015)                                    |   15453 |          0     |          0     |       nan    |
 
 - Stage 1 = performing at Dec-2015 → 12-month ECL from remaining life (hazards conditional on survival to Dec-2015).
 - Stage 2 needs a significant-increase-in-credit-risk test (30 DPD backstop or a refreshed lifetime PD vs origination). LC data has
   no monthly delinquency history and no refreshed scores, so stage 2 **cannot be allocated**; the memo row shows the lifetime-ECL upper bound.
 - Stage 3 = default month (last payment + 1) ≤ Dec-2015 → allowance = LGD × scheduled EAD at that point (simplification).
+- **EX-POST / HINDSIGHT (independent review MA-5):** stage 3 membership uses the *final* status (the loan later charged off). At the
+  reporting date 1,571 of the 3,871 stage-3 loans had fewer than 3 missed payments (< 90 DPD), so a real bank would
+  not yet have classed them as credit-impaired; the same last-payment proxy could flag ≥ 30 DPD for stage 2, which this table does not do.
+  Treat this table as an illustration of the stage mechanics, not as an allowance a lender could have booked at Dec-2015.
 
 ## Macro scenarios
 

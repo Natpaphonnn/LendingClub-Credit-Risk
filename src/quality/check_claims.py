@@ -114,8 +114,11 @@ chk("C5b", "OOT Gini M1 [CI]", ["33.7", "33.1", "34.2"], [g(oo.bad, -oo.score_m1
 d = o["delta_gini_M2_minus_M1"]
 chk("C5c", "ΔGini M2−M1 [CI]", ["3.1", "2.8", "3.4"], [g(oo.bad, oo.pd_m2) - g(oo.bad, -oo.score_m1), 100 * d["lo"], 100 * d["hi"]],
     "metrics.json + sklearn", "point re-derived; CI read", doc_id="C5")
-chk("C6", "OOT Gini LC sub-grade [CI]", ["35.7", "35.2", "36.3"], [g(oo.bad, oo.sub_grade.map(sg)), 100 * o["LC_subgrade"]["gini_lo"], 100 * o["LC_subgrade"]["gini_hi"]],
-    "metrics.json + sklearn", "point re-derived; CI read")
+dl = o["delta_gini_M2_minus_LC"]
+chk("C6", "OOT Gini LC sub-grade [CI]; paired M2 − LC [CI]", ["35.7", "35.2", "36.3", "1.05", "0.56", "1.48"],
+    [g(oo.bad, oo.sub_grade.map(sg)), 100 * o["LC_subgrade"]["gini_lo"], 100 * o["LC_subgrade"]["gini_hi"],
+     g(oo.bad, oo.pd_m2) - g(oo.bad, oo.sub_grade.map(sg)), 100 * dl["lo"], 100 * dl["hi"]],
+    "metrics.json + sklearn", "points re-derived; CIs read")
 c1, c2 = m1["cutoff"]["M1_scorecard|validation_2014"]["cutoff"], m1["cutoff"]["M2_lgbm|validation_2014"]["cutoff"]
 chk("C7", "validation approval % M2 vs M1", ["82.1", "77.4"], [100 * (va.pd_m2 <= c2).mean(), 100 * (va.score_m1 >= c1).mean()],
     "metrics.json cutoffs + scores", "approval re-derived")
@@ -157,8 +160,9 @@ e15 = ex[(ex.signal == "A/E MOB6 M2") & (ex.level == "AMBER/RED")].iloc[0]
 chk("C15", "MOB6 first amber (M2) knowable", ["Jun 2016"], [fmt_m(e15["knowable at"])], "exploratory_early_signal.md", "parsed")
 rows[-1]["result"] = rows[-1]["result"] if e15["first issue quarter"] == "2015Q2" else "FAIL"
 mt = md_table(R2 / "mob6_test.md", "Summary")
-chk("C16", "MOB6 out-of-discovery hits (M1 = M2) and lead months", ["7/7", "6"],
-    [mt["sensitivity (amber+)"][0].split(" ")[0], float(mt["median lead (months)"][0])], "mob6_test.md", "parsed")
+cf = md_table(R2 / "mob6_test.md", "Discovery-period confusion matrix").set_index("model")
+chk("C16", "MOB6 2016–17 flagged (M1 = M2); discovery M2 sensitivity / specificity (descriptive)", ["7/7", "1/2", "6/6"],
+    [mt["sensitivity (amber+)"][0].split(" ")[0], cf.loc["M2", "sensitivity"], cf.loc["M2", "specificity"]], "mob6_test.md", "parsed")
 rows[-1]["result"] = rows[-1]["result"] if mt["sensitivity (amber+)"][1].split(" ")[0] == "7/7" else "FAIL"
 pa = pd.read_parquet(ROOT / "data" / "interim" / "p2" / "pred_A.parquet")
 p15 = pa[pa.issue_q.str.startswith("2015")]
@@ -175,10 +179,11 @@ chk("C19", "θ [CI]; rule b rel. change %; stress multiplier", ["-0.038", "-0.08
     [mb["rule_a"]["theta"], mb["rule_a"]["ci"][0], mb["rule_a"]["ci"][1], 100 * mb["rule_b"]["rel_change"], mb["rule_c"]["multiplier"]],
     "macro_B.json", "read")
 rows[-1]["result"] = rows[-1]["result"] if (not mb["rule_a"]["pass"] and mb["rule_b"]["pass"] and not mb["rule_c"]["pass"]) else "FAIL"
-chk("C20", "γ_u default (SE)", ["-0.062", "0.0035"], [mb["primary"]["gamma_u_default"], mb["primary"]["gamma_u_default_se"]], "macro_B.json", "read")
+chk("C20", "γ_u default (level coefficient)", ["-0.062"], [mb["primary"]["gamma_u_default"]], "macro_B.json", "read")
 t = ecl["total"]
-chk("C21", "pred EL $m / realised $m / ratio", ["234.9", "273.8", "1.17"],
-    [t["pred EL (undisc) $m"], t["realised loss $m"], t["realised / predicted"]], "ecl.json", "read")
+chk("C21", "pred EL $m / realised $m / ratio / % of realised missed", ["234.9", "273.8", "1.17", "14"],
+    [t["pred EL (undisc) $m"], t["realised loss $m"], t["realised / predicted"], 100 * (1 - t["pred EL (undisc) $m"] / t["realised loss $m"])],
+    "ecl.json", "read")
 eb = md_table(R2 / "ecl.md", "Backtest by risk band")
 chk("C22", "realised/pred safest band 1 / riskiest band 5", ["1.52", "1.00"],
     [float(eb["realised / predicted"].iloc[0]), float(eb["realised / predicted"].iloc[-1])], "ecl.md", "parsed")

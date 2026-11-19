@@ -2,7 +2,7 @@
 
 Pre-registration: `notes/02_prereg_phase1.md` (commit 652b889 — commit ก่อน fit model ใด ๆ).
 ทุกตัวเลขมาจาก code ใน `src/phase1/` → ตารางเต็ม `reports/phase1/`, figures `reports/figures/p1_*.png`.
-OOT 2015 ถูกแตะ**ครั้งเดียว** ใน `evaluate.py` หลังเลือกทุกอย่างบน validation แล้ว
+OOT 2015 ถูกประเมินครั้งเดียวต่อ pipeline run ใน `evaluate.py` หลังเลือกทุกอย่างบน validation แล้ว; มี deterministic re-run 1 ครั้ง (ดู §10 ข้อ 5)
 
 Reproduce (ตามลำดับ, รวม ~2 นาที):
 ```
@@ -18,7 +18,7 @@ for s in build_dataset train_scorecard train_lgbm evaluate monitoring vintage ex
    paired ΔGini = **+3.1 [2.8, 3.4]** points (เกณฑ์ ≥ 2.0 และ CI > 0 → ผ่าน)
 2. **Model "รอด" 2015 ในแง่ ranking แต่ไม่รอดในแง่ calibration:** KS/Gini บน OOT ไม่ลดลงเลย แต่ทั้งสอง model
    under-predict PD 1.75–2.0 pp (≈ 12–13% relative); cutoff ที่ตั้งไว้ปี 2014 ให้ bad rate 11.0% → ปี 2015 ได้ 11.7–11.9%
-3. **Monitoring: PSI/CSI ไม่จับ drift เลย** (score PSI ≤ 0.03 ตลอด 2014–2017). Signal แรกที่จับได้คือ MOB-12 A/E:
+3. **Monitoring: PSI/CSI ไม่จับ drift เลย** (score PSI ≤ 0.03 ตลอด 2014Q1–2017Q3; M2 ≤ 0.06 ถึง 2018). Signal แรกที่จับได้คือ MOB-12 A/E:
    amber สำหรับ vintage 2015Q2 → **รู้ได้ ธ.ค. 2016**, red สำหรับ 2015Q4 → มิ.ย. 2017. ระหว่างนั้น LC ปล่อยไปแล้ว
    ~545k loans (36m, 2015Q2–2016Q4) ที่อยู่ใน vintage ที่แย่ลง
 4. **Vintage curves:** default ที่ MOB 12 สูงขึ้น**ในทุก risk band** (B1: ~7% ใน 2013 → ~10.5% ใน 2016; B5: ~1.1% → ~2.2%)
@@ -65,6 +65,7 @@ Base table: 1,485,240 rows (`data/interim/p1_base.parquet`, git-ignored). OOT �
 
 Observed bad rate 14.88%. 95% bootstrap CI (B = 500). Validation 2014: M1 Gini 32.4, M2 36.2, LC 31.9
 - **ΔGini M2 − M1 = 3.10 [2.81, 3.38]** → M2 champion. (validation: 3.74 [3.37, 4.09])
+- M2 − LC sub_grade บน OOT = +1.05 [0.56, 1.48] (paired bootstrap, descriptive)
 - LC sub_grade ดีกว่า M1 บน OOT 2.0 [1.6, 2.5] points แต่ไม่ดีกว่าบน validation (31.9 vs 32.4) — LC มีข้อมูลมากกว่าเรา
   (full bureau report, model ที่ update ทุกปี) และ M2 ชนะ LC ได้ ~1.05 points
 - Calibration: M2 slope 0.93 = PD กระจายเกินไปเล็กน้อย (overconfident ที่ปลาย); ทั้งคู่ under-predict ทั้งระดับ → `p1_calibration_oot.png`
@@ -132,7 +133,7 @@ Cumulative default (% ของ loans ตั้งต้น), risk bands = M1-sc
 ## 9. What worked / what failed
 
 **Worked**
-- Pre-registered pipeline วิ่งจบไม่ต้องย้อนแก้ decision ใด ๆ; time-based split, OOT แตะครั้งเดียว
+- Pre-registered pipeline วิ่งจบไม่ต้องย้อนแก้ decision ใด ๆ; time-based split; OOT ไม่เคยใช้เลือก model/cutoff
 - Monotone LightGBM ชนะ scorecard ชัด (+3.1 Gini, CI แคบ) และชนะ LC sub_grade
 - Vintage + A/E เล่าเรื่อง "would you notice" ได้ชัด พร้อมวันที่ที่รู้ได้จริง
 
@@ -150,6 +151,19 @@ Cumulative default (% ของ loans ตั้งต้น), risk bands = M1-sc
 2. Monitoring flags ใช้ "≥ threshold" (prereg เขียน ">" สำหรับ A/E) — ไม่มีค่าใดตกตรง threshold พอดี จึงไม่มีผล
 3. Calibration slope CI ใช้ Newton 8 iterations ต่อ bootstrap replicate (point estimate ใช้ 25) — approximation เล็กน้อย
 4. Vintage 2012Q3 มีเฉพาะ ก.ย. 2012 (ข้อมูลก่อนหน้าไม่มี bureau batch ให้ score)
+5. **Deterministic re-run (quality step, 2026-11-19):** ผลเดิมมาจาก parquet ที่ row order ไม่ deterministic (`preserve_insertion_order=false`)
+   ทำให้ bootstrap CIs และ LightGBM bagging ขึ้นกับ row order. แก้ให้ order = ลำดับใน CSV (`file_row_number`) แล้ว re-run ทั้ง pipeline
+   (OOT ถูกประเมินอีกครั้ง — ไม่ได้ใช้เลือกอะไร). Config ที่เลือกเปลี่ยน (num_leaves 15 → 63, 318 → 184 rounds; validation log loss เท่ากันที่ 0.37557)
+   | | ก่อน | หลัง |
+   |---|---|---|
+   | OOT Gini M2 | 36.85 [36.29, 37.39] | 36.78 [36.29, 37.31] |
+   | ΔGini M2 − M1 | 3.17 [2.90, 3.46] | 3.10 [2.81, 3.38] |
+   | CITL M2 (pp) | −1.59 | −1.75 |
+   | cutoff M2 | PD ≤ 0.2039 | PD ≤ 0.2008 |
+   ข้อสรุปและ decision rule ไม่เปลี่ยน; ทั้ง 12 configs ให้ OOT Gini 36.48–36.87 (≥ scorecard + 2.8) — reports/quality/grid_sensitivity.md.
+   ตัวเลขทั้งหมดในเอกสารนี้เป็นของ run ใหม่ (reproducible byte-for-byte)
+6. **Timeline caveat (independent review MA-1):** training labels (outcome เต็ม 36 เดือนของ vintage 2012–13) จะครบจริงราว 2017 →
+   "knowable" dates ใน §7 เป็นของ counterfactual "model ใช้งานตั้งแต่ 2015" ไม่ใช่สิ่งที่ lender ปี 2014 ทำได้จริง
 นอกนั้นเป็นไปตาม prereg ทุกข้อ (split, features, binning, selection, grid, decision rule, cutoff rule, thresholds)
 
 ## 11. Implications for Phase 2 (A + B)

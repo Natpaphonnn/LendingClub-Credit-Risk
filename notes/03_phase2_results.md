@@ -1,4 +1,4 @@
-# 03 — Phase 2 results (A survival/lifetime PD, B macro → failed → C, ECL, MOB-6 test) — 2026-11-19
+# 03 — Phase 2 results (A survival/lifetime PD, B macro → failed → C, ECL, MOB-6) — 2026-11-19 (revised after independent validation)
 
 Pre-registration: `notes/03_prereg_phase2.md` (commit 1203ada — commit **ก่อน** ดาวน์โหลด macro data และก่อน fit).
 Code: `src/phase2/`; ตาราง: `reports/phase2/`; figures: `reports/figures/p2_*.png`.
@@ -16,13 +16,15 @@ for s in build_loans fit_A rule_B ecl policy_C mob6_test; do nice -n 19 .venv/bi
 1. **A ใช้ได้:** competing-risks hazard (default vs prepayment, Current = censored) fit บน 2012-09–2013-12 ให้ A/E ≈ 1.00 ใน train
    และ 0.98–1.02 บน validation 2014 แต่ under-predict ตาม drift ที่เห็นใน Phase 1: OOT 2015 A/E 1.07–1.11, 2016 1.26–1.39, 2017 1.44 (MOB 12).
    ถ้าไม่สน prepayment, lifetime PD จะ over-state จาก 13.6% → 18.2% (+34% relative)
-2. **B ไม่ผ่าน Plan B rule → เปลี่ยนเป็น A + C** (ตามกฎที่เขียนไว้ก่อน Phase 1): (a) FAIL — θ = −0.038 [−0.088, −0.005] (CI อยู่ฝั่งลบทั้งหมด = ทิศผิดอย่างมีนัยสำคัญ);
+2. **B ไม่ผ่าน Plan B rule → เปลี่ยนเป็น A + C** (ตามกฎที่เขียนไว้ก่อน Phase 1): (a) FAIL — θ ไม่เป็นบวก: −0.038 [−0.088, −0.005] (ก่อน deterministic re-run: −0.019 [−0.063, 0.011] — ตำแหน่ง CI เปราะ);
    (b) PASS แบบ "ถูกด้วยเหตุผลผิด"; (c) FAIL — adverse/baseline = 0.91 (adverse ทำให้ PD **ลดลง**) → macro signal ถูก confound กับ drift ของ LC
 3. **ECL (score-only, ไม่มี forward-looking overlay):** 2015 portfolio funded $3.62bn → day-1 12m ECL $101m (2.8%), lifetime ECL $203m (5.6%).
-   Backtest: realised net loss **$274m vs predicted lifetime EL $235m (×1.17)** — under-provision มากสุดใน band ที่ปลอดภัยที่สุด (×1.52)
+   Backtest (ไม่ใช่ provision ที่ book จริง): realised net loss **$274m vs predicted lifetime EL $235m (realised = 1.17× predicted; พลาด 14% ของ realised)**
+   — ratio สูงสุดใน band ที่ปลอดภัยที่สุด (×1.52) แต่ dollar gap ใหญ่สุดอยู่ band กลาง; gap นี้ปน drift กับการไม่ refit ณ reporting date
 4. **C:** MILP policy ไม่ชนะ "approve all" บน metric ที่ pre-register (realised profit แบบไม่ discount: $222m vs $230m). Exploratory
    realised NPV @5%: C $46m ≫ approve all $28m แต่ ≈ Phase 1 M2 cutoff ($47m) → optimizer สรุปได้แค่ "PD cutoff ที่ดีก็พอ"
-5. **MOB-6 A/E (out-of-discovery 2016–2017):** sensitivity 7/7 (100%), lead time 6 เดือนทุก quarter; **specificity ทดสอบไม่ได้**
+5. **MOB-6 A/E — descriptive/exploratory เท่านั้น (relabel หลัง review CR-1):** 2016–17 red ทุก quarter แต่ค่าเหล่านี้ถูกคำนวณและ commit แล้ว
+   ก่อน register thresholds, lead time 6 เดือนเป็นจริงโดยนิยาม, และทุก quarter deteriorated → ไม่ใช่ test; discovery period: M2 จับได้ 1/2 (พลาด 2015Q4), ไม่มี false alarm 6/6
    (ทุก quarter ที่มี truth deteriorated หมด) — ใช้ได้ในฐานะ early warning แต่ยังไม่รู้ false-alarm rate
 
 ---
@@ -60,9 +62,9 @@ Data: BLS LAUS state unemployment (SA), 51 series, 2007–2018, ผ่าน BLS
 **→ Decision: B FAILS → Plan B = A + C** (macro เหลือเป็น "weak" sensitivity เท่านั้น — ไม่ใช้ใน ECL)
 
 ทำไมถึงล้มเหลว (การตีความ, ไม่ใช่ส่วนของ rule):
-- γ_u (level) = −0.062 (SE 0.0035) **ติดลบ**: ใน 2009–2014 unemployment ลดลงต่อเนื่อง (median state 8.6% ปลายปี 2009 → 5.5% ต้นปี 2015)
+- γ_u (level) = −0.062 **ติดลบ**: ใน 2009–2014 unemployment ลดลงต่อเนื่อง (median state 8.6% ปลายปี 2009 → 5.5% ต้นปี 2015)
   ขณะที่ default rate ของ LC ไต่ขึ้น (credit box ขยาย) → model เรียนว่า "unemployment ต่ำ = default สูง" = time-trend confounding
-- γ_Δ12u = +0.024 (SE 0.0085) มีทิศถูก (unemployment ที่ **เพิ่มขึ้น** ทำให้ default สูงขึ้น) แต่ไม่พอชดเชย level
+- γ_Δ12u = +0.024 มีทิศถูก (unemployment ที่ **เพิ่มขึ้น** ทำให้ default สูงขึ้น) แต่ไม่พอชดเชย level
 - (b) ผ่านเพราะ level coefficient ติดลบทำให้ predict PD สูงขึ้นในปี 2015 (unemployment ต่ำลง) ซึ่งบังเอิญตรงกับ drift → **ถูกด้วยเหตุผลผิด**
   นี่คือเหตุผลที่ rule ต้องผ่านครบทั้ง 3 ข้อ
 - Sensitivity (2012-09–2014, ไม่นับใน rule): θ = +0.029 [−0.014, +0.057] — ทิศถูกแต่ CI คร่อม 0 (มีแค่ 10 issue quarters)
@@ -84,16 +86,17 @@ Data: BLS LAUS state unemployment (SA), 51 series, 2007–2018, ผ่าน BLS
 | **predicted lifetime EL (undiscounted) vs realised net principal loss** | **$234.9m vs $273.8m → ×1.17** |
 
 Backtest by quarter: ×1.09 (2015Q1), ×1.18, ×1.15, ×1.22 (2015Q4). By risk band (M2-PD quintile, 1 = safest): ×1.52, ×1.44, ×1.36, ×1.23, ×1.00
-→ under-provision กระจุกใน**กลุ่มที่ดูปลอดภัย** (สอดคล้องกับ vintage curves ใน Phase 1: B5 default ×2)
+→ ratio สูงสุดใน**กลุ่มที่ดูปลอดภัย** (สอดคล้องกับ vintage curves ใน Phase 1: B5 default ×2) แต่ dollar gap ใหญ่สุดอยู่ band 3–4
+- Hessian SEs ถูกตัดออกจาก report: fit ใช้ weighted subsample + ไม่คิด clustering จึงใช้ทำ inference ไม่ได้ (review MA-3)
 
 **Allowance ณ 2015-12-31 (stage logic):**
 | stage | loans | gross EAD | allowance | coverage |
 |---|---:|---:|---:|---:|
-| Stage 1 (performing, 12m ECL) | 259,319 | $2,864.7m | $112.1m | 3.91% |
+| Stage 1 (performing, 12m ECL) | 263,610 | $2,992.3m | $112.3m | 3.75% |
 | Stage 2 (SICR) | **ไม่สามารถ allocate ได้** — ไม่มี monthly DPD / refreshed PD | – | – | – |
-| memo: ถ้า performing ทั้งหมดเป็น Stage 2 (upper bound) | 259,319 | $2,864.7m | $167.9m | 5.86% |
-| Stage 3 (default ≤ Dec-2015; LGD × EAD at default) | 4,828 | $52.1m | $46.3m | 88.8% |
-| derecognised (prepaid ≤ Dec-2015) | 18,787 | – | – | – |
+| memo: ถ้า performing ทั้งหมดเป็น Stage 2 (upper bound) | 263,610 | $2,992.3m | $175.0m | 5.85% |
+| Stage 3 (first missed payment due ≤ Dec-2015; LGD × EAD at default) — **ใช้ hindsight**: 1,571 loans ยัง < 90 DPD ณ reporting date | 3,871 | $42.1m | $37.4m | 88.8% |
+| derecognised (prepaid ≤ Dec-2015) | 15,453 | – | – | – |
 
 ## C — Profit-optimal policy (prereg §C; ทำเพราะ B fail) — `reports/phase2/policy_C.md`, `p2_C_policy.png`
 
@@ -114,13 +117,17 @@ MILP บน 30 cells (M2-PD decile × amount band), max expected NPV (A hazards,
 - Sensitivity: discount 3% → C ดีที่สุดเล็กน้อย ($113.5m vs M2 $112.6m, exploratory NPV); 8% → ทุก policy NPV ติดลบ (ดอกเบี้ย LC
   ไม่พอ cover funding 8% + loss) และ constraint approval ≥ 75% บังคับให้อนุมัติ loan ที่ขาดทุน
 
-## MOB-6 A/E — out-of-discovery test (decision 3) — `reports/phase2/mob6_test.md`
+## MOB-6 A/E — DESCRIPTIVE / EXPLORATORY (relabelled after independent review CR-1) — `reports/phase2/mob6_test.md`
 
-**Label: ค้นพบจาก 2015 vintages; thresholds (>1.10 amber, >1.25 red) pre-register ใน commit 1203ada; ประเมินเฉพาะ 2016Q1–2017Q4**
-| model | quarters with truth | truth YES | sensitivity (amber+) | lead vs MOB-12 | specificity |
+> **แก้ไข:** ส่วนนี้เคยถูกเรียกว่า "out-of-discovery test" แต่ค่า A/E6 ของ 2016–17 ถูกคำนวณและ commit ใน Phase 1 exploratory file
+> (commit 5b35a6e) ก่อน pre-register thresholds (commit 1203ada) → ไม่ใช่ confirmatory. Lead time 6 เดือนเป็นจริงโดยนิยาม; truth ใช้ default events ชุดเดียวกัน;
+> base rate 100%. Discovery period (2014Q1–2015Q4): M2 sensitivity 1/2 (พลาด 2015Q4), specificity 6/6; M1 2/2, 6/6
+
+Thresholds (>1.10 amber, >1.25 red) registered ใน commit 1203ada — หลังจากค่าของ 2016–17 ถูกเห็นแล้ว (descriptive เท่านั้น)
+| model | 2016Q1–2017Q3 quarters | truth YES | flagged amber+ | lead vs MOB-12 | specificity |
 |---|---:|---:|---|---:|---|
-| M1 | 7 | 7 | 7/7 = 100% | 6 เดือน | ทดสอบไม่ได้ |
-| M2 | 7 | 7 | 7/7 = 100% | 6 เดือน | ทดสอบไม่ได้ |
+| M1 | 7 | 7 | 7/7 | 6 เดือน (โดยนิยาม) | ทดสอบไม่ได้ (base rate 100%) |
+| M2 | 7 | 7 | 7/7 | 6 เดือน (โดยนิยาม) | ทดสอบไม่ได้ (base rate 100%) |
 - A/E6 อยู่ที่ 1.36–1.82 (red ทุก quarter, รวม 2017Q4 ที่ยังไม่มี truth: 1.58–1.63)
 - A/E6 สูงกว่า A/E12 ของ quarter เดียวกัน (เช่น 2017Q2: 1.82 vs 1.48) → default ช่วงต้นเพิ่มมากกว่าช่วงหลัง; signal นี้อาจ "ไว" เกิน
   และ false-alarm rate ยังไม่รู้ → ใช้คู่กับ MOB-12 ไม่ใช่แทน
@@ -131,11 +138,11 @@ MILP บน 30 cells (M2-PD decile × amount band), max expected NPV (A hazards,
 - Pre-registered ทุกขั้นก่อนดูข้อมูล macro / fit; Plan B rule ทำงานตามที่ออกแบบ (จับ (b) ที่ผ่านแบบหลอก ๆ ได้)
 - Competing-risks lifetime PD calibrate ดีใน train/validation และจัดการ censoring ของ 2016–2018 ได้ตรง ๆ
 - ECL pipeline ครบ (PD × LGD × EAD, discount, stage logic) พร้อม backtest กับ realised loss จริง
-- MOB-6 signal ผ่าน out-of-discovery test ในด้าน sensitivity
+- MOB-6 signal ให้ภาพที่สอดคล้องกับ MOB-12 (descriptive) — ยังไม่มี confirmatory evidence
 
 **Failed / ข้อจำกัด**
 - **Macro (B) ล้มเหลว** — unemployment อธิบาย drift ของ LC ไม่ได้ (ทิศผิด); ECL จึงไม่มี forward-looking component
-- **ECL under-provision 17%** สำหรับ 2015 vintage (และ ~35–50% ใน band ที่ปลอดภัย) — model ที่ calibrate บน 2012–13 ไม่รู้เรื่อง drift
+- **Lifetime EL ต่ำกว่า realised loss (realised = 1.17×)** สำหรับ 2015 vintage (ratio 1.36–1.52 ใน band ที่ปลอดภัย) — model ที่ calibrate บน 2012–13 ไม่รู้เรื่อง drift
 - **C แพ้ approve-all บน metric ที่ pre-register** — เพราะ metric (undiscounted) ไม่เหมาะ; exploratory metric ที่ถูกกว่าบอกว่า C ≈ PD cutoff ธรรมดา
 - **Stage 2 ทำไม่ได้** (ไม่มี behavioural data); stage 3 ใช้ default month แบบ ex-post
 - MOB-6: specificity ทดสอบไม่ได้
@@ -145,7 +152,14 @@ MILP บน 30 cells (M2-PD decile × amount band), max expected NPV (A hazards,
 1. **C: เพิ่ม exploratory "realised NPV @ discount rate"** หลังเห็นว่า metric ที่ pre-register (undiscounted) ทำให้ approve-all ชนะ — ติด label ชัด, ไม่ใช้เป็น headline
 2. `p2_loans.parquet` ถูก rebuild เพื่อเก็บ application features (ใช้คำนวณ M1 score สำหรับเปรียบเทียบใน C) — rows/ค่าเดิมทั้งหมด, A re-run ได้ผลเหมือนเดิม
 3. FRED → BLS API โดยตรง (prereg อนุญาต fallback นี้ไว้แล้ว — ไม่นับเป็น deviation แต่บันทึกไว้)
-นอกนั้นเป็นไปตาม prereg (event coding, model spec, time split, rule a/b/c, ECL components, C constraints, MOB-6 thresholds/evaluation set)
+4. **Deterministic re-run** (row-order fix; ดู 02 §10 ข้อ 5) — θ −0.0185 → −0.0379, rule (c) 0.959 → 0.911, overlay 58%/11% → 54%/6%,
+   lifetime PD 13.4% → 13.6%; decisions ไม่เปลี่ยน. ตัวเลขทั้งหมดในเอกสารนี้เป็นของ run ใหม่
+5. **MOB-6 relabel** (review CR-1) — ไม่ใช่ confirmatory test; ข้อเสนอ test ใหม่อยู่ใน notes/06_quality_report.md (รอ Nat ตัดสิน)
+6. **Staging/ECL caveats** (review MA-5, MA-6) — ระบุ hindsight ของ stage 3 และการไม่ refit; การแก้จริงต้องเปลี่ยน spec → รอ Nat
+7. **Bug fix (off-by-one) ใน staging ณ 2015-12-31:** code เดิมนับ payments due เกิน 1 เดือน → stage 3 รวม loans ที่ first missed payment
+   due Jan-2016 (ขัดกับ prereg "≤ Dec-2015"). แก้ให้ตรง prereg: stage 3 4,828 → 3,871 loans, stage 1 allowance $112.1m → $112.3m (3.91% → 3.75%);
+   day-1 ECL และ backtest ไม่กระทบ (tests/test_riskutils.py::test_stage3_requires_first_missed_payment_due_by_report)
+นอกนั้นเป็นไปตาม prereg (event coding, model spec, time split, rule a/b/c, ECL components, C constraints, MOB-6 thresholds)
 
 ## Implications / next
 - Write-up story ครบแล้ว: "model ปี 2014 ranking รอด, calibration/ECL ไม่รอด (+17% loss), PSI ไม่เห็น, A/E เห็นช้า 12–18 เดือน, macro อธิบายไม่ได้"
@@ -161,6 +175,6 @@ Overlay = predicted lifetime EL × A/E ของ cumulative default ที่ MO
 | overlay MOB-12 | $256.0m | **54%** | 2016-09 → 2017-06 |
 | realised | $273.8m | – | – |
 - MOB-6 ปิดได้น้อย: ภายใต้ hazard shape ของ A model, default ช่วงต้นของ 2015 ใกล้ expected (A/E6 0.91–1.09) — ส่วนเกินมาทีหลัง
-- ไม่ใช่วิธีที่ validate แล้ว: MOB-6 ค้นพบบน 2015 และทดสอบบน 2016–17 แล้ว ไม่มี vintage ที่ยังไม่เคยเห็นเหลือ
+- ไม่ใช่วิธีที่ validate แล้ว: ค่า MOB-6/12 ของทุก vintage ถูกดูไปแล้ว — ไม่มี vintage ที่ยังไม่เคยเห็นเหลือ
 - Bug ที่เจอและแก้ก่อนรายงาน: default_mob ใน p2_loans เป็น nullable Int64 → comparison คืน NA → A/E ≈ 7 ในรอบแรก (แก้ด้วย fillna);
   ตรวจแล้ว script อื่นไม่โดน (fit_A ใช้ fillna, build_loans/ecl แปลงเป็น float, mob6_test ใช้ Phase 1 base ที่เป็น float)

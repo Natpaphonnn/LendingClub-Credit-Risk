@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import FIG, INTERIM, SEED  # noqa: E402
 from hazard import cif, hazards  # noqa: E402
 sys.path.insert(0, str(ROOT / "src" / "lib"))
-from riskutils import annuity_schedule, lgd_ead_at_default  # noqa: E402
+from riskutils import annuity_schedule, lgd_ead_at_default, payments_due  # noqa: E402
 from plotstyle import S, plt, save  # noqa: E402
 
 ART2, REP2 = INTERIM / "p2", ROOT / "reports" / "phase2"
@@ -88,11 +88,13 @@ tot = agg(port)
 
 # ---- staging at reporting date 2015-12-31
 rep = pd.Timestamp("2015-12-01")
-age = ((rep.year - port.issue_dt.dt.year) * 12 + (rep.month - port.issue_dt.dt.month) + 1).to_numpy()  # months elapsed incl. Dec
-d_age = port.default_mob.to_numpy(dtype=float)
+# payments fall due at issue + t (MOB t); by Dec-2015, `age` payments have fallen due -> next exposure month is MOB age+1.
+# (Fixed off-by-one in quality step: previously age included +1, which put Jan-2016 first-missed payments into stage 3.)
+age = payments_due(port.issue_dt, "2015-12-01")
+d_age = port.default_mob.astype("float64").to_numpy()      # MOB of first missed payment (NaN if no default)
 p_age = np.where(port.event.to_numpy() == 2, port["T"].to_numpy(), np.inf)
-stage3 = is_def & (d_age <= age)
-gone = (~stage3) & (p_age <= age)
+stage3 = is_def & (d_age <= age)             # first missed payment due on or before Dec-2015 (pre-registered)
+gone = (~stage3) & (p_age <= age)            # paid off on or before Dec-2015
 perf = ~stage3 & ~gone
 s_prev, hd = A["s_prev"], A["hd"]
 ecl12_rep = np.zeros(len(port))
@@ -101,8 +103,8 @@ for i in np.where(perf)[0]:
     a = int(age[i])
     if a >= H:
         continue
-    sa = s_prev[i, a]                       # survival to start of month a+1
-    md_c = s_prev[i, a:] * hd[i, a:] / sa   # conditional marginal default for months a+1..36
+    sa = s_prev[i, a]                       # survival to start of MOB a+1 (index a)
+    md_c = s_prev[i, a:] * hd[i, a:] / sa   # conditional marginal default for MOB a+1..36
     df_c = (1 + r[i, 0]) ** -np.arange(1, H - a + 1)
     loss = md_c * LGD * EAD[i, a:] * df_c
     ecl12_rep[i], ecl_life_rep[i] = loss[:12].sum(), loss.sum()
@@ -110,6 +112,8 @@ ead_rep = np.array([EAD[i, min(int(age[i]), H - 1)] for i in range(len(port))]) 
 d_idx = np.clip(np.nan_to_num(d_age, nan=1).astype(int) - 1, 0, H - 1)
 ead_rep = np.where(stage3, EAD[np.arange(len(port)), d_idx], ead_rep)                # stage 3: balance at default month
 st3_alloc = (LGD * ead_rep * stage3).sum()
+missed_at_rep = age - d_age + 1                     # payments missed by Dec-2015 (first missed = MOB d_age, due issue + d_age)
+n_lt90 = int((stage3 & (missed_at_rep < 3)).sum())
 staging = pd.DataFrame([
     {"stage": "Stage 1 (performing; 12-month ECL)", "loans": int(perf.sum()), "gross EAD $m": ead_rep[perf].sum() / 1e6,
      "allowance $m": ecl12_rep[perf].sum() / 1e6},
@@ -180,6 +184,10 @@ LGD by M2-PD quintile band (1 = safest; train cut points), sensitivity only: {',
 - Stage 2 needs a significant-increase-in-credit-risk test (30 DPD backstop or a refreshed lifetime PD vs origination). LC data has
   no monthly delinquency history and no refreshed scores, so stage 2 **cannot be allocated**; the memo row shows the lifetime-ECL upper bound.
 - Stage 3 = default month (last payment + 1) ≤ Dec-2015 → allowance = LGD × scheduled EAD at that point (simplification).
+- **EX-POST / HINDSIGHT (independent review MA-5):** stage 3 membership uses the *final* status (the loan later charged off). At the
+  reporting date {n_lt90:,} of the {int(stage3.sum()):,} stage-3 loans had fewer than 3 missed payments (< 90 DPD), so a real bank would
+  not yet have classed them as credit-impaired; the same last-payment proxy could flag ≥ 30 DPD for stage 2, which this table does not do.
+  Treat this table as an illustration of the stage mechanics, not as an allowance a lender could have booked at Dec-2015.
 
 {scen_md}
 """

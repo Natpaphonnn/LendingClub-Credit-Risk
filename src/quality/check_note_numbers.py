@@ -13,16 +13,34 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-NOTES = ["02_phase1_results.md", "03_phase2_results.md", "04_story.md", "05_claims_and_limitations.md"]
+NOTES = ["02_phase1_results.md", "03_phase2_results.md", "04_story.md", "05_claims_and_limitations.md", "STATUS.md", "../README.md"]
 NUM = re.compile(r"(?<![\w.])([−\-+]?\$?\d{1,3}(?:,\d{3})+(?:\.\d+)?|[−\-+]?\$?\d+(?:\.\d+)?)(?![\w])")
+
+
+# historical outputs quoted on purpose in "before → after" disclosure tables (read straight from git, not from disk)
+HISTORICAL = [("5b35a6e", "reports/phase1/metrics.json"), ("5b35a6e", "reports/phase1/evaluation.md"),
+              ("4f0a078", "reports/phase2/ecl.md"), ("e43a338", "reports/phase2/macro_B.json"), ("fbb20bf", "reports/phase2/overlay.json")]
+QUALITY_SOURCES = ["grid_sensitivity.md", "leakage_split_proof.md"]
+
+
+def _texts():
+    import subprocess
+    for p in (ROOT / "reports").rglob("*"):
+        if p.suffix not in (".md", ".json"):
+            continue
+        if "quality" in p.parts and p.name not in QUALITY_SOURCES:
+            continue
+        yield p.suffix, p.read_text(errors="ignore")
+    for rev, path in HISTORICAL:
+        out = subprocess.run(["git", "-C", str(ROOT), "show", f"{rev}:{path}"], capture_output=True, text=True)
+        if out.returncode == 0:
+            yield Path(path).suffix, out.stdout
 
 
 def report_values():
     vals = []
-    for p in (ROOT / "reports").rglob("*"):
-        if "quality" in p.parts or p.suffix not in (".md", ".json"):
-            continue
-        txt = p.read_text(errors="ignore")
+    for suffix, txt in _texts():
+        p = Path("x" + suffix)
         if p.suffix == ".json":
             def walk(o):
                 if isinstance(o, dict):
@@ -53,6 +71,8 @@ def is_skip(tok, line, x, d):
         return True                                       # years
     if re.search(rf"{re.escape(tok)}(Q\d|-\d\d)", line) or re.search(rf"\d-{re.escape(tok)}\b", line):
         return True                                       # quarter labels / dates
+    if re.search(r"(--python|python|Python)\s*" + re.escape(tok), line):
+        return True                                       # software versions
     if re.search(r"(commit|C\d+|§|step|Phase|phase|figure|Figure|fig|#)\s*" + re.escape(tok), line):
         return True
     return False

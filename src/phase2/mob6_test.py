@@ -28,7 +28,7 @@ asof = pd.Timestamp(ASOF)
 flag = lambda v: "RED" if v > 1.25 else "AMBER" if v > 1.10 else "green"  # noqa: E731
 
 rows = []
-for q in [f"{y}Q{k}" for y in (2016, 2017) for k in (1, 2, 3, 4)]:
+for q in [f"{y}Q{k}" for y in (2014, 2015, 2016, 2017) for k in (1, 2, 3, 4)]:
     d = df[df.issue_q == q]
     qe = d.q_end.iloc[0]
     k6, k12 = qe + pd.DateOffset(months=6 + CHARGEOFF_LAG_M), qe + pd.DateOffset(months=12 + CHARGEOFF_LAG_M)
@@ -46,6 +46,15 @@ for q in [f"{y}Q{k}" for y in (2016, 2017) for k in (1, 2, 3, 4)]:
         r["truth (≥1.2×)"] = "not observable"
     rows.append(r)
 T = pd.DataFrame(rows)
+disc = T[T.issue_q < "2016Q1"]                       # discovery period (signal found here in Phase 1)
+T = T[T.issue_q >= "2016Q1"].reset_index(drop=True)
+conf = []
+for m in ("M1", "M2"):
+    pos, neg = disc[disc["truth (≥1.2×)"] == "YES"], disc[disc["truth (≥1.2×)"] == "no"]
+    conf.append({"model": m, "period": "2014Q1–2015Q4 (discovery)",
+                 "sensitivity": f"{pos[f'flag {m}'].isin(['AMBER','RED']).sum()}/{len(pos)}",
+                 "specificity": f"{(~neg[f'flag {m}'].isin(['AMBER','RED'])).sum()}/{len(neg)}",
+                 "missed quarters": ", ".join(pos.loc[~pos[f'flag {m}'].isin(['AMBER','RED']), 'issue_q']) or "none"})
 ev = T[T["truth (≥1.2×)"].isin(["YES", "no"])]
 summ = []
 for m in ("M1", "M2"):
@@ -54,15 +63,23 @@ for m in ("M1", "M2"):
     neg = ev[ev["truth (≥1.2×)"] == "no"]
     summ.append({"model": m, "quarters with truth": len(ev), "truth YES": len(pos),
                  "sensitivity (amber+)": f"{hit.sum()}/{len(pos)} = {100*hit.mean():.0f}%" if len(pos) else "n/a",
-                 "useful (≥80%)?": ("YES" if hit.mean() >= 0.8 else "NO") if len(pos) else "n/a",
+                 "≥80% hit rate? (descriptive)": ("YES" if hit.mean() >= 0.8 else "NO") if len(pos) else "n/a",
                  "truth no": len(neg), "specificity": "not testable (no non-deteriorated quarter)" if len(neg) == 0
                  else f"{(~neg[f'flag {m}'].isin(['AMBER','RED'])).sum()}/{len(neg)}",
                  "median lead (months)": float(np.median(pos.loc[hit, "lead (months)"])) if hit.any() else None})
-md = ("# MOB-6 A/E — out-of-discovery test (2016Q1–2017Q4)\n\n"
-      "**Label: signal discovered on 2015 vintages (Phase 1 exploratory); thresholds pre-registered in notes/03_prereg_phase2.md "
-      "(commit 1203ada) before this run; evaluated only on 2016–2017 vintages.**\n\n"
+md = ("# MOB-6 A/E — 2016Q1–2017Q4 (EXPLORATORY / DESCRIPTIVE — not a confirmatory test)\n\n"
+      "**Status (corrected after independent review, CR-1):** the thresholds were registered in notes/03_prereg_phase2.md (commit 1203ada), "
+      "but the 2016–17 MOB-6 A/E values had already been computed and committed in reports/phase1/exploratory_early_signal.md "
+      "(commit 5b35a6e) before that registration. This table is therefore descriptive, not an out-of-discovery test. "
+      "Lead time is 6 months **by construction** (MOB-6 is knowable 6 months before MOB-12); the truth (MOB-12 rate) shares the "
+      "same default events; every 2016–17 quarter is deteriorated, so any always-on alarm would also score 7/7. "
+      "The A/E level also depends on how 'expected' is built: under the lifetime hazard model's own MOB shape, 2015 A/E6 is 0.91–1.09 "
+      "(reports/phase2/overlay.md).\n\n"
+      "## Discovery-period confusion matrix (2014Q1–2015Q4; truth = MOB-12 ≥ 1.2× train)\n\n"
+      + pd.DataFrame(conf).to_markdown(index=False) + "\n\n"
       f"r6 (train MOB-6 defaults / final bads) = {r6:.4f}; train MOB-12 default rate = {100*d12_train:.2f}%. "
-      "Thresholds: A/E6 > 1.10 AMBER, > 1.25 RED.\n\n## Summary\n\n" + pd.DataFrame(summ).to_markdown(index=False)
-      + "\n\n## By quarter\n\n" + T.to_markdown(index=False) + "\n")
+      "Thresholds: A/E6 > 1.10 AMBER, > 1.25 RED.\n\n## Summary 2016Q1–2017Q3 (descriptive)\n\n" + pd.DataFrame(summ).to_markdown(index=False)
+      + "\n\n## By quarter (2016–17)\n\n" + T.to_markdown(index=False) + "\n\n## Discovery period by quarter\n\n"
+      + disc.to_markdown(index=False) + "\n")
 (REP2 / "mob6_test.md").write_text(md)
 print(md)

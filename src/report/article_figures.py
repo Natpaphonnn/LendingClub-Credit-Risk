@@ -154,11 +154,7 @@ ax.set_title("Population stability index of the champion score (no labels needed
 ax = axes[1]
 k12 = mon[mon.AE12_M2.notna()]
 ax.plot(k12.k12, k12.AE12_M2, color=BLUE, marker="o", markersize=4, label="defaults by month 12 (pre-registered)")
-disc = ae6[ae6.issue_q < "2016Q1"]
-test = ae6[ae6.issue_q >= "2015Q4"]
-ax.plot(disc.known, disc.ae6, color=AQUA, marker="o", markersize=4, linestyle=":", label="defaults by month 6 — discovery (2014–15)")
-ax.plot(test[test.issue_q >= "2016Q1"].known, test[test.issue_q >= "2016Q1"].ae6, color=AQUA, marker="o", markersize=4,
-        label="defaults by month 6 — out-of-discovery test (2016–17)")
+ax.plot(ae6.known, ae6.ae6, color=AQUA, marker="o", markersize=4, linestyle=":", label="defaults by month 6 (exploratory, not pre-registered)")
 ax.axhline(1.0, color=BASE, linewidth=1)
 thresh(ax, 1.10, "1.10 amber", x_text=pd.Timestamp("2014-01-01"))
 thresh(ax, 1.25, "1.25 red", x_text=pd.Timestamp("2014-01-01"))
@@ -176,7 +172,7 @@ ax.set_ylim(0.85, 1.9)
 ax.set_title("Actual / expected defaults, plotted at the date each value became knowable")
 ax.legend(loc="upper left", fontsize=9)
 finish(fig, "Population stability is the wrong alarm: it never fired",
-       "Each point sits at the calendar date it could first be known. Only label-based checks caught the drift — 12–18 months late.",
+       "Points at the date each value could first be known, if the model were live from 2015 (its own training labels completed only in 2017).",
        "fig4_alarm_timeline.png")
 
 # ------------------------------------------------------------------ Fig 5: default at MOB 12 by risk band
@@ -211,7 +207,7 @@ naive = 1 - np.cumprod(1 - hd, axis=1)
 act = np.array([default_by_mob(p15.default_mob, m).mean() for m in range(1, 37)])
 mob = np.arange(1, 37)
 fig, ax = plt.subplots(figsize=(9, 4.6))
-ax.plot(mob, 100 * naive.mean(0), color=MUTED, linestyle="--", label="model ignoring prepayment")
+ax.plot(mob, 100 * naive.mean(0), color=MUTED, linestyle="--", label="same hazards, prepayment treated as censoring")
 ax.plot(mob, 100 * C.mean(0), color=BLUE, label="model with prepayment as competing risk")
 ax.plot(mob, 100 * act, color=ORANGE, label="actual")
 for arr, col, dy in ((naive.mean(0), MUTED, 0), (C.mean(0), BLUE, -0.4), (act, ORANGE, 0.4)):
@@ -221,7 +217,7 @@ ax.set_xticks([6, 12, 18, 24, 30, 36])
 ax.set_xlabel("months on book")
 ax.set_ylabel("cumulative default, %")
 ax.legend(loc="upper left")
-finish(fig, f"Ignore prepayment and lifetime PD is overstated by {100*(naive.mean(0)[-1]/C.mean(0)[-1]-1):.0f}%",
+finish(fig, f"Treat prepayment as censoring and lifetime PD is overstated by {100*(naive.mean(0)[-1]/C.mean(0)[-1]-1):.0f}%",
        "Loans issued Jan–Sep 2015 (observable to month 36). Model trained on 2012–13; its gap to actual is the 2015 drift.",
        "fig6_prepayment_competing_risk.png")
 
@@ -243,9 +239,9 @@ ax.set_ylim(0, q["realised $m"].max() * 1.25)
 ax.grid(axis="x", visible=False)
 ax.legend(loc="upper left", fontsize=9)
 tot = ov["total"]
-finish(fig, f"Provisions fell {100*(tot['realised/pred']-1):.0f}% short; a month-12 overlay closes {100*tot['gap closed MOB12']:.0f}% of the gap",
-       f"2015 loans. Overlay = expected loss × month-12 actual/expected (month-6 version closes {100*tot['gap closed MOB6']:.0f}%). "
-       "Illustrative, in-sample.",
+finish(fig, f"Realised loss came in at {tot['realised/pred']:.2f}× expected; a month-12 overlay closes {100*tot['gap closed MOB12']:.0f}% of the gap",
+       f"2015 loans; lifetime EL at origination, not an allowance. Overlay = EL × month-12 A/E "
+       f"(month-6: {100*tot['gap closed MOB6']:.0f}%). Illustrative.",
        "fig7_ecl_backtest_overlay.png")
 
 # ------------------------------------------------------------------ Fig 8: simple cutoff ≈ MILP
@@ -261,7 +257,7 @@ order = [2, 0, 3, 1]
 pc = pc.iloc[order].reset_index(drop=True)
 fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True)
 for ax, col, ttl in ((axes[0], "realised profit $m", "Pre-registered (wrong: no funding cost)"),
-                     (axes[1], "EXPLORATORY realised NPV $m", "Corrected: NPV at 5% funding cost")):
+                     (axes[1], "EXPLORATORY realised NPV $m", "Exploratory: NPV at 5% funding cost")):
     cols = [ORANGE if "MILP" in lb else (BLUE if "simple" in lb else MUTED) for lb in pc.lab]
     ax.barh(pc.lab, pc[col], color=cols)
     for i, vv in enumerate(pc[col]):
@@ -271,6 +267,6 @@ for ax, col, ttl in ((axes[0], "realised profit $m", "Pre-registered (wrong: no 
     ax.set_xlabel("$ million, 2015 loans")
     ax.grid(axis="y", visible=False)
 axes[0].invert_yaxis()
-finish(fig, "A good PD cutoff is enough: the optimiser adds nothing",
+finish(fig, "A good PD cutoff is enough: the optimiser adds nothing (exploratory metric)",
        f"Without funding cost, 'approve everyone' looks best. With it, the MILP ({appr['C: MILP cells']:.0f}% approved) ≈ the simple champion cutoff ({appr['M2']:.0f}%).",
        "fig8_policy_cutoff_vs_milp.png")

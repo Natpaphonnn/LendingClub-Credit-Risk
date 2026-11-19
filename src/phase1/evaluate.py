@@ -55,6 +55,9 @@ for name, window in [("validation_2014", VALID), ("oot_2015", OOT)]:
     dgl = np.array(smp["LC_subgrade"]["gini"]) - np.array(smp["M1_scorecard"]["gini"])
     res["delta_gini_LC_minus_M1"] = {"point": res["LC_subgrade"]["gini"] - res["M1_scorecard"]["gini"],
                                      "lo": float(np.percentile(dgl, 2.5)), "hi": float(np.percentile(dgl, 97.5))}
+    dml = np.array(smp["M2_lgbm"]["gini"]) - np.array(smp["LC_subgrade"]["gini"])
+    res["delta_gini_M2_minus_LC"] = {"point": res["M2_lgbm"]["gini"] - res["LC_subgrade"]["gini"],
+                                     "lo": float(np.percentile(dml, 2.5)), "hi": float(np.percentile(dml, 97.5))}
     M[name] = {"n": int(len(y)), "bad_rate": float(y.mean()), **res}
     rows = []
     for m in models:
@@ -69,7 +72,9 @@ for name, window in [("validation_2014", VALID), ("oot_2015", OOT)]:
          f"95% bootstrap CI in brackets (B={B_BOOT}). CITL = mean PD − observed bad rate. "
          f"Paired ΔGini (M2 − M1) = {100*dgp['point']:.2f} [{100*dgp['lo']:.2f}, {100*dgp['hi']:.2f}] Gini points. "
          f"LC sub_grade − M1 = {100*res['delta_gini_LC_minus_M1']['point']:.2f} "
-         f"[{100*res['delta_gini_LC_minus_M1']['lo']:.2f}, {100*res['delta_gini_LC_minus_M1']['hi']:.2f}].")
+         f"[{100*res['delta_gini_LC_minus_M1']['lo']:.2f}, {100*res['delta_gini_LC_minus_M1']['hi']:.2f}]. "
+         f"M2 − LC sub_grade = {100*res['delta_gini_M2_minus_LC']['point']:.2f} "
+         f"[{100*res['delta_gini_M2_minus_LC']['lo']:.2f}, {100*res['delta_gini_M2_minus_LC']['hi']:.2f}] (descriptive benchmark comparison).")
     if name == "oot_2015":
         for m in ("M1_scorecard", "M2_lgbm"):
             t = decile_table(pds[m], y)

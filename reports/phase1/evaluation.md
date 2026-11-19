@@ -2,7 +2,7 @@
 
 ## Discrimination & calibration — validation_2014 (n=162,570, bad rate 13.73%)
 
-95% bootstrap CI in brackets (B=500). CITL = mean PD − observed bad rate. Paired ΔGini (M2 − M1) = 3.74 [3.37, 4.09] Gini points. LC sub_grade − M1 = -0.53 [-1.33, 0.10].
+95% bootstrap CI in brackets (B=500). CITL = mean PD − observed bad rate. Paired ΔGini (M2 − M1) = 3.74 [3.37, 4.09] Gini points. LC sub_grade − M1 = -0.53 [-1.33, 0.10]. M2 − LC sub_grade = 4.27 [3.65, 4.98] (descriptive benchmark comparison).
 
 | model        | Gini (×100)       | KS (×100)         |   mean PD % | CITL (pp)            | calib slope          | Brier                   | log loss                |
 |:-------------|:------------------|:------------------|------------:|:---------------------|:---------------------|:------------------------|:------------------------|
@@ -12,7 +12,7 @@
 
 ## Discrimination & calibration — oot_2015 (n=282,787, bad rate 14.88%)
 
-95% bootstrap CI in brackets (B=500). CITL = mean PD − observed bad rate. Paired ΔGini (M2 − M1) = 3.10 [2.81, 3.38] Gini points. LC sub_grade − M1 = 2.05 [1.59, 2.54].
+95% bootstrap CI in brackets (B=500). CITL = mean PD − observed bad rate. Paired ΔGini (M2 − M1) = 3.10 [2.81, 3.38] Gini points. LC sub_grade − M1 = 2.05 [1.59, 2.54]. M2 − LC sub_grade = 1.05 [0.56, 1.48] (descriptive benchmark comparison).
 
 | model        | Gini (×100)       | KS (×100)         |   mean PD % | CITL (pp)            | calib slope          | Brier                   | log loss                |
 |:-------------|:------------------|:------------------|------------:|:---------------------|:---------------------|:------------------------|:------------------------|

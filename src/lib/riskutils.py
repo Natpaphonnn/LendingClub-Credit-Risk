@@ -81,3 +81,11 @@ def observable_mob(quarter_last_month: pd.Series, limit: str, cap: int = 36) -> 
 
 def ae_ratio(actual_events: float, expected_events: float) -> float:
     return float(actual_events) / float(expected_events)
+
+
+def payments_due(issue_dt, report_month: str) -> np.ndarray:
+    """Number of monthly payments that have fallen due by report_month (payment t is due in issue month + t).
+    Loan issued in the report month -> 0. Used for reporting-date staging (bug fixed: previously off by one)."""
+    rep = pd.Timestamp(report_month)
+    d = pd.to_datetime(pd.Series(issue_dt))
+    return ((rep.year - d.dt.year) * 12 + (rep.month - d.dt.month)).to_numpy()

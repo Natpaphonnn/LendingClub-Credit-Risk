@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from riskutils import (ae_ratio, annuity_schedule, code_events, default_by_mob, lgd_ead_at_default,
-                       observable_mob)
+                       observable_mob, payments_due)
 
 
 # ---------------------------------------------------------------- nullable integers (bug found in overlay.py)
@@ -78,3 +78,17 @@ def test_ae_by_mob_simple():
     expected_cif12 = np.full(10, 0.1)               # model expects 10% by MOB 12
     act = default_by_mob(dmob, 12).sum()            # 2 loans
     assert ae_ratio(act, expected_cif12.sum()) == pytest.approx(2.0)
+
+
+# ---------------------------------------------------------------- reporting-date staging (off-by-one fixed in quality step)
+def test_payments_due_by_reporting_month():
+    issue = pd.to_datetime(["2015-12-01", "2015-11-01", "2015-01-01"])
+    assert payments_due(issue, "2015-12-01").tolist() == [0, 1, 11]
+
+
+def test_stage3_requires_first_missed_payment_due_by_report():
+    # issued 2015-10: payments due Nov (t=1) and Dec (t=2). Last payment at MOB 1 -> first missed = MOB 2 (due Dec) -> stage 3.
+    # Last payment at MOB 2 -> first missed = MOB 3 (due Jan-2016) -> NOT stage 3 at Dec-2015.
+    due = payments_due(pd.to_datetime(["2015-10-01", "2015-10-01"]), "2015-12-01")
+    first_missed = np.array([2, 3])
+    assert (first_missed <= due).tolist() == [True, False]

@@ -31,41 +31,45 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 3. C: แสดง profit metric ทั้งสองแบบ, บอกตรง ๆ ว่า metric ที่ pre-register (undiscounted) **ผิด** (ไม่มี cost of funds),
    และข้อสรุปทางธุรกิจคือ **"PD cutoff ที่ดีก็พอ"**
 
+## Decisions (Nat, 2026-11-19, priority change)
+- ทำงานให้ถูกต้องระดับ bank-grade **ก่อน** write-up / demo: reproducibility → correctness audit + tests → independent review → แก้ critical/major
+  (ห้ามเปลี่ยน spec หลังเห็นผล — อะไรที่จะเป็น spec change ให้ log เป็น deviation และรายงาน Nat)
+
 ## Done — Phase 0 (data audit) ✅
 - Data, sha256, license → notes/data_sources.md; findings → notes/01_data_audit.md; code src/audit/; local git (no remote)
 
-## Done — Phase 1 (core 1+2+3 + D) ✅ — รายละเอียด: notes/02_phase1_results.md
-- Pre-register (notes/02_prereg_phase1.md, commit 652b889) ก่อน fit; OOT 2015 แตะครั้งเดียว
-- **Champion = M2 monotone LightGBM:** OOT Gini 36.8 [36.3, 37.4] vs WoE scorecard 33.7 [33.1, 34.3]; ΔGini +3.2 [2.9, 3.5]
-  (LC sub_grade benchmark 35.7)
-- Ranking รอดปี 2015 แต่ **calibration ไม่รอด:** under-predict PD 1.6–2.0 pp; cutoff ที่ตั้งปี 2014 (bad rate 11%) → ปี 2015 ได้ 11.7–11.9%
-- **Monitoring:** PSI/CSI ไม่เตือนเลย (score PSI ≤ 0.03 ถึง 2017Q3). MOB-12 A/E amber ที่ vintage 2015Q2 → รู้ได้ ธ.ค. 2016;
-  red ที่ 2015Q4 → มิ.ย. 2017; ระหว่างนั้นปล่อยไปแล้ว ~545k loans. Exploratory (ไม่ได้ pre-register): MOB-6 A/E → มิ.ย. 2016
-- **Vintage:** default ที่ MOB 12 สูงขึ้นในทุก M1-score band (concept drift ไม่ใช่ mix shift)
-- Reason codes: scorecard "points below max" + LightGBM TreeSHAP; top-1 ตรงกัน 48%
+## Done — Phase 1 (core 1+2+3 + D) ✅ — notes/02_phase1_results.md
+- **Champion = M2 monotone LightGBM:** OOT Gini 36.8 [36.3, 37.3] vs WoE scorecard 33.7 [33.1, 34.2]; ΔGini +3.1 [2.8, 3.4];
+  vs LC sub-grade +1.05 [0.56, 1.48]. ทั้ง 12 grid configs ชนะ scorecard ≥ 2.8 Gini
+- Ranking รอด 2015 แต่ calibration ไม่รอด: under-predict PD 1.75 pp (M2) / 2.0 pp (M1); cutoff 11% (2014) → 11.7–11.9% (2015)
+- Monitoring: score PSI ไม่เตือน (M2 ≤ 0.06 ตลอด 2014–18); MOB-12 A/E amber ที่ vintage 2015Q2 (รู้ได้ Dec 2016 หาก model ใช้งานตั้งแต่ 2015),
+  red Sep 2017 (M2) / Jun 2017 (M1); ~545k loans booked ระหว่างนั้น; peak A/E 1.47 (2016Q3)
+- Vintage: MOB-12 default สูงขึ้นทุก score band (concept drift)
 
-## Done — Phase 2 (A + Plan B → A + C, ECL, MOB-6 test) ✅ — รายละเอียด: notes/03_phase2_results.md
-- Pre-register: notes/03_prereg_phase2.md (commit 1203ada) ก่อนดาวน์โหลด macro / fit
-- **A (competing-risks lifetime PD):** A/E 1.00 train, 0.98–1.02 valid 2014; under-predict OOT 2015 (1.09–1.12) และ 2016–17 (1.26–1.42).
-  ไม่สน prepayment → lifetime PD over-state 13.4% → 18.0%
-- **B FAIL → Plan B (A + C):** (a) θ = −0.019 [−0.063, 0.011] FAIL; (b) PASS แต่ด้วยเหตุผลผิด (level coef ติดลบ = time-trend confounding);
-  (c) adverse/baseline 0.96 FAIL. Macro data: BLS LAUS (public domain)
-- **ECL 2015 portfolio** (score-only, LGD 88.8%): day-1 12m ECL $100m (2.8%), lifetime $202m (5.6%); realised loss $274m vs predicted EL $234m (×1.17);
-  Stage 2 allocate ไม่ได้ (ไม่มี DPD รายเดือน) — ระบุชัด
-- **C (MILP):** แพ้ approve-all บน metric ที่ pre-register (undiscounted profit $222m vs $230m); exploratory NPV @5%: C $46m vs approve-all $28m ≈ M2 cutoff $48m
-- **MOB-6 A/E (out-of-discovery 2016–17):** sensitivity 7/7, lead 6 เดือน; specificity ทดสอบไม่ได้
+## Done — Phase 2 (A + Plan B → A + C, ECL) ✅ — notes/03_phase2_results.md
+- A: competing-risks lifetime PD — A/E 1.01 train, 0.98–1.02 (2014), 1.07–1.11 (2015), 1.26–1.39 (2016), 1.44 (2017);
+  censor prepayment แทน → lifetime PD 18.2% vs 13.6%
+- B FAIL → A + C: (a) θ −0.038 [−0.088, −0.005] (ไม่เป็นบวก; run ก่อนหน้า −0.019 [−0.063, 0.011]), (b) PASS แบบหลอก (−27.1%), (c) 0.91
+- ECL 2015 (score-only, LGD 88.8%): day-1 12m $100.7m (2.8%), lifetime $202.7m (5.6%); backtest realised $273.8m = 1.17× predicted EL $234.9m;
+  overlay MOB-12 ปิด gap 54% (illustrative). Staging: ex-post เท่านั้น (stage 3 3,871 loans, 1,571 ยัง < 90 DPD)
+- C: บน metric ที่ pre-register (ผิด — ไม่มี cost of funds) approve-all ชนะ; exploratory NPV@5%: PD cutoff $47.4m ≈ MILP $45.6m
+- MOB-6 A/E: **descriptive/exploratory เท่านั้น** (relabel หลัง review CR-1)
 
-## Done — Phase 3 prep ✅
-- **Overlay (illustrative, in-sample):** MOB-12 A/E overlay ปิด under-provision 58% ($234m → $257m vs realised $274m); MOB-6 ปิดได้ 11% — `reports/phase2/overlay.md`
-- **Story:** `notes/04_story.md` (9 ขั้นตามลำดับ, ทุกตัวเลขมี source file) — ภาษาอังกฤษสำหรับ draft article
-- **Claims & limitations:** `notes/05_claims_and_limitations.md` (26 claims พร้อม status PRE-REG / DESC / EXPL / ILLUS + limitations ครบ)
-- **Article figures (8):** `reports/figures/article/fig1–8_*.png` สร้างจาก `src/report/article_figures.py` (style เดียวกัน, title = message, source line)
+## Done — Phase 3 prep ✅ — notes/04_story.md, notes/05_claims_and_limitations.md, reports/figures/article/fig1–8
+
+## Done — Quality (steps 1–5) ✅ — **notes/06_quality_report.md**
+- Reproducibility: pipeline deterministic (byte-identical reruns), ~6 นาที, versions locked (requirements.lock.txt)
+- Tests 48/48 pass; claim re-check all PASS; note-number provenance (02–05 + STATUS + README) traced; leakage & split proof
+- Independent review: 1 critical + 10 major — แก้ที่ไม่ต้องเปลี่ยน spec แล้ว; ที่ต้องเปลี่ยน spec รอ Nat (ด้านล่าง)
 
 ## Next step
-- Phase 3 write-up: Medium (EN) + Zenn (JP) จาก 04_story.md, browser demo, private GitHub repo — รอ Nat สั่ง
+- รอ Nat ตัดสิน deviations ที่ต้องเปลี่ยน spec (ด้านล่าง) → แล้วค่อย Phase 3 write-up / demo / private repo
 
-## Open questions for Nat
-1. Article ภาษาอังกฤษใช้ 04_story.md เป็นโครงได้เลยไหม หรืออยากตัดให้สั้นลง (เช่น เหลือ 6 ขั้น: 1, 2, 3+4, 6, 7, 8)?
-2. Browser demo: อยากให้เป็นอะไร — (ก) scorecard calculator + reason codes, (ข) monitoring dashboard แบบ interactive (PSI vs A/E timeline), หรือ (ค) ทั้งสองแบบ?
-   (แนะนำ: ข — เล่า "wrong alarm" ได้ชัดสุด และใช้แค่ aggregates)
-3. สร้าง private GitHub repo เมื่อไร? (ต้องให้ Nat สร้าง / login เอง)
+## Open questions for Nat (spec changes proposed by the review — NOT done)
+1. **MOB-6 confirmatory test (CR-1):** pre-register ใหม่บนข้อมูลที่ยังไม่เคยคำนวณ A/E6 (เช่น 60-month loans หรือ expectation ที่ re-reference) — ทำไหม?
+2. **As-of rebuild (MA-1):** model ที่ใช้ bad window 12 เดือน / hazard ที่ censor ณ 2014-12 เพื่อให้ timeline จริง — หรือคง reframing ("deployed from 2015")?
+3. **Tie-break rule สำหรับ LightGBM grid (MA-2):** เช่น simplest config ภายใน 1e-3 log loss — ใช้ไหม (จะเปลี่ยน champion config)?
+4. **Macro bootstrap (MA-3):** สุ่ม subsample ใหม่ในทุก bootstrap replicate — re-run rule (a) ไหม? (verdict FAIL ไม่น่าเปลี่ยน)
+5. **Staging (MA-5):** stage 3 = ≥ 3 missed payments, stage 2 = ex-post 30 DPD proxy — ทำไหม หรือคงเป็น illustration?
+6. **ECL benchmark (MA-6):** refit A ณ 2014-12 / 2015-12, discounted LGD, 90-DPD default sensitivity — ทำไหม?
+7. **Pre-registration evidence (MA-10):** push pre-reg commits ไป private remote (หรือ timestamp ภายนอก) ก่อนรันครั้งถัดไป — ต้องให้ Nat สร้าง repo
