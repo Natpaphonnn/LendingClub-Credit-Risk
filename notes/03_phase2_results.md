@@ -151,3 +151,16 @@ MILP บน 30 cells (M2-PD decile × amount band), max expected NPV (A hazards,
 - Write-up story ครบแล้ว: "model ปี 2014 ranking รอด, calibration/ECL ไม่รอด (+17% loss), PSI ไม่เห็น, A/E เห็นช้า 12–18 เดือน, macro อธิบายไม่ได้"
 - ถ้าจะทำต่อ: (i) management overlay สำหรับ ECL จาก early A/E (MOB-6/12) — ต้อง pre-register; (ii) ทดสอบ MOB-6 specificity บนช่วงที่ไม่มี drift
   (เช่น re-reference ด้วย model ที่ recalibrate) ; (iii) Phase 3 write-up
+
+## Addendum (Nat decision 2) — management overlay, ILLUSTRATIVE / IN-SAMPLE — `reports/phase2/overlay.md`
+Overlay = predicted lifetime EL × A/E ของ cumulative default ที่ MOB k (A model), ต่อ issue quarter 2015 (rule กำหนดไว้ใน header ของ `src/phase2/overlay.py` ก่อนรัน)
+| | EL | ปิด gap ได้ | รู้ได้เมื่อ |
+|---|---:|---:|---|
+| predicted (no overlay) | $233.8m | – | origination |
+| overlay MOB-6 | $238.1m | 11% | 2016-03 → 2016-12 |
+| overlay MOB-12 | $257.0m | **58%** | 2016-09 → 2017-06 |
+| realised | $273.8m | – | – |
+- MOB-6 ปิดได้น้อย: ภายใต้ hazard shape ของ A model, default ช่วงต้นของ 2015 ใกล้ expected (A/E6 0.92–1.10) — ส่วนเกินมาทีหลัง
+- ไม่ใช่วิธีที่ validate แล้ว: MOB-6 ค้นพบบน 2015 และทดสอบบน 2016–17 แล้ว ไม่มี vintage ที่ยังไม่เคยเห็นเหลือ
+- Bug ที่เจอและแก้ก่อนรายงาน: default_mob ใน p2_loans เป็น nullable Int64 → comparison คืน NA → A/E ≈ 7 ในรอบแรก (แก้ด้วย fillna);
+  ตรวจแล้ว script อื่นไม่โดน (fit_A ใช้ fillna, build_loans/ecl แปลงเป็น float, mob6_test ใช้ Phase 1 base ที่เป็น float)
