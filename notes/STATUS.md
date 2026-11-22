@@ -100,7 +100,7 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
   rebuild จาก raw x2 byte-identical (62 tests, 36/36 claims, provenance 0 unmatched, re-derivation 31/31); demo deploy ผ่าน GitHub Pages workflow.
   History scan: ไม่มี data / secret; มีแค่ local absolute path (username) ใน stderr log ของ commit เก่า → run_all scrub path แล้ว;
   **Open:** จะ rewrite history (git filter-repo + force push) เพื่อลบ path เก่าไหม — รอ Nat ตัดสิน
-- 2026-11-22: demo redesign ตาม demo/mockup_reference.html (Nat-approved): navy/paper/red, IBM Plex; hero + monitoring stepper (as-of + reference)
+- 2026-11-22: demo redesign ตาม notes/design/mockup_reference.html (ย้ายออกจาก demo/ 2026-11-23 — ไม่ publish) (Nat-approved): navy/paper/red, IBM Plex; hero + monitoring stepper (as-of + reference)
   + concept-drift heatmap + expected loss + verdict + 2 interactive panels + method strip. ทุกตัวเลขมาจาก reports/ และ rendered text
   ผ่าน provenance check (demo_text.txt). Open: ใส่ link article + LinkedIn ใน footer (ตอนนี้เป็น placeholder)
 - อ่าน article draft แล้วตัดสินใจ publish (Medium)

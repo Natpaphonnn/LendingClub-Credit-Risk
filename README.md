@@ -2,6 +2,8 @@
 
 **A credit model built on 2012–13 loans and used from 2015: did it survive — and would you have noticed in time?**
 
+**Interactive demo:** https://natpaphonnn.github.io/LendingClub-Credit-Risk/
+
 A bank-style credit-risk project on public LendingClub data: WoE scorecard vs monotone LightGBM, monitoring (PSI/CSI, KS,
 actual/expected by vintage), vintage analysis, competing-risks lifetime PD, a pre-registered macro test, a TFRS 9-style ECL backtest with a
 refit benchmark, and a profit-based approval policy. Headline population: 36-month individual loans 2012–2018; the macro test uses 36-month
@@ -49,7 +51,7 @@ Known limitations: `notes/05_claims_and_limitations.md`; validation history: `no
    every ECL and policy number in the article from the raw file with separate code (`src/quality/rederive_ecl_policy.py`), failing fast on any error.
    Two fresh runs produce byte-identical `reports/` and `demo/` (hash manifest: `reports/quality/reports_manifest.sha256`).
 4. **Demo:** https://natpaphonnn.github.io/LendingClub-Credit-Risk/ — `demo/index.html` (static, single file plus Google Fonts, aggregates
-   only; built from `src/report/demo_template.html` by `src/report/build_demo.py`; design reference `demo/mockup_reference.html`). Browser check
+   only; built from `src/report/demo_template.html` by `src/report/build_demo.py`; design reference `notes/design/mockup_reference.html`, not published). Browser check
    (dev-only dependency): `pip install playwright && python -m playwright install chromium && python src/report/check_demo.py` — no console
    errors, no horizontal scroll at 390 px and 1300 px, reduced-motion mode, pre-registered defaults; screenshots in `reports/demo_screens/`.
    It also writes all rendered page text to `reports/demo_screens/demo_text.txt`, which the number-provenance check covers.

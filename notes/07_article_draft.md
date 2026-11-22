@@ -197,5 +197,7 @@ component — a real TFRS 9 model would need one.
    with early-performance monitoring — and let independent reviewers try to break your numbers. Mine found a critical flaw, a bug that changed
    the champion model, and two results I had to withdraw.
 
+Try the interactive version: https://natpaphonnn.github.io/LendingClub-Credit-Risk/
+
 *Data: LendingClub, via Kaggle dataset by Nathan George (wordsforthewise). Unemployment: U.S. Bureau of Labor Statistics. Raw data is not
 redistributed; code, aggregates and the full list of claims and limitations are in the project repository.*
