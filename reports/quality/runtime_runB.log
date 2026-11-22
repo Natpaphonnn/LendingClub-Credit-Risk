@@ -1,61 +1,61 @@
 >> src/audit/convert_to_parquet.py data/raw data/interim
-   22 s
+   45 s
 >> src/audit/run_audit.py data/interim data/raw/dictionary/LCDataDictionary.xlsx reports/audit
-   7 s
+   19 s
 >> src/audit/make_figures.py data/interim reports/figures
-   2 s
+   3 s
 >> src/phase1/build_dataset.py
-   1 s
->> src/phase1/train_scorecard.py
-   9 s
->> src/phase1/train_lgbm.py
-   33 s
->> src/phase1/evaluate.py
-   38 s
->> src/phase1/scorecard_stability.py
-   2 s
->> src/phase1/monitoring.py
-   12 s
->> src/phase1/vintage.py
-   1 s
->> src/phase1/explore_early_signal.py
-   0 s
->> src/phase4/mob6_60m_test.py
    4 s
+>> src/phase1/train_scorecard.py
+   20 s
+>> src/phase1/train_lgbm.py
+   75 s
+>> src/phase1/evaluate.py
+   95 s
+>> src/phase1/scorecard_stability.py
+   4 s
+>> src/phase1/monitoring.py
+   29 s
+>> src/phase1/vintage.py
+   3 s
+>> src/phase1/explore_early_signal.py
+   1 s
+>> src/phase4/mob6_60m_test.py
+   9 s
 >> src/phase4/asof_model.py
-   21 s
+   52 s
 >> src/phase2/fetch_bls.py
-   0 s
+   1 s
 >> src/phase2/build_loans.py
-   10 s
+   22 s
 >> src/phase2/fit_A.py
-   11 s
+   24 s
 >> src/phase2/rule_B.py
-   10453 s
+   868 s
 >> src/phase2/ecl.py
-   11 s
+   13 s
 >> src/phase2/ecl_benchmark.py
-   2578 s
+   108 s
 >> src/phase2/policy_C.py
-   1048 s
+   44 s
 >> src/phase2/mob6_test.py
    1 s
 >> src/phase2/overlay.py
-   3 s
->> src/report/article_figures.py
-   5 s
->> src/quality/grid_sensitivity.py
-   2644 s
->> src/quality/leakage_split_proof.py
-   1 s
->> src/report/build_demo.py
-   0 s
->> .venv/bin/python -m pytest -q -p no:cacheprovider tests
-   969 s
->> .venv/bin/python -I src/quality/check_claims.py
    4 s
+>> src/report/article_figures.py
+   8 s
+>> src/quality/grid_sensitivity.py
+   87 s
+>> src/quality/leakage_split_proof.py
+   2 s
+>> src/report/build_demo.py
+   1 s
+>> .venv/bin/python -m pytest -q -p no:cacheprovider tests
+   42 s
+>> .venv/bin/python -I src/quality/check_claims.py
+   5 s
 >> .venv/bin/python -I src/quality/check_note_numbers.py
    1 s
 >> .venv/bin/python -I src/quality/rederive_ecl_policy.py
-   11608 s
-TOTAL 29499 s
+   584 s
+TOTAL 2174 s

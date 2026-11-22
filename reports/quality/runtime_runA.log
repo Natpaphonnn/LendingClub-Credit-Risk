@@ -1,61 +1,61 @@
 >> src/audit/convert_to_parquet.py data/raw data/interim
-   55 s
+   71 s
 >> src/audit/run_audit.py data/interim data/raw/dictionary/LCDataDictionary.xlsx reports/audit
-   23 s
+   25 s
 >> src/audit/make_figures.py data/interim reports/figures
-   3 s
->> src/phase1/build_dataset.py
    5 s
->> src/phase1/train_scorecard.py
-   18 s
->> src/phase1/train_lgbm.py
-   117 s
->> src/phase1/evaluate.py
-   117 s
->> src/phase1/scorecard_stability.py
+>> src/phase1/build_dataset.py
    4 s
+>> src/phase1/train_scorecard.py
+   23 s
+>> src/phase1/train_lgbm.py
+   102 s
+>> src/phase1/evaluate.py
+   101 s
+>> src/phase1/scorecard_stability.py
+   5 s
 >> src/phase1/monitoring.py
-   38 s
+   22 s
 >> src/phase1/vintage.py
-   3 s
+   1 s
 >> src/phase1/explore_early_signal.py
    1 s
 >> src/phase4/mob6_60m_test.py
-   12 s
+   6 s
 >> src/phase4/asof_model.py
-   71 s
+   57 s
 >> src/phase2/fetch_bls.py
    1 s
 >> src/phase2/build_loans.py
-   34 s
+   21 s
 >> src/phase2/fit_A.py
-   47 s
+   20 s
 >> src/phase2/rule_B.py
-   581 s
+   530 s
 >> src/phase2/ecl.py
-   11 s
+   17 s
 >> src/phase2/ecl_benchmark.py
-   94 s
+   132 s
 >> src/phase2/policy_C.py
-   26 s
+   50 s
 >> src/phase2/mob6_test.py
    1 s
 >> src/phase2/overlay.py
-   2 s
->> src/report/article_figures.py
    5 s
+>> src/report/article_figures.py
+   7 s
 >> src/quality/grid_sensitivity.py
-   82 s
+   111 s
 >> src/quality/leakage_split_proof.py
    2 s
 >> src/report/build_demo.py
    0 s
 >> .venv/bin/python -m pytest -q -p no:cacheprovider tests
-   37 s
+   53 s
 >> .venv/bin/python -I src/quality/check_claims.py
-   3 s
+   8 s
 >> .venv/bin/python -I src/quality/check_note_numbers.py
-   2 s
+   3 s
 >> .venv/bin/python -I src/quality/rederive_ecl_policy.py
-   419 s
-TOTAL 1814 s
+   715 s
+TOTAL 2099 s

@@ -1,4 +1,4 @@
-# STATUS — 2026-11-20
+# STATUS — 2026-11-22
 
 ## Decisions (Nat, 2026-11-19)
 1. **Story pivot accepted:** "Lender in 2014 — does the model survive the 2015–16 vintages, and would monitoring notice in time?"
@@ -96,7 +96,11 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 - Demo: demo/index.html (static, aggregates only) · Article draft: notes/07_article_draft.md
 
 ## Next step / open questions for Nat
-- อ่าน article draft แล้วตัดสินใจ publish (Medium) — ยังเป็น draft; repo ยัง private
+- 2026-11-22: repo public (Nat). Demo policy slider default = pre-registered cutoff 0.1994 ตรงเป๊ะ + note ว่า NPV curve เป็น ex-post 2015;
+  rebuild จาก raw x2 byte-identical (62 tests, 36/36 claims, provenance 0 unmatched, re-derivation 31/31); demo deploy ผ่าน GitHub Pages workflow.
+  History scan: ไม่มี data / secret; มีแค่ local absolute path (username) ใน stderr log ของ commit เก่า → run_all scrub path แล้ว;
+  **Open:** จะ rewrite history (git filter-repo + force push) เพื่อลบ path เก่าไหม — รอ Nat ตัดสิน
+- อ่าน article draft แล้วตัดสินใจ publish (Medium)
 - ปิด minor ที่ค้างแล้ว (2026-11-20, ตามที่ Nat สั่ง): independent re-derivation ของทุก ECL/policy claim ใน article จาก raw (31/31 ตรง —
   reports/quality/rederive_ecl_policy.md), scorecard bin-stability table, shared scoring helper (src/lib/scoring.py), test ของ as-of information set;
   article เขียนใหม่ (สิ่งที่รอดก่อน แล้วสิ่งที่ fail)

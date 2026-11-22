@@ -5,6 +5,8 @@ cd "$(dirname "$0")/.."
 PY="nice -n 19 .venv/bin/python -I"
 LOG="${1:-reports/quality/runtime.log}"
 : > "$LOG"; : > "$LOG.stderr"
+# logs are committed: replace the absolute repo path with "." on any exit (no local user paths in the public repo)
+trap 'perl -pi -e "s|\\Q$PWD\\E|.|g" "$LOG" "$LOG.stderr"' EXIT
 # raw LendingClub inputs must match the committed manifest (gate R1-5); BLS values are pinned by bls_values.sha256 inside fetch_bls.py
 (cd data/raw && shasum -a 256 -c --quiet "../../raw_inputs.sha256") || { echo "FAILED: raw input checksums" | tee -a "$LOG"; exit 1; }
 # rebuild everything derived from raw (gate R10-1: convert_to_parquet skips existing parquet, so start from an empty data/interim)

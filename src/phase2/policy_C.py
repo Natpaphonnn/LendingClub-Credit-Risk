@@ -142,7 +142,7 @@ for rate in (0.05, 0.03, 0.08):
     dtab = pd.DataFrame([{"difference ($m, OOT 2015)": k, "bootstrap": kind, "point": round(v[0], 2), "95% CI": f"[{v[1]:.2f}, {v[2]:.2f}]"}
                          for (k, kind), v in diffs.items()])
     # demo aggregates (exploratory): single PD cutoff swept on 2015 loans — approval %, realised approved bad %, realised NPV $m
-    grid_c = np.round(np.arange(0.05, 0.4001, 0.0025), 4)
+    grid_c = np.unique(np.r_[np.round(np.arange(0.05, 0.4001, 0.0025), 4), CUT2])      # includes the exact pre-registered cutoff
     labd = oo.bad.notna().to_numpy()
     curve = {"cutoff": grid_c.tolist(), "approval %": [], "approved bad %": [], "realised NPV $m": []}
     for cth in grid_c:

@@ -132,7 +132,8 @@ differences, not levels. Funding cost changes NPV only. Marked: the pre-register
 </div>
 <div class="kv" id="polkv"></div>
 <svg id="pol" viewBox="0 0 900 230" role="img" aria-label="realised NPV by PD cutoff"></svg>
-<div class="legend"><span><i style="background:var(--s1)"></i>realised NPV, single cutoff</span><span><i style="background:var(--s2)"></i>pre-registered cutoff</span><span><i style="background:var(--muted)"></i>MILP policy (dashed)</span></div>
+<p class="sub" style="margin:6px 0 0">Ex-post curve on 2015 outcomes; its best point is only knowable afterwards. The pre-registered cutoff was set on 2014.</p>
+<div class="legend"><span><i style="background:var(--s1)"></i>realised NPV, single cutoff</span><span><i style="background:var(--s2);width:10px;height:10px;border-radius:50%"></i>pre-registered cutoff</span><span><i style="background:none;border-top:2px dashed var(--muted);height:0"></i>MILP policy</span><span><i style="background:var(--ink2);width:2px;height:12px"></i>selected cutoff</span></div>
 </section>
 
 <section>
@@ -272,7 +273,7 @@ document.getElementById("resetT").addEventListener("click", () => { document.get
 const PO = D.policy, cutEl = document.getElementById("cut"), rateEl = document.getElementById("rate");
 const C0 = PO["0.05"].curve, preCut = PO["0.05"].marks["pre-registered cutoff"].cutoff;
 cutEl.max = C0.cutoff.length - 1;
-const nearest = c => C0.cutoff.reduce((b, v, i) => Math.abs(v - c) < Math.abs(C0.cutoff[b] - c) ? i : b, 0);
+const nearest = c => C0.cutoff.reduce((b, v, i) => Math.abs(v - c) < Math.abs(C0.cutoff[b] - c) ? i : b, 0);   // exact: the curve includes the pre-registered cutoff
 cutEl.value = nearest(preCut);
 function renderPolicy(){
   const P = PO[rateEl.value], C = P.curve, i = +cutEl.value, mk = P.marks, pre = mk["pre-registered cutoff"], mi = mk.MILP;

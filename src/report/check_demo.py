@@ -41,8 +41,19 @@ with sync_playwright() as p:
                     problems.append(f"{w}px {scheme}: alarm table missing {must!r}")
             if tag != "pre-registered thresholds":
                 problems.append(f"{w}px {scheme}: default thresholds not labelled pre-registered")
-            if "$47.5m" not in kv or "$45.8m" not in kv:
-                problems.append(f"{w}px {scheme}: policy panel defaults {kv!r}")
+            vals = pg.evaluate("""() => { const P = D.policy["0.05"], i = +document.getElementById("cut").value, c = P.curve,
+                pre = P.marks["pre-registered cutoff"];
+                return [c.cutoff[i] === pre.cutoff, c["approval %"][i] === pre["approval %"], c["approved bad %"][i] === pre["approved bad %"],
+                        c["realised NPV $m"][i] === pre["realised NPV $m"]]; }""")
+            if not all(vals) or "$47.5m" not in kv or "$45.8m" not in kv or pg.inner_text("#cutv") != "0.1994":
+                problems.append(f"{w}px {scheme}: policy default is not the exact pre-registered cutoff {vals} {kv!r}")
+            legend_ok = pg.evaluate("""() => { const c = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+                const sv = document.getElementById("pol"), stroke = [...sv.querySelectorAll("path")].map(e => e.getAttribute("stroke"));
+                const dots = [...sv.querySelectorAll("circle")].map(e => e.getAttribute("fill"));
+                const dash = [...sv.querySelectorAll("line")].filter(e => e.getAttribute("stroke-dasharray")).map(e => e.getAttribute("stroke"));
+                return stroke.includes(c("--s1")) && dots.includes(c("--s2")) && dash.includes(c("--muted")); }""")
+            if not legend_ok:
+                problems.append(f"{w}px {scheme}: policy legend colours do not match the drawn marks")
             pg.close()
     b.close()
 print("\n".join(problems) if problems else "demo check: OK (390 px and 1300 px, light and dark)")
