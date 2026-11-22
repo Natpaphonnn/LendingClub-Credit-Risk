@@ -2,7 +2,7 @@
 
 **A credit model built on 2012–13 loans and used from 2015: did it survive — and would you have noticed in time?**
 
-**Interactive demo:** https://natpaphonnn.github.io/LendingClub-Credit-Risk/
+**Interactive demo:** https://natpaphonnn.github.io/LendingClub-Credit-Risk/ · **Author:** Natpaphon Nukhunthod — [LinkedIn](https://www.linkedin.com/in/natpaphon-nukhunthod)
 
 A bank-style credit-risk project on public LendingClub data: WoE scorecard vs monotone LightGBM, monitoring (PSI/CSI, KS,
 actual/expected by vintage), vintage analysis, competing-risks lifetime PD, a pre-registered macro test, a TFRS 9-style ECL backtest with a
