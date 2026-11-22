@@ -14,7 +14,7 @@ T0=$SECONDS
 step src/audit/convert_to_parquet.py data/raw data/interim
 step src/audit/run_audit.py data/interim data/raw/dictionary/LCDataDictionary.xlsx reports/audit
 step src/audit/make_figures.py data/interim reports/figures
-for s in build_dataset train_scorecard train_lgbm evaluate monitoring vintage explore_early_signal; do step src/phase1/$s.py; done
+for s in build_dataset train_scorecard train_lgbm evaluate scorecard_stability monitoring vintage explore_early_signal; do step src/phase1/$s.py; done
 for s in mob6_60m_test asof_model; do step src/phase4/$s.py; done          # before phase 2: ecl_benchmark uses the as-of score
 step src/phase2/fetch_bls.py
 for s in build_loans fit_A rule_B ecl ecl_benchmark policy_C mob6_test overlay; do step src/phase2/$s.py; done
@@ -27,4 +27,5 @@ check() { local s=$SECONDS; echo ">> $*" | tee -a "$LOG"; nice -n 19 "$@" >> "$L
 check .venv/bin/python -m pytest -q -p no:cacheprovider tests
 check .venv/bin/python -I src/quality/check_claims.py
 check .venv/bin/python -I src/quality/check_note_numbers.py
+check .venv/bin/python -I src/quality/rederive_ecl_policy.py     # independent re-derivation of the article's ECL/policy claims
 echo "TOTAL $((SECONDS-T0)) s" | tee -a "$LOG"

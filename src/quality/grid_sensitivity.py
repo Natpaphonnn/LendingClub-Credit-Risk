@@ -15,13 +15,12 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src" / "phase1"))
 from config import CATEGORICAL, FEATURES, MONO_DEC, MONO_INC, OOT, SEED, TRAIN, VALID, load_base, split_mask  # noqa: E402
 from metrics import Disc  # noqa: E402
+from scoring import fit_categories, model_frame  # noqa: E402
 
 df = load_base()
 tr, va, oo = (split_mask(df, w) & df.bad.notna() for w in (TRAIN, VALID, OOT))
-cats = {c: sorted(df.loc[tr, c].dropna().unique()) for c in CATEGORICAL}
-X = df[FEATURES].copy()
-for c in CATEGORICAL:
-    X[c] = pd.Categorical(X[c], categories=cats[c])
+cats = fit_categories(df, tr, CATEGORICAL)
+X, _ = model_frame(df, FEATURES, CATEGORICAL, cats)
 mono = [(-1 if f in MONO_DEC else 1 if f in MONO_INC else 0) for f in FEATURES]
 dtr = lgb.Dataset(X[tr], df.loc[tr, "bad"], categorical_feature=CATEGORICAL, free_raw_data=False)
 dva = lgb.Dataset(X[va], df.loc[va, "bad"], reference=dtr, categorical_feature=CATEGORICAL, free_raw_data=False)

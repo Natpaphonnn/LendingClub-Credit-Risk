@@ -75,7 +75,8 @@
   max 0.03 pp PD). tests/test_monotone.py sweeps every split threshold on a NaN-enriched sample with a 0.05 pp tolerance (gate round 2 R5-1 / R10-3).
 - Cost of the constraints: the unconstrained twin of the champion config scores ≈ 0.4 Gini higher on OOT (reports/quality/grid_sensitivity.md).
 - WoE bins: the 5% minimum share was applied on non-missing rows, so a few bins hold 4.6–5.0% of all rows; no significance-based merge step (gate R4-3/R4-4). Some fine bins in flat ranges lose strict bad-rate order out of time
-  (4 of 13 numeric characteristics on 2015; near-identical points); no bin-level stability report (gate round 2 R4-2).
+  (4 of 13 numeric characteristics on 2015; near-identical points) — bin-level shares, bad rates and WoE by period in
+  reports/phase1/scorecard_stability.md (descriptive); merging such bins would be a spec change (gate round 2 R4-2).
 - Reason codes are characteristic names: MISSING bins can produce reasons (e.g. no instalment account → mo_sin_old_il_acct); `purpose`
   appears in 12.7% of top-4 reasons (fair-lending not checked); M1 uses a best-attribute baseline and M2 TreeSHAP a mean baseline, so part of
   their disagreement is the reference point (gate round 2 R4-4).
@@ -141,7 +142,8 @@
 - **Statistics:** bootstrap CIs resample loans i.i.d. (no quarter clustering); for level metrics this understates uncertainty — e.g. the M2 OOT
   CITL CI is [−1.82, −1.58] i.i.d. but ≈ [−1.96, −1.44] by issue month and ≈ [−2.10, −1.16] by state (gate round 2 R5-3); KS percentile CIs
   are biased upward (R5-5); A/E thresholds have no binomial/traffic-light bounds.
-- **Not checked:** fair-lending / disparate impact (e.g. `purpose` as a decline reason); unseen categorical values are not monitored.
+- **Not checked:** fair-lending / disparate impact (e.g. `purpose` as a decline reason); unseen categorical values are mapped to missing and counted at scoring (src/lib/scoring.py; counts in
+  reports/phase1/lgbm_grid.md) but have no alarm threshold.
 - **Monotonicity (gate R5-1):** the first build used LightGBM `monotone_constraints_method="advanced"`, which violated the constraints;
   now `"intermediate"` with a post-training sweep test (tests/test_monotone.py).
 - **Data dictionary text** is quoted from a third-party Figshare copy whose CC BY 4.0 tag is the uploader's claim (same caveat as Kaggle CC0) (gate R1-7).

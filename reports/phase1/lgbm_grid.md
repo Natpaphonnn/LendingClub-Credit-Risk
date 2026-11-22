@@ -16,3 +16,5 @@ Selected: {'num_leaves': 31, 'min_child_samples': 1000, 'lambda_l2': 0}, best_it
 |           63 |                 200 |          10 |         172 |         0.3761  |
 |           63 |                1000 |           0 |         157 |         0.37586 |
 |           63 |                1000 |          10 |         196 |         0.37579 |
+
+Unseen categorical values when scoring the full base 2012-09..2018 (mapped to missing; gate R10-12): {'home_ownership': 763, 'verification_status': 0, 'purpose': 2}

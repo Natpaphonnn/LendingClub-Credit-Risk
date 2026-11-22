@@ -1,19 +1,21 @@
 >> src/audit/convert_to_parquet.py data/raw data/interim
-   24 s
+   22 s
 >> src/audit/run_audit.py data/interim data/raw/dictionary/LCDataDictionary.xlsx reports/audit
-   11 s
+   7 s
 >> src/audit/make_figures.py data/interim reports/figures
-   1 s
->> src/phase1/build_dataset.py
    2 s
+>> src/phase1/build_dataset.py
+   1 s
 >> src/phase1/train_scorecard.py
-   10 s
+   9 s
 >> src/phase1/train_lgbm.py
-   46 s
+   33 s
 >> src/phase1/evaluate.py
-   40 s
+   38 s
+>> src/phase1/scorecard_stability.py
+   2 s
 >> src/phase1/monitoring.py
-   10 s
+   12 s
 >> src/phase1/vintage.py
    1 s
 >> src/phase1/explore_early_signal.py
@@ -25,33 +27,35 @@
 >> src/phase2/fetch_bls.py
    0 s
 >> src/phase2/build_loans.py
-   9 s
+   10 s
 >> src/phase2/fit_A.py
-   9 s
+   11 s
 >> src/phase2/rule_B.py
-   261 s
+   10453 s
 >> src/phase2/ecl.py
-   6 s
+   11 s
 >> src/phase2/ecl_benchmark.py
-   55 s
+   2578 s
 >> src/phase2/policy_C.py
-   20 s
+   1048 s
 >> src/phase2/mob6_test.py
    1 s
 >> src/phase2/overlay.py
-   2 s
->> src/report/article_figures.py
    3 s
+>> src/report/article_figures.py
+   5 s
 >> src/quality/grid_sensitivity.py
-   54 s
+   2644 s
 >> src/quality/leakage_split_proof.py
    1 s
 >> src/report/build_demo.py
    0 s
 >> .venv/bin/python -m pytest -q -p no:cacheprovider tests
-   20 s
+   969 s
 >> .venv/bin/python -I src/quality/check_claims.py
-   2 s
+   4 s
 >> .venv/bin/python -I src/quality/check_note_numbers.py
    1 s
-TOTAL 614 s
+>> .venv/bin/python -I src/quality/rederive_ecl_policy.py
+   11608 s
+TOTAL 29499 s

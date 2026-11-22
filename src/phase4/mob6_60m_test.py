@@ -19,6 +19,7 @@ for p in ("src/phase1", "src/lib"):
     sys.path.insert(0, str(ROOT / p))
 from config import ACC, ART, ASOF, CATEGORICAL, CHARGEOFF_LAG_M, FEATURES, INTERIM, NUMERIC  # noqa: E402
 from riskutils import default_by_mob  # noqa: E402
+from scoring import load_categories, score  # noqa: E402
 
 REP4 = ROOT / "reports" / "phase4"
 REP4.mkdir(parents=True, exist_ok=True)
@@ -46,11 +47,7 @@ df["issue_dt"] = pd.to_datetime(df.issue_dt)
 
 # frozen scores: M2 (champion) primary, M1 (scorecard) secondary
 booster = lgb.Booster(model_file=str(ART / "lgbm.txt"))
-cats = json.loads((ART / "lgbm_cats.json").read_text())
-X = df[FEATURES].copy()
-for c in CATEGORICAL:
-    X[c] = pd.Categorical(X[c], categories=cats[c])
-df["pd_m2"] = booster.predict(X)
+df["pd_m2"], _ = score(booster, df, FEATURES, CATEGORICAL, load_categories(ART / "lgbm_cats.json"))
 sc = pickle.load(open(ART / "scorecard.pkl", "rb"))
 s1 = np.zeros(len(df))
 for c in sc["cols"]:

@@ -47,7 +47,9 @@ def test_derived_sql_reads_only_declared_sources():
 
 def test_training_code_uses_feature_list_only():
     lgb_src = (ROOT / "src/phase1/train_lgbm.py").read_text()
-    assert "X = df[FEATURES].copy()" in lgb_src
+    assert "X, unseen = model_frame(df, FEATURES, CATEGORICAL, cats)" in lgb_src        # shared helper (src/lib/scoring.py)
+    helper = (ROOT / "src/lib/scoring.py").read_text()
+    assert "X = df[list(features)].copy()" in helper                                     # the helper selects only the given features
     sc_src = (ROOT / "src/phase1/train_scorecard.py").read_text()
     assert "for f in FEATURES:" in sc_src
 

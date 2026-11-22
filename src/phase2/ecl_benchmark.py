@@ -26,6 +26,7 @@ from config import CATEGORICAL, FEATURES, INTERIM  # noqa: E402
 from ecl_lib import ecl_from, fit_hazard_asof, fit_on, pooled_lgd, realised_loss, schedule, staging_e4  # noqa: E402
 from hazard import cif, hazards  # noqa: E402
 from riskutils import as_float, code_events, default_by_mob, lgd_ead_at_default, payments_due  # noqa: E402
+from scoring import load_categories, score  # noqa: E402
 
 REP2 = ROOT / "reports" / "phase2"
 H = 36
@@ -37,11 +38,8 @@ dft = trn[trn.loan_status.isin(["Charged Off", "Default"])]
 
 # ---- as-of score for every loan (as-of model: data to 2014-06)
 booster = lgb.Booster(model_file=str(INTERIM / "p4" / "asof_lgbm.txt"))
-cats = json.loads((INTERIM / "p4" / "asof_cats.json").read_text())
-X = loans[FEATURES].copy()
-for c in CATEGORICAL:
-    X[c] = pd.Categorical(X[c], categories=cats[c])
-p12 = np.clip(booster.predict(X), 1e-6, 1 - 1e-6)
+p12, _ = score(booster, loans, FEATURES, CATEGORICAL, load_categories(INTERIM / "p4" / "asof_cats.json"))
+p12 = np.clip(p12, 1e-6, 1 - 1e-6)
 lp_asof = pd.Series(np.log(p12 / (1 - p12)), index=loans.index)
 
 port = loans[loans.yr == 2015].copy()

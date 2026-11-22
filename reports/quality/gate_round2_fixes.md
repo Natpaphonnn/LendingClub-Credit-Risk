@@ -31,7 +31,7 @@ No pre-registered threshold, window, population or decision criterion was change
 | R2-5 / R7-2 docstrings / identifiability wording | minor | fixed |
 | R2-6 memo ≥ 6 vs ≥ 5 | minor | fixed (both memo rows shown) |
 | R4-1 story CI [2.8, 3.4] | minor | fixed |
-| R4-2 bin stability | minor | disclosed; table deferred |
+| R4-2 bin stability | minor | fixed: reports/phase1/scorecard_stability.md (4 of 13 numeric characteristics reverse on OOT; descriptive) |
 | R4-3 scorecard scaling tests | minor | fixed (tests/test_scorecard_scaling.py) |
 | R4-4 reason-code caveats | minor | disclosed (notes/05) |
 | R5-2 cost of constraints | minor | fixed (unconstrained twin in grid_sensitivity.md: OOT Gini 37.16 vs 36.74) |
@@ -48,6 +48,6 @@ No pre-registered threshold, window, population or decision criterion was change
 | R9-4 bootstrap conditions | minor | fixed (wording) |
 | R9-5 unequal clusters | minor | disclosed |
 | R9-6 stale CI in 03 deviations | minor | fixed |
-| R3-3 tests of extension information sets | minor | partly (fit_hazard_asof window test); as-of window test deferred |
-| R10-10 "read" claims are self-consistency | minor | README wording fixed; independent re-derivation deferred |
-| R10-12 duplicated scoring block | minor | deferred |
+| R3-3 tests of extension information sets | minor | fixed: tests/test_asof_information_set.py (+ src/phase4/asof_info.py, asserted in asof_model.py) and the fit_hazard_asof window test |
+| R10-10 "read" claims are self-consistency | minor | fixed: src/quality/rederive_ecl_policy.py re-derives every ECL and policy claim of the article from the raw file with separate code (reports/quality/rederive_ecl_policy.md), run by run_all |
+| R10-12 duplicated scoring block | minor | fixed: src/lib/scoring.py used by every stage; unseen categories counted; tests/test_scoring_helper.py |

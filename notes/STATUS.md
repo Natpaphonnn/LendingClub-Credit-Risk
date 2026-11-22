@@ -97,4 +97,6 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 
 ## Next step / open questions for Nat
 - อ่าน article draft แล้วตัดสินใจ publish (Medium) — ยังเป็น draft; repo ยัง private
-- Deferred (minor): scorecard bin-stability table (R4-2), shared scoring helper (R10-12), independent re-derivation ของ ECL/policy claims (R10-10), tests ของ as-of information set (R3-3)
+- ปิด minor ที่ค้างแล้ว (2026-11-20, ตามที่ Nat สั่ง): independent re-derivation ของทุก ECL/policy claim ใน article จาก raw (31/31 ตรง —
+  reports/quality/rederive_ecl_policy.md), scorecard bin-stability table, shared scoring helper (src/lib/scoring.py), test ของ as-of information set;
+  article เขียนใหม่ (สิ่งที่รอดก่อน แล้วสิ่งที่ fail)

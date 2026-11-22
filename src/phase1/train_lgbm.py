@@ -17,16 +17,15 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import (ART, CATEGORICAL, FEATURES, MONO_DEC, MONO_INC, REP, SEED, TRAIN, VALID,  # noqa: E402
                     load_base, split_mask)
+from scoring import fit_categories, model_frame  # noqa: E402
 
 df = load_base()
 tr_m = split_mask(df, TRAIN) & df.bad.notna()
 va_m = split_mask(df, VALID) & df.bad.notna()
 
-# categories fixed from train; unseen -> NaN
-cats = {c: sorted(df.loc[tr_m, c].dropna().unique()) for c in CATEGORICAL}
-X = df[FEATURES].copy()
-for c in CATEGORICAL:
-    X[c] = pd.Categorical(X[c], categories=cats[c])
+# categories fixed from train; unseen -> missing (shared helper, src/lib/scoring.py)
+cats = fit_categories(df, tr_m, CATEGORICAL)
+X, unseen = model_frame(df, FEATURES, CATEGORICAL, cats)
 mono = [(-1 if f in MONO_DEC else 1 if f in MONO_INC else 0) for f in FEATURES]
 
 dtr = lgb.Dataset(X[tr_m], df.loc[tr_m, "bad"], categorical_feature=CATEGORICAL, free_raw_data=False)
@@ -62,6 +61,7 @@ imp = imp.sort_values("gain", ascending=False).drop(columns="gain")
 sel = {k: params[k] for k in ("num_leaves", "min_child_samples", "lambda_l2")}
 (REP / "lgbm_grid.md").write_text(
     f"# M2 LightGBM grid (selection by validation log loss)\n\nSelected: {sel}, best_iter={m.best_iteration}, "
-    f"valid logloss={ll:.5f}\n\n" + grid.to_markdown(index=False) + "\n")
+    f"valid logloss={ll:.5f}\n\n" + grid.to_markdown(index=False) + "\n\n"
+    f"Unseen categorical values when scoring the full base 2012-09..2018 (mapped to missing; gate R10-12): {unseen}\n")
 (REP / "lgbm_importance.md").write_text("# M2 gain importance (%)\n\n" + imp.to_markdown(index=False) + "\n")
 print("selected", sel, m.best_iteration, ll)

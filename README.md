@@ -43,9 +43,10 @@ Known limitations: `notes/05_claims_and_limitations.md`; validation history: `no
    uv venv --python 3.12 .venv
    uv pip install --python .venv/bin/python -r requirements.lock.txt
    ```
-3. **Run** (deterministic; ~9 min on a laptop, `nice 19`): `bash scripts/run_all.sh` deletes `data/interim`, rebuilds everything from
+3. **Run** (deterministic; ~15 min on a laptop, `nice 19`): `bash scripts/run_all.sh` deletes `data/interim`, rebuilds everything from
    `data/raw`, then runs the tests, the strict claim re-check (`src/quality/check_claims.py`: re-derived where possible, otherwise a consistency
-   check against the cited report) and the number-provenance check (`src/quality/check_note_numbers.py`), failing fast on any error.
+   check against the cited report), the number-provenance check (`src/quality/check_note_numbers.py`) and an independent re-derivation of
+   every ECL and policy number in the article from the raw file with separate code (`src/quality/rederive_ecl_policy.py`), failing fast on any error.
    Two fresh runs produce byte-identical `reports/` and `demo/` (hash manifest: `reports/quality/reports_manifest.sha256`).
 4. **Demo:** open `demo/index.html` (static, aggregates only). **Article draft:** `notes/07_article_draft.md`.
 
@@ -56,7 +57,7 @@ Known limitations: `notes/05_claims_and_limitations.md`; validation history: `no
 | `src/phase1` | scorecard, LightGBM, evaluation, monitoring, vintage |
 | `src/phase2` | competing-risks hazard, macro rule, ECL (+ benchmark), profit policy, overlay |
 | `src/phase4` | as-of model, confirmatory 60m early-warning test |
-| `src/lib/riskutils.py` | small tested helpers for error-prone logic |
+| `src/lib` | small tested helpers for error-prone logic (`riskutils.py`) and the shared model frame / scoring (`scoring.py`) |
 | `src/quality` | claim re-check, number provenance, leakage/split proof, grid sensitivity |
 | `src/report` | article figures, demo builder |
 | `notes/` | plan, pre-registrations (02, 03, 08), results (01–03, 10), story, claims, quality report, gate rubric, article draft |

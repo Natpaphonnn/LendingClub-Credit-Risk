@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT / "src" / "phase1"))
 from config import ACC, ART, CATEGORICAL, FEATURES, INTERIM, NUMERIC  # noqa: E402
 sys.path.insert(0, str(ROOT / "src" / "lib"))
 from riskutils import code_events  # noqa: E402
+from scoring import load_categories, score  # noqa: E402
 
 OUT = INTERIM / "p2_loans.parquet"
 num = ",\n  ".join(f"TRY_CAST({c} AS DOUBLE)::FLOAT AS {c}" for c in NUMERIC)
@@ -55,11 +56,8 @@ df["issue_dt"] = pd.to_datetime(df["issue_dt"])
 
 # frozen M2 score
 booster = lgb.Booster(model_file=str(ART / "lgbm.txt"))
-cats = json.loads((ART / "lgbm_cats.json").read_text())
-X = df[FEATURES].copy()
-for c in CATEGORICAL:
-    X[c] = pd.Categorical(X[c], categories=cats[c])
-df["pd_m2"] = booster.predict(X).astype(np.float32)
+pm2, _ = score(booster, df, FEATURES, CATEGORICAL, load_categories(ART / "lgbm_cats.json"))
+df["pd_m2"] = pm2.astype(np.float32)
 df["lp"] = np.log(df.pd_m2 / (1 - df.pd_m2)).astype(np.float32)
 
 # event coding (prereg §A) — tested helper (tests/test_riskutils.py::test_code_events)

@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import (ART, B_BOOT, BAD_RATE_TARGET, CATEGORICAL, FEATURES, FIG, OOT, REP, SEED, TRAIN, VALID,  # noqa: E402
                     load_base, split_mask)
 from metrics import Disc, calib_slope, decile_table, evaluate  # noqa: E402
+from scoring import load_categories, model_frame  # noqa: E402
 from plotstyle import S, plt, save  # noqa: E402
 
 df = load_base()
@@ -204,11 +205,8 @@ emit(f"Reason codes — M1, OOT 2015 declines (n={len(dec1):,}, 'points below ma
 
 # M2 TreeSHAP on OOT declines
 booster = lgb.Booster(model_file=str(ART / "lgbm.txt"))
-cats = json.loads((ART / "lgbm_cats.json").read_text())
 dec2 = oo[oo.pd_m2 > c2].index
-X = df.loc[dec2, FEATURES].copy()
-for c in CATEGORICAL:
-    X[c] = pd.Categorical(X[c], categories=cats[c])
+X, _ = model_frame(df.loc[dec2], FEATURES, CATEGORICAL, load_categories(ART / "lgbm_cats.json"))
 contrib = booster.predict(X, pred_contrib=True)[:, :-1]
 o2 = np.argsort(-contrib, axis=1)[:, :4]
 top2 = np.array(FEATURES)[o2]

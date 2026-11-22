@@ -1,7 +1,10 @@
 """Phase 1 configuration — mirrors notes/02_prereg_phase1.md (pre-registered 2026-11-19, commit 652b889)."""
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT / "src" / "lib") not in sys.path:          # shared helpers (riskutils, scoring) for every stage
+    sys.path.insert(0, str(ROOT / "src" / "lib"))
 INTERIM = ROOT / "data" / "interim"
 ACC = INTERIM / "accepted_2007_to_2018Q4.parquet"
 BASE = INTERIM / "p1_base.parquet"          # row-level, git-ignored

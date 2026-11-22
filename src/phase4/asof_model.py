@@ -27,7 +27,9 @@ from riskutils import default_by_mob  # noqa: E402
 REP4, ART4 = ROOT / "reports" / "phase4", INTERIM / "p4"
 REP4.mkdir(parents=True, exist_ok=True)
 ART4.mkdir(parents=True, exist_ok=True)
-TR, VA = ("2012-09-01", "2013-03-01"), ("2013-04-01", "2013-06-01")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from asof_info import DECISION, TRAIN as TR, VALID as VA, label_available  # noqa: E402
+from scoring import fit_categories, model_frame  # noqa: E402
 
 df = load_base().join(pd.read_parquet(ART / "scores_m2.parquet"))
 df["bad12"] = default_by_mob(df.default_mob, 12)
@@ -36,11 +38,10 @@ tr_m, va_m = split_mask(df, TR), split_mask(df, VA)
 fit = df[tr_m | va_m]
 last_event = (fit.issue_dt.dt.to_period("M") + 12).max().to_timestamp()
 assert last_event <= pd.Timestamp("2014-06-01"), last_event
+assert (label_available(fit.issue_dt, CHARGEOFF_LAG_M) <= pd.Timestamp(DECISION)).all()   # tests/test_asof_information_set.py
 
-cats = {c: sorted(df.loc[tr_m, c].dropna().unique()) for c in CATEGORICAL}
-X = df[FEATURES].copy()
-for c in CATEGORICAL:
-    X[c] = pd.Categorical(X[c], categories=cats[c])
+cats = fit_categories(df, tr_m, CATEGORICAL)
+X, _ = model_frame(df, FEATURES, CATEGORICAL, cats)
 mono = [(-1 if f in MONO_DEC else 1 if f in MONO_INC else 0) for f in FEATURES]
 dtr = lgb.Dataset(X[tr_m], df.loc[tr_m, "bad12"], categorical_feature=CATEGORICAL, free_raw_data=False)
 dva = lgb.Dataset(X[va_m], df.loc[va_m, "bad12"], reference=dtr, categorical_feature=CATEGORICAL, free_raw_data=False)

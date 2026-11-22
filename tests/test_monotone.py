@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 
 from config import ART, BASE, CATEGORICAL, FEATURES, INTERIM, MONO_DEC, MONO_INC, load_base
+from scoring import model_frame
 
 MODELS = [ART / "lgbm.txt", INTERIM / "p4" / "asof_lgbm.txt"]
 CATS = [ART / "lgbm_cats.json", INTERIM / "p4" / "asof_cats.json"]
@@ -44,9 +45,7 @@ def test_trained_models_are_monotone(k):
     full = load_base()
     has_nan = full[FEATURES].isna().any(axis=1)
     df = pd.concat([full[~has_nan].sample(600, random_state=0), full[has_nan].sample(1400, random_state=0)])
-    X = df[FEATURES].copy()
-    for c in CATEGORICAL:
-        X[c] = pd.Categorical(X[c], categories=cats[c])
+    X, _ = model_frame(df, FEATURES, CATEGORICAL, cats)
     tdf = b.trees_to_dataframe()
     worst, bad = 0.0, []
     for f in MONO_DEC + MONO_INC:
