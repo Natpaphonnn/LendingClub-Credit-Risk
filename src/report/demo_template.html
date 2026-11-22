@@ -45,6 +45,21 @@ th{color:var(--ink2);font-weight:600}td.num{text-align:right;font-variant-numeri
 .pass{color:var(--good)}.fail{color:var(--crit)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
 footer{color:var(--muted);font-size:12.5px;margin-top:10px}
+.ctrls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:14px;margin:6px 0 12px}
+.ctrls label{display:flex;align-items:center;gap:8px}.ctrls input[type=range]{width:170px;max-width:52vw}
+.ctrls output{font-variant-numeric:tabular-nums;min-width:3.2em;font-weight:600}
+.ctrls button,.ctrls select{background:none;border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:4px 10px;font-size:13px}
+.scroll{overflow-x:auto}.tag{font-size:11.5px;color:var(--ink2);border:1px solid var(--border);border-radius:999px;padding:1px 8px;margin-left:6px;white-space:nowrap}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:4px 0 10px}
+.kv div{border:1px solid var(--border);border-radius:8px;padding:8px 10px}.kv b{display:block;font-size:20px}.kv span{color:var(--ink2);font-size:12.5px}
+.rule span{min-width:0;overflow-wrap:anywhere}code{overflow-wrap:anywhere}
+@media(max-width:560px){
+  .rule{grid-template-columns:1fr auto;grid-auto-flow:dense}.rule span:nth-child(3n+2){grid-column:1/-1;margin:-4px 0 6px;font-size:13px}
+  #alarmtab tr:first-child{display:none}#alarmtab tr{display:block;border-bottom:1px solid var(--grid);padding:6px 0}
+  #alarmtab td{display:flex;justify-content:space-between;gap:12px;border:0;padding:2px 0;text-align:right}
+  #alarmtab td::before{content:attr(data-l);color:var(--ink2);text-align:left}
+  #psi text,#ae text,#pol text,#mob6 text{font-size:21px}
+}
 button.theme{float:right;background:none;border:1px solid var(--border);color:var(--ink2);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12.5px}
 </style>
 </head>
@@ -63,6 +78,19 @@ Bottom: actual ÷ expected defaults by month 12 — reference model (if live fro
 <svg id="psi" viewBox="0 0 900 170" role="img" aria-label="PSI by date"></svg>
 <div class="legend"><span><i style="background:var(--s1)"></i>reference model</span><span><i style="background:var(--s2)"></i>as-of model (data to Jun 2014)</span><span><i style="background:var(--band);height:10px"></i>first worse loans issued → first alarm</span></div>
 <svg id="ae" viewBox="0 0 900 260" role="img" aria-label="actual over expected by date"></svg>
+</section>
+
+<section>
+<h2>What if the alarm thresholds were different?</h2>
+<p class="sub">Month-12 actual ÷ expected defaults by issue quarter; a quarter flags when A/E is strictly above the threshold, at the date it becomes
+knowable. First worse vintage: <b id="fw"></b> (≥ 1.2× the 2012–13 month-12 default rate). "Loans booked meanwhile" = 36-month loans issued from
+that vintage up to the quarter in which the alarm becomes knowable.</p>
+<div class="ctrls">
+  <label>Amber &gt; <input type="range" id="amb" min="1.00" max="1.50" step="0.01" value="1.10"><output id="ambv"></output></label>
+  <label>Red &gt; <input type="range" id="red" min="1.00" max="1.60" step="0.01" value="1.25"><output id="redv"></output></label>
+  <button id="resetT">Reset</button><span class="tag" id="prereg"></span>
+</div>
+<div class="scroll"><table id="alarmtab"></table></div>
 </section>
 
 <div class="grid2">
@@ -94,10 +122,24 @@ Bottom: actual ÷ expected defaults by month 12 — reference model (if live fro
 </div>
 
 <section>
+<h2>Approval policy: one PD cutoff <span class="tag">exploratory</span></h2>
+<p class="sub">2015 loans, champion PD. Realised NPV uses an approximate cash timing, so dollar levels depend on that assumption — compare
+differences, not levels. Funding cost changes NPV only. Marked: the pre-registered cutoff (set on 2014 for an 11% bad rate) and the MILP cell policy.</p>
+<div class="ctrls">
+  <label>PD cutoff ≤ <input type="range" id="cut" min="0" max="1" step="1" value="0"><output id="cutv"></output></label>
+  <label>Funding cost <select id="rate"><option value="0.03">3%</option><option value="0.05" selected>5%</option><option value="0.08">8%</option></select></label>
+  <button id="resetP">Pre-registered cutoff</button>
+</div>
+<div class="kv" id="polkv"></div>
+<svg id="pol" viewBox="0 0 900 230" role="img" aria-label="realised NPV by PD cutoff"></svg>
+<div class="legend"><span><i style="background:var(--s1)"></i>realised NPV, single cutoff</span><span><i style="background:var(--s2)"></i>pre-registered cutoff</span><span><i style="background:var(--muted)"></i>MILP policy (dashed)</span></div>
+</section>
+
+<section>
 <h2>Early warning at month 6 — confirmatory test on 60-month loans</h2>
 <p class="sub" id="mob6sub"></p>
 <svg id="mob6" viewBox="0 0 900 230" role="img" aria-label="month-6 actual over expected by quarter"></svg>
-<div class="legend"><span><i style="background:var(--s1);height:10px"></i>truth: deteriorated</span><span><i style="background:var(--base);height:10px"></i>truth: not deteriorated</span></div>
+<div class="legend"><span><i style="background:var(--s1);height:8px;width:8px;border-radius:50%"></i>truth: deteriorated</span><span><i style="background:var(--muted);height:8px;width:8px;border-radius:50%"></i>truth: not deteriorated</span></div>
 </section>
 
 <footer>Data: LendingClub via Kaggle (Nathan George); unemployment: U.S. Bureau of Labor Statistics. Raw data is not included. Claims and their
@@ -164,6 +206,7 @@ function render(){
     el("text", {x: 0, y: y + 4}, ms).textContent = r.model;
     el("line", {x1: X(100 * r.gini_lo), x2: X(100 * r.gini_hi), y1: y, y2: y, stroke: c, "stroke-width": 2}, ms);
     const d = el("circle", {cx: X(100 * r.gini), cy: y, r: 6, fill: c, stroke: css("--panel"), "stroke-width": 2}, ms);
+    el("text", {x: X(100 * r.gini_hi) + 7, y: y + 4, "font-weight": 600, style: "fill:var(--ink)"}, ms).textContent = (100 * r.gini).toFixed(1);
     const h = el("rect", {x: 0, y: y - 18, width: 440, height: 36, fill: "transparent"}, ms);
     h.addEventListener("mousemove", e => showTip(e, `<b>${r.model}</b><br>Gini ${(100 * r.gini).toFixed(1)} [${(100 * r.gini_lo).toFixed(1)}, ${(100 * r.gini_hi).toFixed(1)}]<br>KS ${(100 * r.ks).toFixed(1)}`));
     h.addEventListener("mouseleave", hideTip); });
@@ -191,17 +234,73 @@ function render(){
   document.getElementById("mob6sub").textContent = `Pre-registered and pushed before computing. Sensitivity ${R.tp}/${R.n_truth_yes}, specificity ${R.tn}/${R.n_truth_no} (${(100 * R.specificity).toFixed(0)}% < 80%) → ${R.verdict}. Specificity not demonstrated (only ${R.n_truth_no} negative quarters).`;
   const mm = {l: 44, r: 10, t: 10, b: 28}, Ys = y => 230 - mm.b - (y - 0.8) / (2.0 - 0.8) * (230 - mm.t - mm.b), bw2 = (900 - mm.l - mm.r) / q.length;
   [0.8, 1.0, 1.4, 1.8].forEach(t => { el("line", {x1: mm.l, x2: 900 - mm.r, y1: Ys(t), y2: Ys(t), class: "gridl"}, ss); el("text", {x: mm.l - 6, y: Ys(t) + 4, "text-anchor": "end"}, ss).textContent = t; });
-  q.forEach((qq, i) => { const x = mm.l + i * bw2 + 3, c = tr[i] === "YES" ? css("--s1") : css("--base");
-    const r = el("rect", {x, y: Ys(v[i]), width: bw2 - 6, height: Ys(0.8) - Ys(v[i]), rx: 3, fill: c}, ss);
-    r.addEventListener("mousemove", e => showTip(e, `<b>${qq}</b> A/E6 ${v[i].toFixed(2)}<br>truth: ${tr[i] === "YES" ? "deteriorated" : "not deteriorated"}`)); r.addEventListener("mouseleave", hideTip);
-    if (i % 2 === 0) el("text", {x: x + (bw2 - 6) / 2, y: 230 - mm.b + 16, "text-anchor": "middle"}, ss).textContent = qq; });
-  [[1.10, "1.10 amber"], [1.25, "1.25 red"]].forEach(([y, l]) => { el("line", {x1: mm.l, x2: 900 - mm.r, y1: Ys(y), y2: Ys(y), stroke: css("--muted"), "stroke-dasharray": "4 4"}, ss); el("text", {x: 900 - mm.r, y: Ys(y) - 4, "text-anchor": "end"}, ss).textContent = l; });
+  const cx = i => mm.l + (i + 0.5) * bw2;
+  [[1.10, "1.10 amber"], [1.25, "1.25 red"]].forEach(([y, l]) => { el("line", {x1: mm.l, x2: 900 - mm.r, y1: Ys(y), y2: Ys(y), stroke: css("--muted"), "stroke-dasharray": "4 4"}, ss);
+    el("text", {x: mm.l + 4, y: Ys(y) - 4}, ss).textContent = l; });     // left end: early quarters sit below both lines
+  el("path", {d: q.map((qq, i) => `${i ? "L" : "M"}${cx(i)},${Ys(v[i])}`).join(""), fill: "none", stroke: css("--base"), "stroke-width": 2}, ss);
+  q.forEach((qq, i) => { const c = tr[i] === "YES" ? css("--s1") : css("--muted");
+    el("circle", {cx: cx(i), cy: Ys(v[i]), r: 6, fill: c, stroke: css("--panel"), "stroke-width": 2}, ss);
+    const h = el("circle", {cx: cx(i), cy: Ys(v[i]), r: 14, fill: "transparent"}, ss);
+    h.addEventListener("mousemove", e => showTip(e, `<b>${qq}</b> A/E6 ${v[i].toFixed(2)}<br>truth: ${tr[i] === "YES" ? "deteriorated" : "not deteriorated"}`)); h.addEventListener("mouseleave", hideTip);
+    if (i % 2 === 0) el("text", {x: cx(i), y: 230 - mm.b + 16, "text-anchor": "middle"}, ss).textContent = qq; });
 }
+// ---- alarm-threshold panel
+const AL = D.alarm, PRE = [1.10, 1.25];
+const qOf = ym => { const [y, m] = ym.split("-").map(Number); return `${y}Q${Math.floor((m - 1) / 3) + 1}`; };
+const qStart = q => (Number(q.slice(0, 4)) * 12) + (Number(q.slice(5)) - 1) * 3;
+function alarmRow(name, rows, thr){
+  const r = rows.find(p => p.ae > thr + 1e-12);
+  if (!r) return `<td data-l="first alarm knowable">never</td><td class="num" data-l="months after first worse vintage">–</td><td class="num" data-l="loans booked meanwhile">–</td>`;
+  const lag = month(r.known) - qStart(AL.first_worse);
+  const booked = Object.entries(AL.n).filter(([q]) => q >= AL.first_worse && q <= qOf(r.known)).reduce((a, [, n]) => a + n, 0);
+  return `<td data-l="first alarm knowable">${mlabel(month(r.known))} <span style="color:var(--ink2)">(${r.q} vintage, A/E ${r.ae.toFixed(2)})</span></td>` +
+    `<td class="num" data-l="months after first worse vintage">${lag}</td><td class="num" data-l="loans booked meanwhile">${booked.toLocaleString("en-US")}</td>`;
+}
+function renderAlarm(){
+  const a = +document.getElementById("amb").value, r = +document.getElementById("red").value;
+  document.getElementById("ambv").textContent = a.toFixed(2); document.getElementById("redv").textContent = r.toFixed(2);
+  document.getElementById("fw").textContent = AL.first_worse;
+  document.getElementById("prereg").textContent = (a === PRE[0] && r === PRE[1]) ? "pre-registered thresholds" : "not the pre-registered thresholds (1.10 / 1.25)";
+  const hdr = `<tr><th>model</th><th>level</th><th>first alarm knowable</th><th class="num">months after first worse vintage</th><th class="num">loans booked meanwhile</th></tr>`;
+  const body = [["reference model (if live from 2015)", AL.reference], ["as-of model (data to Jun 2014)", AL.asof]].flatMap(([nm, rows]) =>
+    [["amber", a], ["red", r]].map(([lv, t]) => `<tr><td data-l="model"><b>${nm}</b></td><td data-l="level">${lv} &gt; ${t.toFixed(2)}</td>${alarmRow(nm, rows, t)}</tr>`)).join("");
+  document.getElementById("alarmtab").innerHTML = hdr + body;
+}
+["amb", "red"].forEach(id => document.getElementById(id).addEventListener("input", renderAlarm));
+document.getElementById("resetT").addEventListener("click", () => { document.getElementById("amb").value = PRE[0]; document.getElementById("red").value = PRE[1]; renderAlarm(); });
+// ---- policy panel
+const PO = D.policy, cutEl = document.getElementById("cut"), rateEl = document.getElementById("rate");
+const C0 = PO["0.05"].curve, preCut = PO["0.05"].marks["pre-registered cutoff"].cutoff;
+cutEl.max = C0.cutoff.length - 1;
+const nearest = c => C0.cutoff.reduce((b, v, i) => Math.abs(v - c) < Math.abs(C0.cutoff[b] - c) ? i : b, 0);
+cutEl.value = nearest(preCut);
+function renderPolicy(){
+  const P = PO[rateEl.value], C = P.curve, i = +cutEl.value, mk = P.marks, pre = mk["pre-registered cutoff"], mi = mk.MILP;
+  document.getElementById("cutv").textContent = C.cutoff[i].toFixed(4);
+  const box = (lab, v, sub) => `<div><span>${lab}</span><b>${v}</b><span>${sub}</span></div>`;
+  document.getElementById("polkv").innerHTML =
+    box("approval", `${C["approval %"][i].toFixed(1)}%`, `pre-registered ${pre["approval %"].toFixed(1)}% · MILP ${mi["approval %"].toFixed(1)}%`) +
+    box("approved bad rate (realised)", `${C["approved bad %"][i].toFixed(2)}%`, `pre-registered ${pre["approved bad %"].toFixed(2)}% · MILP ${mi["approved bad %"].toFixed(2)}%`) +
+    box(`realised NPV at ${Math.round(100 * rateEl.value)}%`, `$${C["realised NPV $m"][i].toFixed(1)}m`, `pre-registered $${pre["realised NPV $m"].toFixed(1)}m · MILP $${mi["realised NPV $m"].toFixed(1)}m`);
+  const sv = document.getElementById("pol"), m = {l: 52, r: 16, t: 12, b: 28}, y = C["realised NPV $m"];
+  const lo = Math.min(...y, mi["realised NPV $m"]), hi = Math.max(...y, mi["realised NPV $m"]), pad = (hi - lo) * 0.08;
+  const step = Math.pow(10, Math.floor(Math.log10((hi - lo) / 3))), yt = []; for (let t = Math.ceil((lo - pad) / step) * step; t <= hi + pad; t += step) yt.push(+t.toFixed(6));
+  const yts = yt.length > 6 ? yt.filter((_, k) => k % 2 === 0) : yt;
+  const s = frame(sv, 900, 230, m, C.cutoff[0], C.cutoff[C.cutoff.length - 1], lo - pad, hi + pad, yts, [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4], v => v.toFixed(2));
+  el("path", {d: C.cutoff.map((c, k) => `${k ? "L" : "M"}${s.X(c)},${s.Y(y[k])}`).join(""), fill: "none", stroke: css("--s1"), "stroke-width": 2}, sv);
+  el("line", {x1: m.l, x2: 900 - m.r, y1: s.Y(mi["realised NPV $m"]), y2: s.Y(mi["realised NPV $m"]), stroke: css("--muted"), "stroke-dasharray": "5 4"}, sv);
+  el("text", {x: m.l + 4, y: s.Y(mi["realised NPV $m"]) - 5}, sv).textContent = `MILP $${mi["realised NPV $m"].toFixed(1)}m`;
+  el("circle", {cx: s.X(pre.cutoff), cy: s.Y(pre["realised NPV $m"]), r: 6, fill: css("--s2"), stroke: css("--panel"), "stroke-width": 2}, sv);
+  el("line", {x1: s.X(C.cutoff[i]), x2: s.X(C.cutoff[i]), y1: m.t, y2: 230 - m.b, stroke: css("--ink2"), "stroke-width": 1}, sv);
+  el("circle", {cx: s.X(C.cutoff[i]), cy: s.Y(y[i]), r: 5, fill: css("--s1"), stroke: css("--panel"), "stroke-width": 2}, sv);
+}
+cutEl.addEventListener("input", renderPolicy); rateEl.addEventListener("change", renderPolicy);
+document.getElementById("resetP").addEventListener("click", () => { cutEl.value = nearest(preCut); renderPolicy(); });
 document.getElementById("theme").addEventListener("click", () => {
   const r = document.documentElement, dark = r.getAttribute("data-theme") ? r.getAttribute("data-theme") === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  r.setAttribute("data-theme", dark ? "light" : "dark"); render(); });
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
-render();
+  r.setAttribute("data-theme", dark ? "light" : "dark"); render(); renderPolicy(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { render(); renderPolicy(); });
+render(); renderAlarm(); renderPolicy();
 </script>
 </body>
 </html>

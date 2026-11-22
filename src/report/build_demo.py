@@ -79,6 +79,13 @@ data = {
     "macro": {"a": mb["rule_a"], "b": mb["rule_b"], "c": mb["rule_c"], "decision": mb["decision"]},
     "mob6": {"res": e60["results"]["M2"], "quarters": e60["by_quarter"]["issue_q"], "ae6": e60["by_quarter"]["A/E6 M2"],
              "truth": e60["by_quarter"]["truth"]},
+    # alarm-threshold panel: quarterly A/E12 with knowable dates, loans per issue quarter, first worse vintage (truth ≥ 1.2× train)
+    "alarm": {"first_worse": str(mon.loc[mon.deterioration == "YES", "issue_q"].iloc[0]),
+              "n": dict(zip(mon.issue_q, mon.n.astype(int))),
+              "reference": [{"q": q_, "ae": float(v), "known": k} for q_, v, k in zip(mon.issue_q, mon.AE12_M2, mon.known_MOB12) if pd.notna(v)],
+              "asof": [{"q": q_, "ae": float(v), "known": k} for q_, v, k in zip(am.issue_q, am["A/E12"], am["knowable"]) if pd.notna(v)]},
+    # policy panel (exploratory): single PD cutoff swept on 2015 loans, by funding cost; pre-registered cutoff and MILP marked
+    "policy": {k: {"curve": v["curve"], "marks": v["marks"]} for k, v in J(R2 / "policy_C.json").items()},
 }
 html = (ROOT / "src" / "report" / "demo_template.html").read_text().replace("/*__DATA__*/null", json.dumps(data, default=float))
 (OUT / "index.html").write_text(html)

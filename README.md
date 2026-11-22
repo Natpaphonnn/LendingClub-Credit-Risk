@@ -48,7 +48,11 @@ Known limitations: `notes/05_claims_and_limitations.md`; validation history: `no
    check against the cited report), the number-provenance check (`src/quality/check_note_numbers.py`) and an independent re-derivation of
    every ECL and policy number in the article from the raw file with separate code (`src/quality/rederive_ecl_policy.py`), failing fast on any error.
    Two fresh runs produce byte-identical `reports/` and `demo/` (hash manifest: `reports/quality/reports_manifest.sha256`).
-4. **Demo:** open `demo/index.html` (static, aggregates only). **Article draft:** `notes/07_article_draft.md`.
+4. **Demo:** open `demo/index.html` (static, single file, aggregates only). Browser check (dev-only dependency):
+   `pip install playwright && python -m playwright install chromium && python src/report/check_demo.py` — no console errors, no horizontal
+   scroll at 390 px and 1300 px, light and dark; screenshots in `reports/demo_screens/`. **Publishing:** `.github/workflows/pages.yml` deploys
+   `demo/` to GitHub Pages once the repository is public (Settings → Pages → Source: GitHub Actions). **Article draft:** `notes/07_article_draft.md`;
+   **executive summary (Thai):** `notes/11_executive_summary_TH.md`.
 
 ## Layout
 | path | content |
