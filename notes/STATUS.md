@@ -1,4 +1,4 @@
-# STATUS — 2026-11-22
+# STATUS — 2026-11-23 (project closed; no further work unless Nat asks)
 
 ## Decisions (Nat, 2026-11-19)
 1. **Story pivot accepted:** "Lender in 2014 — does the model survive the 2015–16 vintages, and would monitoring notice in time?"
@@ -89,13 +89,34 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
     ranking "รอด" ยืนยันได้เฉพาะ 2014Q1–2015Q3 (month-12 KS ของ 2016Q2–Q4 ลดเหลือ 0.87–0.89×)
 
 ## Repo
-- Private: https://github.com/Natpaphonnn/LendingClub-Credit-Risk (no data files tracked)
+- Public (made public by Nat, 2026-11-22): https://github.com/Natpaphonnn/LendingClub-Credit-Risk (no data files tracked)
 
 ## Done — package / demo / article ✅
 - README (reproduce steps: run_all ลบ data/interim แล้ว rebuild จาก raw + tests + checkers), requirements.lock.txt, raw_inputs.sha256, bls_values.sha256
 - Demo: demo/index.html (static, aggregates only) · Article draft: notes/07_article_draft.md
 
-## Next step / open questions for Nat
+## Done — published (2026-11-23) ✅
+- **Medium article** (2026-11-23): https://medium.com/@natpaphon.nukhunthod/the-alarm-that-never-rang-043d13f0ee20
+  topics Credit Risk, Credit Risk Monitoring, Data Science, Machine Learning, Risk Management/Banking; cover reports/figures/article/fig0_cover.png,
+  figures fig1–fig8, and three demo GIFs (reports/figures/article/demo_gifs/).
+- **Interactive demo** (GitHub Pages): https://natpaphonnn.github.io/LendingClub-Credit-Risk/
+- **Repo**: https://github.com/Natpaphonnn/LendingClub-Credit-Risk (About: description, homepage = demo, topics set)
+- **LinkedIn post** (2026-11-23): short screen-recorded video of the demo; article, demo and repo links in the first comment.
+- Article link + LinkedIn link in the demo footer and README; notes/07 header records the published URL.
+
+### Published vs private
+- **Published:** code, notes, aggregate reports (reports/**/*.md|json), figures, demo page, article, demo GIFs, screenshots.
+- **Private / never published:** raw LendingClub files and everything in data/ (raw, interim parquet, model files), row-level scores;
+  the LinkedIn video file (kept on Nat's machine). Credentials are never read or stored.
+- Known: old commits' stderr logs contain the local repository path (no data or secrets); history was not rewritten (Nat's call; run_all now scrubs paths).
+
+## Open items (later only — not scheduled)
+- Zenn (JP) translation of the article — paused.
+- Optional future work from notes/11 §6: bounded A/E monitoring by vintage and MOB; testable overlay and SICR rules; rolling as-of model at each
+  reporting date; forward-looking ECL with longer macro history; approval policy with PD uncertainty and real funding cost; fairness review of
+  reason codes and features such as purpose.
+
+## Log — 2026-11-20 to 2026-11-23
 - 2026-11-22: repo public (Nat). Demo policy slider default = pre-registered cutoff 0.1994 ตรงเป๊ะ + note ว่า NPV curve เป็น ex-post 2015;
   rebuild จาก raw x2 byte-identical (62 tests, 36/36 claims, provenance 0 unmatched, re-derivation 31/31); demo deploy ผ่าน GitHub Pages workflow.
   History scan: ไม่มี data / secret; มีแค่ local absolute path (username) ใน stderr log ของ commit เก่า → run_all scrub path แล้ว;
