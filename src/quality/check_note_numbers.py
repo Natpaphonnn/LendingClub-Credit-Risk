@@ -14,7 +14,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 NOTES = ["01_data_audit.md", "02_phase1_results.md", "03_phase2_results.md", "04_story.md", "05_claims_and_limitations.md", "06_quality_report.md", "07_article_draft.md",
-         "10_extensions_results.md", "STATUS.md", "../README.md"]
+         "10_extensions_results.md", "11_executive_summary_TH.md", "STATUS.md", "../README.md"]
 NUM = re.compile(r"(?<![\w.])([−\-+]?\$?\d{1,3}(?:,\d{3})+(?:\.\d+)?|[−\-+]?\$?\d+(?:\.\d+)?)(?![\w])")
 
 
