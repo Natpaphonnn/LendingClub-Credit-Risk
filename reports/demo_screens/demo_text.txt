@@ -343,7 +343,7 @@ automated tests, incl. leakage and information-set checks
 report outputs byte-identical on a fresh rebuild from raw
 10
 independent reviewers; failed results reported, withdrawn claims stated
-Read the full story (article: link to come)Code & methodsLinkedIn
+Read the full story on MediumCode & methodsLinkedIn
 
 Data: LendingClub, via Kaggle dataset by Nathan George (wordsforthewise). Unemployment: U.S. Bureau of Labor Statistics. Aggregates only: no raw or row-level data. Every number on this page is read from reports/ in the repository. Claims and their status (pre-registered / descriptive / exploratory): notes/05_claims_and_limitations.md.
 2014

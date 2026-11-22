@@ -1,5 +1,7 @@
 # 07 — Article draft (Medium, English) — 2026-11-20 (post-gate: numbers and meanings after bank gate rounds 1–2)
 
+**Published 2026-11-23:** https://medium.com/@natpaphon.nukhunthod/the-alarm-that-never-rang-043d13f0ee20
+
 > สำหรับ Nat: draft สำหรับ Medium — เรียงใหม่: สิ่งที่รอดก่อน แล้วบอกสิ่งที่ fail ตรง ๆ. ทุกตัวเลขผ่าน provenance check; ทุกตัวเลขด้าน ECL และ
 > policy ถูกคำนวณซ้ำแบบอิสระจาก raw (reports/quality/rederive_ecl_policy.md); status ของแต่ละ claim ตาม notes/05_claims_and_limitations.md.
 > Figures: reports/figures/article/fig1–8 + reports/figures/p4_asof_monitoring.png. Zenn (JP) ยังไม่ได้ทำ.

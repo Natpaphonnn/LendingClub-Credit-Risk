@@ -102,8 +102,8 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
   **Open:** จะ rewrite history (git filter-repo + force push) เพื่อลบ path เก่าไหม — รอ Nat ตัดสิน
 - 2026-11-22: demo redesign ตาม notes/design/mockup_reference.html (ย้ายออกจาก demo/ 2026-11-23 — ไม่ publish) (Nat-approved): navy/paper/red, IBM Plex; hero + monitoring stepper (as-of + reference)
   + concept-drift heatmap + expected loss + verdict + 2 interactive panels + method strip. ทุกตัวเลขมาจาก reports/ และ rendered text
-  ผ่าน provenance check (demo_text.txt). Open: ใส่ link article + LinkedIn ใน footer (ตอนนี้เป็น placeholder)
-- อ่าน article draft แล้วตัดสินใจ publish (Medium)
+  ผ่าน provenance check (demo_text.txt). Footer: article + LinkedIn links ใส่แล้ว (2026-11-23)
+- **Article published on Medium 2026-11-23:** https://medium.com/@natpaphon.nukhunthod/the-alarm-that-never-rang-043d13f0ee20 (ลิงก์อยู่ใน demo footer, README, notes/07)
 - ปิด minor ที่ค้างแล้ว (2026-11-20, ตามที่ Nat สั่ง): independent re-derivation ของทุก ECL/policy claim ใน article จาก raw (31/31 ตรง —
   reports/quality/rederive_ecl_policy.md), scorecard bin-stability table, shared scoring helper (src/lib/scoring.py), test ของ as-of information set;
   article เขียนใหม่ (สิ่งที่รอดก่อน แล้วสิ่งที่ fail)
