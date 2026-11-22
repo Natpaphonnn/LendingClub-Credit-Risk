@@ -41,12 +41,37 @@ plt.rcParams.update({
 })
 
 
+def _fits(fig, artist, margin=0.985):
+    r = fig.canvas.get_renderer()
+    return artist.get_window_extent(r).x1 <= margin * fig.bbox.width
+
+
 def finish(fig, title, subtitle, name, source=SOURCE):
+    """Title, subtitle (wrapped to as many lines as needed to fit the width) and source; fails if any text is clipped (gate: fig3)."""
+    import textwrap
     h = fig.get_figheight()
     fig.suptitle(title, x=0.012, y=1 - 0.10 / h, ha="left", va="top", fontsize=14, fontweight="bold", color=INK)
-    fig.text(0.012, 1 - 0.48 / h, subtitle, ha="left", va="top", fontsize=10.5, color=INK2)
+    sub = fig.text(0.012, 1 - 0.48 / h, subtitle, ha="left", va="top", fontsize=10.5, color=INK2)
+    width = len(subtitle)
+    while not _fits(fig, sub) and width > 40:
+        width = int(width * 0.9)
+        sub.set_text("\n".join(textwrap.wrap(subtitle, width)))
+    extra = 0.22 * sub.get_text().count("\n")
     fig.text(0.012, 0.08 / h, source, ha="left", fontsize=8.5, color=MUTED)
-    fig.tight_layout(rect=(0, 0.30 / h, 1, 1 - 0.80 / h))
+    fig.tight_layout(rect=(0, 0.30 / h, 1, 1 - (0.80 + extra) / h))
+    fig.canvas.draw()
+    r = fig.canvas.get_renderer()
+    W, Hh = fig.bbox.width, fig.bbox.height
+    drawn = list(fig.texts) + [fig._suptitle]
+    for ax in fig.axes:
+        drawn += [ax.title, ax._left_title, ax._right_title, ax.xaxis.label, ax.yaxis.label] + list(ax.texts)
+        if ax.get_legend():
+            drawn += list(ax.get_legend().get_texts())
+    for t in drawn:
+        if t is None or not t.get_visible() or not str(t.get_text()).strip():
+            continue
+        bb = t.get_window_extent(r)
+        assert bb.x0 >= -1 and bb.x1 <= W + 1 and bb.y0 >= -1 and bb.y1 <= Hh + 1, f"{name}: clipped text {t.get_text()[:40]!r}"
     fig.savefig(OUT / name, dpi=200)
     plt.close(fig)
     print("wrote", OUT / name)
@@ -129,7 +154,7 @@ finish(fig, "The model kept ranking borrowers well — its default level drifted
        f"Champion (LightGBM) by issue quarter. KS never breached its alarm on quarters with complete outcomes (2014Q1–2015Q3); A/E by month 12 later climbed to {m4.AE12_M2.max():.2f}.",
        "fig3_ranking_vs_level.png")
 
-# ------------------------------------------------------------------ Fig 4: PSI is the wrong alarm (calendar time)
+# ------------------------------------------------------------------ Fig 6: PSI is the wrong alarm (calendar time)
 b = load_base(["issue_dt", "issue_q", "bad", "default_mob"]).join(pd.read_parquet(ART / "scores_m2.parquet"))
 b["d6"] = default_by_mob(b.default_mob, 6)
 trm = split_mask(b, TRAIN)
@@ -173,9 +198,9 @@ ax.set_title("Actual / expected defaults, plotted at the date each value became 
 ax.legend(loc="upper left", fontsize=9)
 finish(fig, "Population stability is the wrong alarm: it never fired",
        "Points at the date each value could first be known, if the model were live from 2015 (its own training labels completed only in 2017).",
-       "fig4_alarm_timeline.png")
+       "fig6_alarm_timeline.png")
 
-# ------------------------------------------------------------------ Fig 5: default at MOB 12 by risk band
+# ------------------------------------------------------------------ Fig 7: default at MOB 12 by risk band
 b1 = load_base(["issue_dt", "issue_q", "default_mob"]).join(pd.read_parquet(ART / "scores_m1.parquet", columns=["score_m1"]))
 cuts = np.quantile(b1.loc[split_mask(b1, TRAIN), "score_m1"], [0.2, 0.4, 0.6, 0.8])
 b1["band"] = 1 + np.searchsorted(cuts, b1.score_m1.to_numpy(), side="right")
@@ -194,9 +219,9 @@ ax.set_ylabel("defaulted by month 12, %")
 ax.legend(loc="upper left", fontsize=9, ncol=2)
 finish(fig, "Same score, more defaults: the drift hit every risk band",
        "Share of loans defaulted by month 12, by issue quarter and scorecard band (cut points fixed on 2012–13 training data).",
-       "fig5_bands_mob12.png")
+       "fig7_bands_mob12.png")
 
-# ------------------------------------------------------------------ Fig 6: prepayment as competing risk
+# ------------------------------------------------------------------ Fig 4: prepayment as competing risk
 p2 = pd.read_parquet(INTERIM / "p2_loans.parquet")
 p15 = p2[(p2.yr == 2015) & (p2.issue_dt <= "2015-09-01")].reset_index(drop=True)      # fully observable to MOB 36
 with open(INTERIM / "p2" / "model_A.pkl", "rb") as fh:
@@ -219,9 +244,9 @@ ax.set_ylabel("cumulative default, %")
 ax.legend(loc="upper left")
 finish(fig, f"Treat prepayment as censoring and lifetime PD is overstated by {100*(naive.mean(0)[-1]/C.mean(0)[-1]-1):.0f}%",
        "Loans issued Jan–Sep 2015 (observable to month 36). Model trained on 2012–13; its gap to actual is the 2015 drift.",
-       "fig6_prepayment_competing_risk.png")
+       "fig4_prepayment_competing_risk.png")
 
-# ------------------------------------------------------------------ Fig 7: ECL under-provision + overlay
+# ------------------------------------------------------------------ Fig 8: lifetime-EL backtest + overlay
 ov = json.loads((REP2 / "overlay.json").read_text())
 q = pd.DataFrame(ov["by_quarter"])
 fig, ax = plt.subplots(figsize=(9.5, 4.6))
@@ -242,9 +267,9 @@ tot = ov["total"]
 finish(fig, f"Realised loss came in at {tot['realised/pred']:.2f}× expected; in-sample month-12 overlay closes {100*tot['gap closed MOB12']:.0f}%",
        f"2015 loans; lifetime EL at origination, not an allowance. Overlay = EL × month-12 A/E "
        f"(month-6: {100*tot['gap closed MOB6']:.0f}%). Illustrative.",
-       "fig7_ecl_backtest_overlay.png")
+       "fig8_ecl_backtest_overlay.png")
 
-# ------------------------------------------------------------------ Fig 8: simple cutoff ≈ MILP
+# ------------------------------------------------------------------ Fig 5: simple cutoff vs MILP
 pcj = json.loads((REP2 / "policy_C.json").read_text())["0.05"]
 pc = pd.DataFrame(pcj["table"])
 dfx = pd.DataFrame(pcj["diffs"])
@@ -272,4 +297,4 @@ axes[0].invert_yaxis()
 finish(fig, "The optimiser adds nothing over one PD threshold (exploratory metric)",
        f"Without funding cost, 'approve everyone' looks best. At 5%: MILP − cutoff = −${-dC['point']:.1f}m, 95% CI {dC['95% CI']}. "
        "Levels depend on cash timing.",
-       "fig8_policy_cutoff_vs_milp.png")
+       "fig5_policy_cutoff_vs_milp.png")

@@ -18,7 +18,7 @@ extension pre-registration (E1–E5, commit 4562602) and the review-gate rubric 
   vintage ≥ 1.2× the 2012–13 month-12 default rate — 18 months of that is the month-12 observation window itself.
 - A month-6 early-warning signal caught 9/9 deteriorated quarters but **failed** its pre-registered confirmatory test on 60-month loans
   (specificity 4/6 = 67% < 80%; with 6 negative quarters, specificity is not demonstrated).
-- Treating prepayment as censoring overstates lifetime PD by about a third (18.0% vs 13.4%).
+- Treating prepayment as censoring overstates lifetime PD by about a third (18.2% vs 13.6%, loans issued Jan–Sep 2015; actual 14.7% by month 36).
 - State unemployment failed the pre-registered macro rule (the "adverse" scenario lowered PD) → no forward-looking macro overlay.
 - Lifetime expected loss under-predicted the 2015 vintage's realised loss (realised = 1.18× predicted). Refitting at the reporting date on
   outcomes knowable then (months 1–21, tail from the reference model) makes it worse — 1.27×, a lower bound (1.41× with a knowable tail):

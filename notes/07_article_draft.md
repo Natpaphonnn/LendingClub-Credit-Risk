@@ -18,8 +18,12 @@ shifts after I deploy this, will my model still make the right decisions — and
 
 I tried to answer that with LendingClub's public loan book (2.26 million accepted loans, 2007–2018). I used time-based splits only, published
 only aggregates, and wrote the decision rules down before fitting anything. For the first two phases those rules are local git commits, so their
-order is self-attested; the later confirmatory tests were pushed to a private remote before anything was computed. Ten independent reviewers then
-tried to break the results in two rounds. They broke two numbers; both are corrected below, and I say where.
+order is self-attested; the later confirmatory tests were pushed to a private remote before anything was computed. Then I let independent
+reviewers try to break it. A first review found 1 critical and 10 major issues — the critical one: my month-6 "test" was not confirmatory,
+because I had seen those values before setting the thresholds. A ten-reviewer gate then failed its first round on blocking issues, including a
+bug in how the monotone constraints were enforced: fixing it retrained the champion and moved every number built on it. All of these were fixed,
+and two results were withdrawn — the claim that refitting at the reporting date closed a third of the loss gap, and the month-6 "test" result,
+now reported as descriptive. The second gate round passed. Where a correction matters below, I say so.
 
 ## The short version
 
@@ -78,12 +82,13 @@ loans issued in mid-to-late 2016 was about 0.87–0.89 of its 2014 level before 
 
 ### 4. Lifetime PD needs prepayment as a competing risk
 
-*[Figure 6 — fig6_prepayment_competing_risk.png]*
+*[Figure 4 — fig4_prepayment_competing_risk.png]*
 
 TFRS 9 / IFRS 9 needs *lifetime* default probabilities, and prepayment is the dominant way these loans end: 57% of fully repaid 36-month loans
 paid off more than three months early. I fitted a discrete-time hazard with default and prepayment as competing risks. Treat a prepayment as
-"censored" instead — as if the borrower were still exposed to default — and the same hazards give a lifetime PD of **18.0% instead of 13.4%** on
-2015 loans (actual 14.9%): about a third too high. A plain 36-month default model does not have this problem; a survival model does.
+"censored" instead — as if the borrower were still exposed to default — and the same hazards give a lifetime PD of **18.2% instead of 13.6%** for
+loans issued January–September 2015 — the 2015 loans whose first 36 months are fully observable — against an actual 14.7% defaulted by month
+36: about a third too high. A plain 36-month default model does not have this problem; a survival model does.
 
 ### 5. A written-down macro rule caught a fake pass
 
@@ -98,7 +103,7 @@ all three tests stopped it. The rule worked; the macro signal did not.
 
 ### 6. A plain PD cutoff is as good as an optimiser
 
-*[Figure 8 — fig8_policy_cutoff_vs_milp.png]*
+*[Figure 5 — fig5_policy_cutoff_vs_milp.png]*
 
 I let an optimiser (a mixed-integer program over 30 risk × loan-size cells) choose which cells to approve to maximise expected profit under an
 approval floor and a bad-rate cap. My pre-registered profit measure was wrong — it ignored the cost of funds, so "approve everyone" looked best
@@ -122,7 +127,7 @@ issued in early 2014 to **1.46** for loans issued in the third quarter of 2016.
 
 ### 8. Population stability was the wrong alarm — and the real alarm came late
 
-*[Figure 4 — fig4_alarm_timeline.png] [Figure 5 — fig5_bands_mob12.png]*
+*[Figure 6 — fig6_alarm_timeline.png] [Figure 7 — fig7_bands_mob12.png]*
 
 The standard monitoring tool is the population stability index: has the mix of applicants shifted? For the champion it stayed at or below 0.06 in
 every quarter from 2014 to 2018, against an amber line of 0.10. The scorecard's PSI only went amber in 2018, and then because applicants got
@@ -151,7 +156,7 @@ is unspecific — it shows I cannot demonstrate that it is specific. The two fal
 
 ### 10. Expected loss came in short — and a refit made it worse
 
-*[Figure 7 — fig7_ecl_backtest_overlay.png]*
+*[Figure 8 — fig8_ecl_backtest_overlay.png]*
 
 I combined the lifetime PD with loss given default (88.8% — recoveries average only about 11% of the exposure at default) and an amortising
 exposure into a TFRS 9-style expected loss for the 2015 portfolio ($3.62 billion funded): **$100 million** of 12-month expected loss on day one,
@@ -189,7 +194,8 @@ component — a real TFRS 9 model would need one.
 4. **Write the rules down before you look.** The macro rule rejected a result that looked good for the wrong reason, and the early-warning test
    failed where my exploratory analysis had looked promising.
 5. **Recalibration is necessary, not sufficient.** Refitting on what you can see cannot catch drift in vintages too young to have outcomes; pair it
-   with early-performance monitoring — and let an independent reviewer try to break your numbers. Mine broke two of them.
+   with early-performance monitoring — and let independent reviewers try to break your numbers. Mine found a critical flaw, a bug that changed
+   the champion model, and two results I had to withdraw.
 
 *Data: LendingClub, via Kaggle dataset by Nathan George (wordsforthewise). Unemployment: U.S. Bureau of Labor Statistics. Raw data is not
 redistributed; code, aggregates and the full list of claims and limitations are in the project repository.*

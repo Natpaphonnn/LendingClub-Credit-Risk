@@ -18,7 +18,8 @@ for s in build_loans fit_A rule_B ecl policy_C mob6_test; do nice -n 19 .venv/bi
 
 1. **A ใช้ได้ (ระดับ portfolio):** competing-risks hazard (default vs prepayment, Current = censored) fit บน 2012-09–2013-12 ให้ A/E ≈ 1.00 ใน train
    และ 0.98–1.03 บน validation 2014 (ราย band ไม่ calibrate — ดู by-band A/E / C22) แต่ under-predict ตาม drift ที่เห็นใน Phase 1: OOT 2015 A/E 1.09–1.12, 2016 1.27–1.39, 2017 1.43 (MOB 12).
-   ถ้า treat prepayment เป็น censoring (hazard เดิม), lifetime PD จะ over-state จาก 13.4% → 18.0% (+34% relative)
+   ถ้า treat prepayment เป็น censoring (hazard เดิม), lifetime PD จะ over-state: loans Jan–Sep 2015 (ดูได้ครบ 36 เดือน) 13.6% → 18.2% (actual ภายใน MOB 36 = 14.7%);
+   ทั้งปี 2015 13.4% → 18.0% (ตารางด้านล่าง; Q4 ยังดูไม่ครบ 36 เดือน)
 2. **B ไม่ผ่าน Plan B rule → เปลี่ยนเป็น A + C** (ตามกฎที่เขียนไว้ก่อน Phase 1): (a) FAIL — θ ไม่เป็นบวก: −0.045 [−0.099, −0.009] (E3: subsample สุ่มใหม่ทุก replicate; run ก่อนหน้า −0.019 และ −0.038 — ติดลบทุกครั้ง แต่ตำแหน่ง CI เปราะ);
    (b) PASS แบบ "ถูกด้วยเหตุผลผิด"; (c) FAIL — adverse/baseline = 0.89 (adverse ทำให้ PD **ลดลง**) → macro signal ถูก confound กับ drift ของ LC
 3. **ECL (score-only, ไม่มี forward-looking overlay):** 2015 portfolio funded $3.62bn → day-1 12m ECL $100m (2.7%), lifetime ECL $201m (5.5%).

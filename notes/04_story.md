@@ -61,7 +61,7 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
 - Actual/expected defaults by month 12 climb from 0.93 (2014Q1) to **1.46 (2016Q3)**. *(monitoring.md §2)*
 
 ## 4. Population stability is the wrong alarm
-*Figure 4 — `fig4_alarm_timeline.png`; Figure 5 — `fig5_bands_mob12.png`*
+*Figure 6 — `fig6_alarm_timeline.png`; Figure 7 — `fig7_bands_mob12.png`*
 - The champion's score PSI stays **≤ 0.06 in every quarter 2014–2018** (amber line 0.10). The scorecard's PSI is ≤ 0.03 through 2017Q3 and
   only goes amber in 2018 — because applicants got *better*, not worse. *(monitoring.md §1)*
 - Characteristic-level alerts (CSI) did fire, but in the reassuring direction: revolving utilisation fell (median 59% → 41%) and LendingClub
@@ -78,7 +78,7 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
   2016Q1, whose truth is knowable the same month as the red alarm. *(reports/phase4/asof_model.md)*
 
 ## 5. An earlier signal? Defaults by month 6 — sensitive, but failed the confirmatory test
-*Figure 4 (green line)*
+*Figure 6 (green line)*
 - Found exploratorily: the month-6 A/E would have gone amber for 2015Q2 by **Jun 2016**, 6 months before the month-12 alarm.
   *(reports/phase1/exploratory_early_signal.md)*
 - In the discovery period (2014Q1–2015Q4) the champion's month-6 signal caught **1 of 2** deteriorated quarters (missed 2015Q4) with no
@@ -93,12 +93,12 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
   the reference default rate, just under the 1.2× line) had early defaults *arriving earlier*, so A/E6 mixes timing with level. *(reports/phase4/mob6_60m_test.md)*
 
 ## 6. Lifetime PD needs prepayment as a competing risk
-*Figure 6 — `fig6_prepayment_competing_risk.png`*
+*Figure 4 — `fig4_prepayment_competing_risk.png`*
 - Prepayment is the dominant exit: 57% of fully paid 36-month loans repaid > 3 months early. *(01_data_audit.md §8)*
 - A discrete-time competing-risks hazard (default vs prepayment, open loans censored) calibrates to A/E 1.01 in training and 0.98–1.03 on 2014.
-  **Treating prepayment as censoring (same hazards) overstates lifetime PD by about a third: 18.0% vs 13.4%** on the 2015 portfolio
-  (actual 14.9%). A binary 36-month PD already reflects prepayment; the error appears when a hazard/survival model censors prepayments.
-  *(notes/03_phase2_results.md §A; reports/phase2/survival_A.md)* (Figure 6 uses Jan–Sep 2015 loans, observable to month 36: 18.2% vs 13.6% vs actual 14.7%.)
+  **Treating prepayment as censoring (same hazards) overstates lifetime PD by about a third: 18.2% vs 13.6%** on loans issued Jan–Sep 2015
+  (the 2015 vintages observable to month 36 at the data cut; actual cumulative default by month 36: 14.7%). A binary 36-month PD already reflects
+  prepayment; the error appears when a hazard/survival model censors prepayments. *(reports/phase2/survival_A.md; Figure 4)*
 - Out of time it inherits the drift: A/E 1.09–1.12 on 2015, 1.27–1.39 on 2016, 1.43 on 2017 (censoring handled by comparing at equal months on book).
 
 ## 7. Macro data could not explain it — and the rule caught a fake pass
@@ -112,7 +112,7 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
   default" (level coefficient −0.066). Requiring all three tests blocked it → Plan B (survival + profit policy). *(03_phase2_results.md §B)*
 
 ## 8. Lifetime expected loss under-predicted realised loss — and refitting on what was knowable would not have fixed it
-*Figure 7 — `fig7_ecl_backtest_overlay.png`*
+*Figure 8 — `fig8_ecl_backtest_overlay.png`*
 - TFRS 9-style ECL = PD (competing-risks) × LGD × EAD (amortising), discounted at the loan rate. LGD = **88.8%** of exposure at default.
 - 2015 portfolio ($3.62bn funded): day-1 12-month ECL **$100m (2.7%)** — the Stage 1 allowance at origination — and lifetime ECL **$201m (5.5%)**.
 - Backtest (not a booked provision): undiscounted lifetime expected loss at origination **$232m vs realised net loss $274m (realised = 1.18×
@@ -135,7 +135,7 @@ Exploratory analyses are labelled. Raw data is never published — only code, ag
   backstops (2–3 / ≥ 4 missed) the counts are 1,521 and 1,640. Delinquencies that later cured are invisible. *(ecl.md; 10 E4)*
 
 ## 9. A good PD cutoff is enough — the hard part is its level
-*Figure 8 — `fig8_policy_cutoff_vs_milp.png`*
+*Figure 5 — `fig5_policy_cutoff_vs_milp.png`*
 - A MILP chose approval cells (PD decile × amount) to maximise expected NPV under approval ≥ 75% and expected bad ≤ 11%.
 - On the pre-registered metric (undiscounted realised profit), **approve-everyone wins ($230m vs MILP $222m)** — the metric was wrong: it
   charges no cost of funds. *(reports/phase2/policy_C.md)*

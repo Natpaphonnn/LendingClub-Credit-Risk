@@ -166,9 +166,13 @@ chk("C16", "MOB6 2016–17 flagged (M1 = M2); discovery M2 sensitivity / specifi
     [mt["sensitivity (amber+)"][0].split(" ")[0], cf.loc["M2", "sensitivity"], cf.loc["M2", "specificity"]], "mob6_test.md", "parsed")
 rows[-1]["result"] = rows[-1]["result"] if mt["sensitivity (amber+)"][1].split(" ")[0] == "7/7" else "FAIL"
 pa = pd.read_parquet(ROOT / "data" / "interim" / "p2" / "pred_A.parquet")
-p15 = pa[pa.issue_q.str.startswith("2015")]
-chk("C17", "2015 lifetime PD naive / competing-risks / actual (%)", ["18.0", "13.4", "14.9"],
-    [100 * p15.pd_life_naive.mean(), 100 * p15.pd_life.mean(), 100 * oo.bad.mean()], "pred_A.parquet + p1_base", "re-derived")
+lq = pd.read_parquet(ROOT / "data" / "interim" / "p2_loans.parquet", columns=["issue_dt", "issue_q", "default_mob"])
+lq = lq[pd.to_datetime(lq.issue_dt) >= "2012-10-01"].reset_index(drop=True)          # same rows / order as pred_A (fit_A.py)
+assert (lq.issue_q.to_numpy() == pa.issue_q.to_numpy()).all()
+j = pa.issue_q.isin(["2015Q1", "2015Q2", "2015Q3"]).to_numpy()
+chk("C17", "Jan–Sep 2015 lifetime PD naive / competing-risks / actual default by month 36 (%)", ["18.2", "13.6", "14.7"],
+    [100 * pa.pd_life_naive[j].mean(), 100 * pa.pd_life[j].mean(), 100 * default_by_mob(lq.default_mob[j], 36).mean()],
+    "pred_A.parquet + p2_loans", "re-derived")
 sa = md_table(R2 / "survival_A.md", "A/E of cumulative default by period").set_index("period")
 f = lambda per, cs: [float(sa.loc[per, c]) for c in cs if sa.loc[per, c] not in ("nan", "")]  # noqa: E731
 A3 = ["A/E@12", "A/E@24", "A/E@36"]

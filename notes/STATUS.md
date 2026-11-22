@@ -57,7 +57,7 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 
 ## Done — Phase 2 (A + Plan B → A + C, ECL) ✅ — notes/03_phase2_results.md
 - A: competing-risks lifetime PD — A/E 1.01 train, 0.98–1.03 (2014), 1.09–1.12 (2015), 1.27–1.39 (2016), 1.43 (2017);
-  censor prepayment แทน → lifetime PD 18.0% vs 13.4%
+  censor prepayment แทน → lifetime PD 18.2% vs 13.6% (loans Jan–Sep 2015 ที่ดูได้ครบ 36 เดือน; actual 14.7%)
 - B FAIL → A + C: (a) θ −0.045 [−0.099, −0.009] (ไม่เป็นบวก), (b) PASS แบบหลอก (−28.0%), (c) 0.89
 - ECL 2015 (score-only, LGD 88.8%): day-1 12m $99.6m (2.7%), lifetime $200.6m (5.5%); backtest realised $273.8m = 1.18× predicted EL $232.4m
   (in-sample 1.03× — EAD structural); overlay MOB-12 ปิด gap 57% (illustrative). Staging (E4, ex-post): stage 2 1,571 loans, stage 3 2,300 loans
