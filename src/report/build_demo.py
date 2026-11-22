@@ -3,6 +3,7 @@
 Usage: .venv/bin/python -I src/report/build_demo.py
 """
 import json
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -34,7 +35,6 @@ am = pd.DataFrame(asof["monitoring"])
 mb = J(R2 / "macro_B.json")
 eb = J(R2 / "ecl_benchmark.json")
 e60 = J(R4 / "mob6_60m_test.json")
-ov = J(R2 / "overlay.json")["total"]
 vt = md_table(R1 / "vintage.md", "Cumulative default at MOB 12")
 
 
@@ -47,45 +47,43 @@ def knowable(q, months):
 
 
 ref = mon[mon.AE12_M2.notna()]
+pol = J(R2 / "policy_C.json")
+dif = pol["0.05"]["diffs"]
+k = next(i for i, (n, b) in enumerate(zip(dif["difference ($m, OOT 2015)"], dif["bootstrap"])) if n == "C−M2 NPV" and b == "loan")
+life = re.search(r"n = ([\d,]+);.*?censoring ([\d.]+)%, competing-risks ([\d.]+)%, actual cumulative default by month 36 ([\d.]+)%",
+                 (R2 / "survival_A.md").read_text())
+eq = md_table(R2 / "ecl.md", "Backtest by issue quarter")
+aud = md_table(ROOT / "reports" / "audit" / "audit_tables.md", "Accepted file — basics").set_index("item")["value"]
+loans_total = int(aud["rows with valid issue_d (loans)"].replace(",", ""))
+EBK = {"a": "(a) reference A, undiscounted LGD", "c": "(c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)",
+       "c2": "(c'') (c) with the MOB 22–36 tail from the 2009-start refit (knowable at 2014-12)"}
+G = lambda d: {k_: d[k_] for k_ in ("gini", "gini_lo", "gini_hi", "ks")}  # noqa: E731
+vq = [i for i, v in enumerate(vt["B1@12"]) if v not in ("", "nan")]
 data = {
-    "tiles": [
-        {"label": "Champion OOT Gini (2015)", "value": f"{100*m['oot_2015']['M2_lgbm']['gini']:.1f}",
-         "note": f"scorecard {100*m['oot_2015']['M1_scorecard']['gini']:.1f} · LC grade {100*m['oot_2015']['LC_subgrade']['gini']:.1f}"},
-        {"label": "As-of model OOT Gini", "value": f"{100*asof['oot_final']['asof_PD12']['gini']:.1f}",
-         "note": "only data known on 31 Dec 2014"},
-        {"label": "Peak actual / expected", "value": f"{ref.AE12_M2.max():.2f}", "note": "defaults by month 12, champion"},
-        {"label": "Realised / predicted loss", "value": f"{eb['(a) reference A, undiscounted LGD']['realised / predicted']:.2f}×",
-         "note": f"{eb['(c) refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)']['realised / predicted']:.2f}× "
-                 "(a lower bound) after refitting on what was knowable at the reporting date"},
-    ],
-    "timeline": {
-        "psi": [{"x": knowable(q, 0), "y": v, "q": q} for q, v in zip(mon.issue_q, mon.PSI_M2)],
-        "ae_ref": [{"x": knowable(q, 18), "y": v, "q": q} for q, v in zip(ref.issue_q, ref.AE12_M2)],
-        "ae_asof": [{"x": k, "y": v, "q": q} for q, v, k in zip(am.issue_q, am["A/E12"], am["knowable"]) if pd.notna(v)],
-    },
-    "bands": {"quarters": vt.issue_q.tolist(),
-              "series": {f"B{b}": [None if v in ("", "nan") else float(v) for v in vt[f"B{b}@12"]] for b in range(1, 6)}},
-    "models": [
-        {"model": "Monotone LightGBM (champion)", **{k: m["oot_2015"]["M2_lgbm"][k] for k in ("gini", "gini_lo", "gini_hi", "ks")}},
-        {"model": "WoE scorecard", **{k: m["oot_2015"]["M1_scorecard"][k] for k in ("gini", "gini_lo", "gini_hi", "ks")}},
-        {"model": "LendingClub sub-grade (benchmark)", **{k: m["oot_2015"]["LC_subgrade"][k] for k in ("gini", "gini_lo", "gini_hi", "ks")}},
-        {"model": "As-of model (data to Jun 2014)", **{k: asof["oot_final"]["asof_PD12"][k] for k in ("gini", "gini_lo", "gini_hi", "ks")}},
-    ],
-    "ecl": [{"name": k.split(") ", 1)[1], "pred": v.get("backtest: pred EL (undisc.) $m"), "ratio": v.get("realised / predicted"),
-             "ecl12": v["day-1 12m ECL $m"], "ecllife": v["lifetime ECL $m"]}
-            for k, v in eb.items() if isinstance(v, dict) and "scenario" in v],
-    "realised": eb["realised_loss_m"],
-    "overlay": {"ovl12": ov["EL_ovl12 $m"], "gap12": ov["gap closed MOB12"]},
-    "macro": {"a": mb["rule_a"], "b": mb["rule_b"], "c": mb["rule_c"], "decision": mb["decision"]},
-    "mob6": {"res": e60["results"]["M2"], "quarters": e60["by_quarter"]["issue_q"], "ae6": e60["by_quarter"]["A/E6 M2"],
-             "truth": e60["by_quarter"]["truth"]},
+    "loans_total": loans_total,
+    "models": [{"model": "Monotone LightGBM (champion)", "key": "champion", **G(m["oot_2015"]["M2_lgbm"])},
+               {"model": "LendingClub sub-grade", "key": "lc", **G(m["oot_2015"]["LC_subgrade"])},
+               {"model": "WoE scorecard", "key": "scorecard", **G(m["oot_2015"]["M1_scorecard"])},
+               {"model": "As-of model (data known at end-2014)", "key": "asof", **G(asof["oot_final"]["asof_PD12"])}],
+    "timeline": {"psi": [{"x": k_, "y": float(v), "q": q} for q, v, k_ in zip(mon.issue_q, mon.PSI_M2, mon.known_PSI)],
+                 "ae_ref": [{"x": k_, "y": float(v), "q": q} for q, v, k_ in zip(ref.issue_q, ref.AE12_M2, ref.known_MOB12)],
+                 "ae_asof": [{"x": k_, "y": float(v), "q": q} for q, v, k_ in zip(am.issue_q, am["A/E12"], am["knowable"]) if pd.notna(v)]},
+    "psi_max": float(mon.PSI_M2.max()),
+    "bands": {"quarters": [vt.issue_q[i] for i in vq], "series": [[float(vt[f"B{b}@12"][i]) for i in vq] for b in range(1, 6)]},
+    "ecl_q": [{"q": q, "pred": float(p_), "real": float(r_)} for q, p_, r_ in zip(eq.issue_q, eq["pred EL (undisc) $m"], eq["realised loss $m"])],
+    "ecl_ratio": {k_: eb[v]["realised / predicted"] for k_, v in EBK.items()},
+    "life": {"n": int(life.group(1).replace(",", "")), "cens": float(life.group(2)), "cr": float(life.group(3)), "act": float(life.group(4))},
+    "macro": {"theta": mb["rule_a"]["theta"], "mult": mb["rule_c"]["multiplier"]},
+    "mob6": e60["results"]["M2"],
+    "policy_diff": {"point": dif["point"][k], "ci": dif["95% CI"][k]},
+    "manifest_n": sum(1 for l in (ROOT / "reports" / "quality" / "reports_manifest.sha256").read_text().splitlines() if l.strip()),
     # alarm-threshold panel: quarterly A/E12 with knowable dates, loans per issue quarter, first worse vintage (truth ≥ 1.2× train)
     "alarm": {"first_worse": str(mon.loc[mon.deterioration == "YES", "issue_q"].iloc[0]),
               "n": dict(zip(mon.issue_q, mon.n.astype(int))),
-              "reference": [{"q": q_, "ae": float(v), "known": k} for q_, v, k in zip(mon.issue_q, mon.AE12_M2, mon.known_MOB12) if pd.notna(v)],
-              "asof": [{"q": q_, "ae": float(v), "known": k} for q_, v, k in zip(am.issue_q, am["A/E12"], am["knowable"]) if pd.notna(v)]},
+              "reference": [{"q": q_, "ae": float(v), "known": k_} for q_, v, k_ in zip(mon.issue_q, mon.AE12_M2, mon.known_MOB12) if pd.notna(v)],
+              "asof": [{"q": q_, "ae": float(v), "known": k_} for q_, v, k_ in zip(am.issue_q, am["A/E12"], am["knowable"]) if pd.notna(v)]},
     # policy panel (exploratory): single PD cutoff swept on 2015 loans, by funding cost; pre-registered cutoff and MILP marked
-    "policy": {k: {"curve": v["curve"], "marks": v["marks"]} for k, v in J(R2 / "policy_C.json").items()},
+    "policy": {k_: {"curve": v["curve"], "marks": v["marks"]} for k_, v in pol.items()},
 }
 html = (ROOT / "src" / "report" / "demo_template.html").read_text().replace("/*__DATA__*/null", json.dumps(data, default=float))
 (OUT / "index.html").write_text(html)

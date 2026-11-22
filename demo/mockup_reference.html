@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Alarm That Never Rang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* 2 main colours: navy + paper. 1 secondary: risk red. Everything else is a tint of navy. */
+:root{--navy:#0b2545;--paper:#f7f5f0;--red:#c8372d;
+  --ink:#0b2545;--ink2:#3d5170;--ink3:#7a889d;--rule:#d9dde3;--tint:#e9edf2;--card:#ffffff;--redtint:#f6e3e0}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.serif{font-family:"IBM Plex Serif",Georgia,serif}.mono{font-family:"IBM Plex Mono",monospace}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+/* HERO */
+.hero{background:var(--navy);color:#fff;position:relative;overflow:hidden}
+.hero .wrap{padding-top:88px;padding-bottom:56px;position:relative}
+.hero .eyebrow{color:#9fb0c8}
+.hero h1{font-family:"IBM Plex Serif",serif;font-weight:600;font-size:clamp(40px,7vw,84px);line-height:1.02;margin:16px 0 0;letter-spacing:-.015em;max-width:14ch}
+.hero h1 span{color:#ff8a7e}
+.hero p{color:#c9d3e1;font-size:clamp(17px,2vw,20px);max-width:44ch;margin:24px 0 0}
+.hero canvas{position:absolute;right:0;top:40px;width:50%;height:56%;opacity:.95;pointer-events:none}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.14);margin-top:56px}
+.kpi{padding:22px 18px 4px 0}
+.kpi .v{font-family:"IBM Plex Mono",monospace;font-size:clamp(28px,3.6vw,42px);font-weight:500;letter-spacing:-.02em}
+.kpi .v.r{color:#ff8a7e}
+.kpi .l{color:#9fb0c8;font-size:14px;margin-top:4px;max-width:24ch}
+/* SECTIONS */
+section{padding:64px 0;border-bottom:1px solid var(--rule)}
+h2{font-family:"IBM Plex Serif",serif;font-weight:600;font-size:clamp(28px,3.6vw,42px);line-height:1.12;margin:10px 0 12px;max-width:24ch}
+.dek{color:var(--ink2);font-size:18px;max-width:62ch;margin:0 0 32px}
+.fig{background:var(--card);border:1px solid var(--rule);padding:22px 22px 14px}
+.fig .t{font-weight:600;font-size:15px}.fig .s{color:var(--ink3);font-size:13px;margin:2px 0 10px}
+.src{font-size:12px;color:var(--ink3);margin-top:10px;font-family:"IBM Plex Mono",monospace}
+svg{display:block;width:100%;height:auto}
+/* stepper */
+.stepper{background:var(--card);border:1px solid var(--rule)}
+.chips{display:flex;border-bottom:1px solid var(--rule);overflow-x:auto}
+.chip{flex:1;min-width:96px;background:none;border:0;border-bottom:3px solid transparent;padding:12px 10px;text-align:left;cursor:pointer;font:500 12px "IBM Plex Mono",monospace;letter-spacing:.08em;color:var(--ink3)}
+.chip b{display:block;font:600 14px "IBM Plex Sans",sans-serif;letter-spacing:0;color:var(--ink3);margin-top:2px}
+.chip.on{border-color:var(--red);color:var(--red)}.chip.on b{color:var(--ink)}
+.stage{display:grid;grid-template-columns:1.55fr 1fr;gap:0}
+.stage .chart{padding:18px 18px 10px;border-right:1px solid var(--rule)}
+.stage .text{padding:26px 24px;display:flex;flex-direction:column}
+.stage .d{font:500 12px "IBM Plex Mono",monospace;letter-spacing:.14em;color:var(--red)}
+.stage h3{font-family:"IBM Plex Serif",serif;font-size:26px;line-height:1.2;margin:8px 0 10px}
+.stage p{margin:0;color:var(--ink2);font-size:16.5px}
+.nav{margin-top:auto;padding-top:22px;display:flex;gap:10px;align-items:center}
+.nav button{font:600 13px "IBM Plex Sans",sans-serif;padding:9px 16px;border:1px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer}
+.nav button.ghost{background:none;color:var(--navy)}
+.nav .count{margin-left:auto;font:500 12px "IBM Plex Mono",monospace;color:var(--ink3)}
+/* grids */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.tbl{width:100%;border-collapse:collapse;font-size:15px;background:var(--card);border:1px solid var(--rule)}
+.tbl th{text-align:left;font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);padding:12px 16px;border-bottom:1px solid var(--rule)}
+.tbl td{padding:14px 16px;border-bottom:1px solid var(--tint);vertical-align:top}
+.tbl td:first-child{font-weight:600;width:26%}
+.tbl td.num{font-family:"IBM Plex Mono",monospace;white-space:nowrap;width:22%}
+.pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;padding:3px 8px;border:1px solid currentColor}
+.pill.ok{color:var(--navy)}.pill.ko{color:var(--red);background:var(--redtint);border-color:transparent}
+/* console */
+.console{display:grid;grid-template-columns:1fr 1.3fr;gap:28px;background:var(--card);border:1px solid var(--rule);padding:26px}
+.big{font-family:"IBM Plex Mono",monospace;font-size:clamp(40px,5vw,60px);font-weight:500;letter-spacing:-.02em;line-height:1;margin:6px 0 10px}
+.big.r{color:var(--red)}
+input[type=range]{width:100%;accent-color:var(--navy);margin:8px 0 4px}
+.rowlbl{display:flex;justify-content:space-between;font-size:13px;color:var(--ink3);margin-top:22px}
+.rowlbl b{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-size:18px}
+/* method */
+.method{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:2px solid var(--navy)}
+.m{padding:18px 16px 0 0}.m .n{font-family:"IBM Plex Mono",monospace;font-size:30px;font-weight:500}.m .l{color:var(--ink2);font-size:14px}
+footer{padding:44px 0 70px;color:var(--ink3);font-size:14px}
+footer a{color:var(--navy);font-weight:600;margin-right:22px;text-decoration:none;border-bottom:1px solid var(--navy)}
+.tag{position:fixed;top:10px;right:10px;font:600 11px "IBM Plex Mono",monospace;background:var(--red);color:#fff;padding:4px 8px;z-index:5}
+@media (max-width:860px){.kpis{grid-template-columns:1fr 1fr}.stage,.two,.console{grid-template-columns:1fr}.stage .chart{border-right:0;border-bottom:1px solid var(--rule)}.stage .text{padding:18px 16px}.method{grid-template-columns:1fr 1fr}.hero canvas{width:100%;opacity:.35}.tbl td:first-child{width:auto}.tbl th:nth-child(3),.tbl td:nth-child(3){display:none}.tbl td,.tbl th{padding:10px 8px;font-size:14px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="tag">MOCKUP v3</div>
+
+<header class="hero">
+  <canvas id="bg"></canvas>
+  <div class="wrap">
+    <div class="eyebrow">Model risk case study · LendingClub · 2.26 million loans</div>
+    <h1>The alarm that <span>never rang.</span></h1>
+    <p>A credit model built on 2012–13 loans passed every stability check for four years. Underneath, defaults ran far above its expectations. A lender relying on it would have found out about two years late.</p>
+    <div class="kpis">
+      <div class="kpi"><div class="v">36.7</div><div class="l">Gini on unseen 2015 loans, above LendingClub's own grades (35.7)</div></div>
+      <div class="kpi"><div class="v">0</div><div class="l">alarms from the population stability index, 2014–2018</div></div>
+      <div class="kpi"><div class="v r">1.46×</div><div class="l">actual ÷ expected defaults at the worst vintage</div></div>
+      <div class="kpi"><div class="v r">26 mo</div><div class="l">until a realistic alarm; 687,800 loans booked meanwhile</div></div>
+    </div>
+  </div>
+</header>
+
+<section><div class="wrap">
+  <div class="eyebrow">01 · Monitoring</div>
+  <h2>The standard alarm watched the wrong thing</h2>
+  <p class="dek">Each value is plotted on the date it could first be known. Step through what a risk team would have seen.</p>
+  <div class="stepper">
+    <div class="chips" id="chips"></div>
+    <div class="stage">
+      <div class="chart"><div class="t" style="font-weight:600;font-size:15px">Actual ÷ expected defaults by month 12, and PSI</div><div class="s" style="color:var(--ink3);font-size:13px;margin:2px 0 8px">Line: reference model · red marker: realistic (as-of) model's first alarm</div><svg id="story" viewBox="0 0 700 440"></svg><div class="src">Source: reports/phase1/monitoring.json, reports/phase4/asof_model.md</div></div>
+      <div class="text"><div class="d" id="sd"></div><h3 id="sh"></h3><p id="sp"></p>
+        <div class="nav"><button class="ghost" id="prev">← Back</button><button id="next">Next →</button><span class="count mono" id="sc"></span></div></div>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">02 · Concept drift</div>
+  <h2>Same score, more defaults, in every risk band</h2>
+  <p class="dek">Default rate by month 12, by issue quarter and score band (bands fixed on 2012–13). The drift is not a change of mix: each band got worse.</p>
+  <div class="fig"><div class="t">Defaulted by month 12, %</div><div class="s">Darker = higher. Band 1 is the riskiest fifth at training.</div><svg id="heat" viewBox="0 0 1060 300"></svg><div class="src">Source: reports/phase1/vintage.md</div></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">03 · Expected credit loss</div>
+  <h2>Realised loss exceeded expected loss in every 2015 quarter</h2>
+  <p class="dek">Lifetime expected loss at origination vs realised net principal loss. Realised was 1.18× predicted overall; refitting at the reporting date made it worse (1.27×).</p>
+  <div class="two">
+    <div class="fig"><div class="t">Predicted vs realised loss, $m</div><div class="s">2015 vintages, TFRS 9-style lifetime EL</div><svg id="ecl" viewBox="0 0 520 300"></svg><div class="src">Source: reports/phase2/ecl.md</div></div>
+    <div class="fig"><div class="t">Lifetime default, Jan–Sep 2015 loans</div><div class="s">Treating prepayment as censoring overstates PD by a third</div><svg id="pd" viewBox="0 0 520 300"></svg><div class="src">Source: reports/phase2/survival_A.md</div></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">04 · Verdict</div>
+  <h2>What survived, and what broke</h2>
+  <p class="dek">Rules were written down before results were seen; ten independent reviewers then tried to break the numbers.</p>
+  <table class="tbl">
+    <tr><th>Area</th><th>Result</th><th>Evidence</th><th>Status</th></tr>
+    <tr><td>Ranking</td><td>Beats a WoE scorecard and LendingClub's grades out of time</td><td class="num">Gini 36.7 vs 33.7 / 35.7</td><td><span class="pill ok">HELD</span></td></tr>
+    <tr><td>Lifetime PD</td><td>Prepayment modelled as a competing risk</td><td class="num">13.6% vs 18.2% (actual 14.7%)</td><td><span class="pill ok">HELD</span></td></tr>
+    <tr><td>Macro rule</td><td>Pre-written rule rejected a spurious pass</td><td class="num">stress ×0.89 · θ −0.045</td><td><span class="pill ok">HELD</span></td></tr>
+    <tr><td>Calibration</td><td>Defaults drifted above expectation</td><td class="num">A/E peak 1.46</td><td><span class="pill ko">BROKE</span></td></tr>
+    <tr><td>Monitoring</td><td>PSI silent; realistic alarm late</td><td class="num">PSI ≤ 0.057 · Jun 2017</td><td><span class="pill ko">BROKE</span></td></tr>
+    <tr><td>Expected loss</td><td>Under-predicted; refit made it worse</td><td class="num">1.18× → 1.27×</td><td><span class="pill ko">BROKE</span></td></tr>
+  </table>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">05 · Try it</div>
+  <h2>You are the risk manager</h2>
+  <p class="dek">Set the alarm line on actual ÷ expected defaults. Lower rings sooner, but also on healthy quarters. (Mockup: reference model only.)</p>
+  <div class="console">
+    <div>
+      <div class="eyebrow">First alarm knowable</div>
+      <div class="big" id="when">Dec 2016</div>
+      <div id="msg" style="color:var(--ink2)"></div>
+      <div class="rowlbl"><span>Alarm when A/E is above</span><b id="thrV">1.10</b></div>
+      <input type="range" id="thr" min="1.02" max="1.30" step="0.01" value="1.10" aria-label="Alarm threshold">
+      <div class="rowlbl"><span>Pre-registered</span><span class="mono">1.10 amber · 1.25 red</span></div>
+    </div>
+    <svg id="bars" viewBox="0 0 560 280"></svg>
+  </div>
+</div></section>
+
+<section style="border-bottom:0"><div class="wrap">
+  <div class="eyebrow">06 · How it was kept honest</div>
+  <h2>Built like a bank would audit it</h2>
+  <div class="method">
+    <div class="m"><div class="n">100%</div><div class="l">decision rules written before results</div></div>
+    <div class="m"><div class="n">0</div><div class="l">random splits: train, tune and test by time</div></div>
+    <div class="m"><div class="n">62</div><div class="l">automated tests, incl. leakage checks</div></div>
+    <div class="m"><div class="n">60/60</div><div class="l">outputs byte-identical on a rebuild from raw</div></div>
+    <div class="m"><div class="n">10</div><div class="l">independent reviewers; withdrawn claims stated</div></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <a href="#">Read the full story</a><a href="https://github.com/Natpaphonnn/LendingClub-Credit-Risk">Code &amp; methods</a><a href="#">LinkedIn</a>
+  <p>Data: LendingClub via Kaggle (Nathan George). Aggregates only; no raw or row-level data. Natpaphon Nukhunthod, 2026.</p>
+</div></footer>
+
+<script>
+const C={navy:'#0b2545',red:'#c8372d',ink2:'#3d5170',ink3:'#7a889d',rule:'#d9dde3',tint:'#e9edf2'};
+const NS='http://www.w3.org/2000/svg',el=(p,t,a,x)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(x!=null)e.textContent=x;p.appendChild(e);return e};
+const mono={'font-family':'IBM Plex Mono','font-size':12,fill:C.ink3};
+const tt=s=>{const[y,m]=s.split('-').map(Number);return y+(m-1)/12};
+const aeK=['2015-09','2015-12','2016-03','2016-06','2016-09','2016-12','2017-03','2017-06','2017-09','2017-12','2018-03','2018-06','2018-09','2018-12','2019-03'];
+const ae=[.934,.985,1.044,1.050,1.045,1.127,1.128,1.223,1.339,1.431,1.463,1.444,1.344,1.450,1.415];
+const psiK=['2014-03','2014-06','2014-09','2014-12','2015-03','2015-06','2015-09','2015-12','2016-03','2016-06','2016-09','2016-12','2017-03','2017-06','2017-09','2017-12','2018-03','2018-06','2018-09','2018-12'];
+const psi=[.0023,.0053,.0054,.0301,.0207,.0166,.0090,.0074,.0083,.0070,.0127,.0010,.0054,.0066,.0046,.0292,.0433,.0283,.0568,.0563];
+
+/* hero line */
+(function(){const c=document.getElementById('bg'),x=c.getContext('2d');let w,h,s0=null;const D=devicePixelRatio||1;
+ const size=()=>{w=c.width=c.offsetWidth*D;h=c.height=c.offsetHeight*D};size();addEventListener('resize',size);
+ function f(now){s0=s0??now;const p=Math.max(0,Math.min(1,(now-s0)/2800));x.clearRect(0,0,w,h);
+  const X=v=>w*.04+(tt(v)-2015.6)/(2019.3-2015.6)*w*.92,Y=v=>h*.95-(v-.9)/(1.5-.9)*h*.85;
+  x.setLineDash([6*D,6*D]);x.strokeStyle='rgba(255,255,255,.25)';x.lineWidth=D;x.beginPath();x.moveTo(0,Y(1.1));x.lineTo(w,Y(1.1));x.stroke();x.setLineDash([]);
+  x.fillStyle='rgba(255,255,255,.35)';x.font=`${11*D}px IBM Plex Mono`;x.fillText('ALARM 1.10',w*.04,Y(1.1)-6*D);
+  const n=p*(ae.length-1),k=Math.floor(n);x.strokeStyle='#ff8a7e';x.lineWidth=3*D;x.lineJoin='round';x.beginPath();
+  for(let i=0;i<=k;i++){const a=[X(aeK[i]),Y(ae[i])];i?x.lineTo(...a):x.moveTo(...a)}
+  if(k<ae.length-1){const f2=n-k,a=[X(aeK[k]),Y(ae[k])],b=[X(aeK[k+1]),Y(ae[k+1])];x.lineTo(a[0]+(b[0]-a[0])*f2,a[1]+(b[1]-a[1])*f2)}x.stroke();
+  if(p<1)requestAnimationFrame(f)}requestAnimationFrame(f)})();
+
+/* story chart */
+const S=document.getElementById('story'),W=700,L=44,R=14,X=v=>L+(v-2014)/(5.4)*(W-L-R);
+const TP={a:16,b:290,mn:.85,mx:1.55},BT={a:330,b:405,mn:0,mx:.3},Y=(p,v)=>p.b-(v-p.mn)/(p.mx-p.mn)*(p.b-p.a);const g={};
+(function(){for(let y=2014;y<=2019;y++){el(S,'line',{x1:X(y),x2:X(y),y1:10,y2:405,stroke:C.tint});el(S,'text',{...mono,x:X(y),y:428,'text-anchor':'middle'},y)}
+ g.band=el(S,'rect',{x:X(2015.25),y:10,width:X(2017.42)-X(2015.25),height:395,fill:'#f6e3e0',opacity:0,style:'transition:opacity .6s'});
+ [[TP,1.1,'ALARM 1.10'],[BT,.1,'PSI ALARM 0.10']].forEach(([p,v,l])=>{el(S,'line',{x1:L,x2:W-R,y1:Y(p,v),y2:Y(p,v),stroke:C.ink3,'stroke-dasharray':'4 4'});el(S,'text',{...mono,x:W-R,y:Y(p,v)-6,'text-anchor':'end'},l)});
+ [1,1.2,1.4].forEach(v=>el(S,'text',{...mono,x:L-8,y:Y(TP,v)+4,'text-anchor':'end'},v.toFixed(1)));
+ el(S,'text',{...mono,x:L,y:BT.a-8},'PSI');
+ const d=(xs,ys,p)=>xs.map((v,i)=>(i?'L':'M')+X(tt(v)).toFixed(1)+' '+Y(p,ys[i]).toFixed(1)).join(' ');
+ g.psi=el(S,'path',{d:d(psiK,psi,BT),fill:'none',stroke:C.ink3,'stroke-width':2,style:'transition:stroke .5s,stroke-width .5s'});
+ g.ae=el(S,'path',{d:d(aeK,ae,TP),fill:'none',stroke:C.navy,'stroke-width':3,'stroke-linejoin':'round',style:'transition:stroke-dashoffset 1s ease'});
+ const len=g.ae.getTotalLength();g.ae.style.strokeDasharray=len;g.ae.style.strokeDashoffset=len;g.len=len;
+ g.al=el(S,'g',{opacity:0,style:'transition:opacity .5s'});el(g.al,'line',{x1:X(2017.42),x2:X(2017.42),y1:10,y2:405,stroke:C.red,'stroke-width':2});
+ el(g.al,'text',{x:X(2017.42)+8,y:Y(TP,.93),fill:C.red,'font-size':13,'font-weight':600,'font-family':'IBM Plex Sans'},'Realistic first alarm');
+ el(g.al,'text',{...mono,x:X(2017.42)+8,y:Y(TP,.93)+16,fill:C.red},'JUN 2017 · +26 MO');
+ g.pk=el(S,'g',{opacity:0,style:'transition:opacity .5s'});el(g.pk,'circle',{cx:X(tt('2018-03')),cy:Y(TP,1.463),r:6,fill:C.red});el(g.pk,'text',{x:X(tt('2018-03')),y:Y(TP,1.463)-14,'text-anchor':'middle','font-family':'IBM Plex Mono','font-size':15,'font-weight':600,fill:C.red},'1.46×');
+})();
+function stage(s){g.band.setAttribute('opacity',s>=1?1:0);g.ae.style.strokeDashoffset=s<1?g.len:s<3?g.len*.86:s<4?g.len*.38:0;
+ g.psi.setAttribute('stroke',s===2?C.red:C.ink3);g.psi.setAttribute('stroke-width',s===2?4:2);g.al.setAttribute('opacity',s>=3?1:0);g.pk.setAttribute('opacity',s>=4?1:0)}
+const ST=[['2014','Go-live','The model goes live.',"It ranks borrowers better than a classic scorecard and LendingClub's own grades. Every check is green."],
+['APR 2015','Drift starts','Worse loans begin.','From this quarter, borrowers with the same score default more. Their outcomes are a year away, so nothing can show it yet.'],
+['2015–2018','PSI silent','The stability index stays flat.','PSI compares who applies, not how they repay. Applicants even looked better. It never approached its 0.10 line.'],
+['JUN 2017','First alarm','The first realistic alarm.','A model using only data a lender had in 2014 first crosses 1.10 here, 26 months after the first worse loans. The reference line, built with future data, would have rung in Dec 2016.'],
+['2018','Peak','1.46× expectation.',"At the peak, defaults ran 46% above what the model expected, while its ranking still looked healthy."]];
+let cur=0,timer=null;const chips=document.getElementById('chips');
+ST.forEach((x,i)=>{const b=document.createElement('button');b.className='chip';b.innerHTML=x[0]+'<b>'+x[1]+'</b>';b.onclick=()=>{stop();go(i)};chips.appendChild(b)});
+function go(i){cur=Math.max(0,Math.min(ST.length-1,i));const x=ST[cur];document.getElementById('sd').textContent=x[0];document.getElementById('sh').textContent=x[2];document.getElementById('sp').textContent=x[3];
+ document.getElementById('sc').textContent=(cur+1)+' / '+ST.length;[...chips.children].forEach((c,k)=>c.classList.toggle('on',k===cur));
+ document.getElementById('next').textContent=cur===ST.length-1?'Replay ↺':'Next →';stage(cur)}
+function stop(){clearInterval(timer);timer=null}
+document.getElementById('next').onclick=()=>{stop();go(cur===ST.length-1?0:cur+1)};document.getElementById('prev').onclick=()=>{stop();go(cur-1)};
+go(0);const ob=new IntersectionObserver(es=>{if(es[0].isIntersecting){ob.disconnect();timer=setInterval(()=>{if(cur>=ST.length-1)return stop();go(cur+1)},3200)}},{threshold:.5});ob.observe(document.querySelector('.stepper'));
+
+/* heatmap: MOB12 default % by band (B1 riskiest) x quarter */
+(function(){const q=['12Q3','12Q4','13Q1','13Q2','13Q3','13Q4','14Q1','14Q2','14Q3','14Q4','15Q1','15Q2','15Q3','15Q4','16Q1','16Q2','16Q3','16Q4','17Q1','17Q2','17Q3'];
+ const B=[[8.62,8.54,7.31,8.05,7.65,7.02,6.89,7.33,7.72,8.22,8.16,8.61,8.80,9.45,10.16,10.51,10.80,9.73,9.92,10.25,10.15],
+ [5.63,4.46,5.13,5.21,4.53,4.37,4.45,4.33,5.00,5.21,5.06,5.61,5.51,5.99,6.69,6.84,6.77,7.16,6.28,7.24,7.02],
+ [3.05,3.67,3.51,2.97,3.53,3.19,3.17,3.66,3.49,3.61,3.49,4.14,4.14,4.37,5.00,5.37,5.63,5.58,5.14,5.49,5.18],
+ [3.30,2.59,2.15,2.37,2.37,2.30,2.15,3.01,2.96,2.62,2.51,2.84,2.73,3.25,3.66,4.10,4.10,4.19,3.65,3.80,3.86],
+ [1.09,1.69,1.16,1.38,1.12,1.09,1.42,1.10,1.35,1.22,1.54,1.32,1.37,1.55,1.70,2.12,2.28,2.24,1.76,1.93,2.02]];
+ const H=document.getElementById('heat'),L=90,T=10,cw=(1060-L-6)/q.length,ch=48;
+ const col=v=>{const a=Math.min(1,v/11);return `rgba(11,37,69,${(0.06+0.94*a).toFixed(3)})`};
+ B.forEach((row,r)=>{el(H,'text',{x:L-10,y:T+r*ch+ch/2+4,'text-anchor':'end','font-family':'IBM Plex Sans','font-size':13,fill:C.ink2},r===0?'Band 1 (risky)':r===4?'Band 5 (safe)':'Band '+(r+1));
+  row.forEach((v,i)=>{el(H,'rect',{x:L+i*cw+1,y:T+r*ch+1,width:cw-2,height:ch-2,fill:col(v)});el(H,'text',{x:L+i*cw+cw/2,y:T+r*ch+ch/2+4,'text-anchor':'middle','font-family':'IBM Plex Mono','font-size':11,fill:v>5?'#fff':C.navy},v.toFixed(1))})});
+ q.forEach((s,i)=>{if(i%2===0)el(H,'text',{...mono,x:L+i*cw+cw/2,y:T+5*ch+20,'text-anchor':'middle'},s)});
+ const x0=L+11*cw;el(H,'line',{x1:x0,x2:x0,y1:T-4,y2:T+5*ch+4,stroke:C.red,'stroke-width':2});el(H,'text',{x:x0+6,y:T+5*ch+38,'font-family':'IBM Plex Mono','font-size':12,fill:C.red},'APR 2015: WORSE LOANS BEGIN');
+})();
+
+/* ECL bars */
+(function(){const q=['2015Q1','2015Q2','2015Q3','2015Q4'],p=[48.5,53.8,60.3,69.8],r=[53.6,64.3,70.0,85.8],rt=['1.10','1.19','1.16','1.23'];const E=document.getElementById('ecl'),Lx=40,B=262,mx=100,Yv=v=>B-v/mx*230,gw=(520-Lx)/4;
+ [0,25,50,75,100].forEach(v=>{el(E,'line',{x1:Lx,x2:520,y1:Yv(v),y2:Yv(v),stroke:C.tint});el(E,'text',{...mono,x:Lx-6,y:Yv(v)+4,'text-anchor':'end'},v)});
+ q.forEach((s,i)=>{const x=Lx+i*gw+18;el(E,'rect',{x,y:Yv(p[i]),width:36,height:B-Yv(p[i]),fill:C.navy});el(E,'rect',{x:x+40,y:Yv(r[i]),width:36,height:B-Yv(r[i]),fill:C.red});
+  el(E,'text',{x:x+76,y:Yv(r[i])-6,'text-anchor':'end','font-family':'IBM Plex Mono','font-size':12,'font-weight':600,fill:C.red},'×'+rt[i]);el(E,'text',{...mono,x:x+38,y:B+18,'text-anchor':'middle'},s)});
+ el(E,'rect',{x:Lx,y:4,width:12,height:12,fill:C.navy});el(E,'text',{x:Lx+18,y:14,'font-size':12,fill:C.ink2},'Predicted EL');el(E,'rect',{x:Lx+120,y:4,width:12,height:12,fill:C.red});el(E,'text',{x:Lx+138,y:14,'font-size':12,fill:C.ink2},'Realised loss');
+})();
+
+/* lifetime PD bars */
+(function(){const P=document.getElementById('pd'),items=[['Prepayment as censoring',18.2,C.ink3],['Competing-risk model',13.6,C.navy],['Actual',14.7,C.red]];
+ items.forEach(([l,v,c],i)=>{const y=40+i*82,w=v/20*380;el(P,'text',{x:0,y,'font-size':14,fill:C.ink2,'font-family':'IBM Plex Sans'},l);el(P,'rect',{x:0,y:y+10,width:w,height:34,fill:c});el(P,'text',{x:w+10,y:y+33,'font-family':'IBM Plex Mono','font-size':18,'font-weight':600,fill:c},v.toFixed(1)+'%')});
+})();
+
+/* console */
+const Bs=document.getElementById('bars'),ql=['14Q1','','','','15Q1','','','','16Q1','','','','17Q1','',''];
+function bars(){Bs.innerHTML='';const th=+document.getElementById('thr').value;document.getElementById('thrV').textContent=th.toFixed(2);
+ const W=560,H=280,T=14,Bt=30,bw=(W-10)/ae.length,Yb=v=>T+(1.55-v)/(.7)*(H-T-Bt);let first=-1;
+ ae.forEach((v,i)=>{const on=v>th;if(on&&first<0)first=i;el(Bs,'rect',{x:5+i*bw+3,y:Yb(v),width:bw-6,height:H-Bt-Yb(v),fill:on?C.red:C.tint});if(ql[i])el(Bs,'text',{...mono,x:5+i*bw+bw/2,y:H-8,'text-anchor':'middle'},ql[i])});
+ el(Bs,'line',{x1:0,x2:W,y1:Yb(th),y2:Yb(th),stroke:C.navy,'stroke-width':2,'stroke-dasharray':'6 4'});
+ const w=document.getElementById('when'),m=document.getElementById('msg');
+ if(first<0){w.textContent='Never';w.className='big';m.textContent='The line sits above every quarter.';return}
+ const k=aeK[first],mo=Math.round((tt(k)-2015.25)*12);w.textContent=new Date(k+'-01').toLocaleString('en',{month:'short',year:'numeric'});w.className='big'+(mo>12?' r':'');
+ m.innerHTML=mo>0?`<b class="mono">${mo} months</b> after the first worse loans were issued.`:`Rings early, but it also <b>flags healthy 2014 quarters</b>.`}
+document.getElementById('thr').addEventListener('input',bars);bars();
+</script>
+</body>
+</html>

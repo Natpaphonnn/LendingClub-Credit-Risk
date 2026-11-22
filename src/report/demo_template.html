@@ -3,305 +3,541 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Credit Model Drift</title>
+<title>The Alarm That Never Rang</title>
+<meta name="description" content="A credit model that kept ranking well while defaults drifted above expectation, and a stability alarm that never fired. LendingClub case study, aggregates only.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --surface:#fcfcfb;--panel:#ffffff;--ink:#0b0b0b;--ink2:#52514e;--muted:#898781;--grid:#e1e0d9;--base:#c3c2b7;--border:rgba(11,11,11,.10);
-  --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;
-  --q1:#b7d3f6;--q2:#86b6ef;--q3:#5598e7;--q4:#2a78d6;--q5:#104281;
-  --good:#0ca30c;--warn:#fab219;--crit:#d03b3b;--band:rgba(250,178,25,.13);
-  color-scheme:light;
+/* 2 main colours: navy + paper. 1 secondary: risk red (broke / risk / key markers only). Everything else is a tint of navy. */
+:root{--navy:#0b2545;--paper:#f7f5f0;--red:#c8372d;
+  --ink:#0b2545;--ink2:#3d5170;--ink3:#6b7a90;--t2:#a3b0c2;--rule:#d9dde3;--tint:#e9edf2;--card:#ffffff;--redtint:#f6e3e0;color-scheme:light}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.mono,.num{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+/* HERO */
+.hero{background:var(--navy);color:#fff;position:relative;overflow:hidden}
+.hero .wrap{padding-top:80px;padding-bottom:48px;position:relative}
+.hero .eyebrow{color:#9fb0c8}
+.hero h1{font-family:"IBM Plex Serif",serif;font-weight:600;font-size:clamp(40px,7vw,84px);line-height:1.02;margin:16px 0 0;letter-spacing:-.015em;max-width:14ch;position:relative}
+.hero h1 span{color:#ff8a7e}
+.hero p{color:#c9d3e1;font-size:clamp(17px,2vw,20px);max-width:44ch;margin:24px 0 0;position:relative}
+.hero canvas{position:absolute;right:16px;top:64px;width:48%;height:300px;pointer-events:none}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.14);margin-top:52px;position:relative}
+.kpi{padding:22px 18px 4px 0}
+.kpi .v{font-family:"IBM Plex Mono",monospace;font-size:clamp(28px,3.6vw,42px);font-weight:500;letter-spacing:-.02em;line-height:1.15}
+.kpi .v.r{color:#ff8a7e}
+.kpi .l{color:#9fb0c8;font-size:14px;margin-top:6px;max-width:26ch}
+/* SECTIONS */
+section{padding:60px 0;border-bottom:1px solid var(--rule)}
+h2{font-family:"IBM Plex Serif",serif;font-weight:600;font-size:clamp(28px,3.6vw,42px);line-height:1.12;margin:10px 0 12px;max-width:26ch}
+.dek{color:var(--ink2);font-size:18px;max-width:64ch;margin:0 0 28px}
+.fig{background:var(--card);border:1px solid var(--rule);padding:20px 20px 14px;min-width:0}
+.fig .t,.chart .t{font-weight:600;font-size:15px}.fig .s,.chart .s{color:var(--ink3);font-size:13px;margin:2px 0 10px}
+.src{font-size:12px;color:var(--ink3);margin-top:10px;font-family:"IBM Plex Mono",monospace;overflow-wrap:anywhere}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink2);margin:8px 0 0}
+.legend i{display:inline-block;width:16px;height:3px;vertical-align:middle;margin-right:6px}
+/* stepper */
+.stepper{background:var(--card);border:1px solid var(--rule)}
+.chips{display:flex;border-bottom:1px solid var(--rule);overflow-x:auto;scrollbar-width:none}
+.chip{flex:1;min-width:104px;background:none;border:0;border-bottom:3px solid transparent;padding:12px 12px;text-align:left;cursor:pointer;font:500 12px "IBM Plex Mono",monospace;letter-spacing:.08em;color:var(--ink3)}
+.chip b{display:block;font:600 14px "IBM Plex Sans",sans-serif;letter-spacing:0;color:var(--ink3);margin-top:2px}
+.chip.on{border-color:var(--red);color:var(--red)}.chip.on b{color:var(--ink)}
+.chip:focus-visible,.nav button:focus-visible,.btn:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+.stage{display:grid;grid-template-columns:1.6fr 1fr}
+.stage .chart{padding:18px 18px 12px;border-right:1px solid var(--rule);min-width:0}
+.stage .text{padding:26px 24px;display:flex;flex-direction:column}
+.stage .d{font:500 12px "IBM Plex Mono",monospace;letter-spacing:.14em;color:var(--red)}
+.stage h3{font-family:"IBM Plex Serif",serif;font-size:26px;line-height:1.2;margin:8px 0 10px}
+.stage p{margin:0;color:var(--ink2);font-size:16.5px}
+.nav{margin-top:auto;padding-top:22px;display:flex;gap:10px;align-items:center}
+.nav button,.btn{font:600 13px "IBM Plex Sans",sans-serif;padding:9px 16px;border:1px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer}
+.nav button.ghost,.btn.ghost{background:none;color:var(--navy)}
+.nav .count{margin-left:auto;font:500 12px "IBM Plex Mono",monospace;color:var(--ink3)}
+/* grids */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.tbl{width:100%;border-collapse:collapse;font-size:15px;background:var(--card);border:1px solid var(--rule)}
+.tbl th{text-align:left;font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);padding:12px 16px;border-bottom:1px solid var(--rule)}
+.tbl td{padding:13px 16px;border-bottom:1px solid var(--tint);vertical-align:top}
+.tbl td:first-child{font-weight:600;width:18%}
+.tbl td.num{white-space:nowrap;width:28%;font-size:14px}
+.pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;padding:3px 8px;border:1px solid currentColor}
+.pill.ok{color:var(--navy)}.pill.ko{color:var(--red);background:var(--redtint);border-color:transparent}
+.verdict{display:grid;grid-template-columns:1fr;gap:20px}
+/* console */
+.console{display:grid;grid-template-columns:1fr 1.35fr;gap:28px;background:var(--card);border:1px solid var(--rule);padding:24px;margin-bottom:20px}
+.console h3{font-family:"IBM Plex Serif",serif;font-size:22px;line-height:1.2;margin:0 0 6px}
+.console .sub{color:var(--ink2);font-size:14.5px;margin:0 0 6px}
+.big{font-family:"IBM Plex Mono",monospace;font-size:clamp(36px,4.6vw,54px);font-weight:500;letter-spacing:-.02em;line-height:1;margin:8px 0 8px}
+.big.r{color:var(--red)}
+input[type=range]{width:100%;accent-color:var(--navy);margin:8px 0 2px}
+select{font:500 14px "IBM Plex Mono",monospace;border:1px solid var(--navy);background:var(--card);color:var(--navy);padding:6px 8px}
+.rowlbl{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px;color:var(--ink3);margin-top:16px}
+.rowlbl b{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-size:18px}
+.tag{display:inline-block;font:500 11px "IBM Plex Mono",monospace;letter-spacing:.06em;color:var(--ink2);border:1px solid var(--rule);padding:2px 8px;margin-top:10px}
+.tag.off{color:var(--red);border-color:var(--red)}
+.btns{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px}
+.at{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:14px}
+.at th{text-align:left;font:500 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding:6px 6px;border-bottom:1px solid var(--rule)}
+.at td{padding:7px 6px;border-bottom:1px solid var(--tint);vertical-align:top}.at td.num{text-align:right;white-space:nowrap}
+.at th.num{text-align:right}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:0 14px;margin-top:18px;border-top:1px solid var(--rule)}
+.kv div{padding:10px 0;border-bottom:1px solid var(--tint);min-width:0}
+.kv span{display:block;color:var(--ink3);font-size:12.5px}.kv b{font:500 22px "IBM Plex Mono",monospace;display:block;margin:2px 0}
+.note{color:var(--ink2);font-size:13.5px;margin:10px 0 0;border-left:3px solid var(--rule);padding-left:10px}
+/* method */
+.method{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:2px solid var(--navy)}
+.m{padding:18px 16px 0 0}.m .n{font-family:"IBM Plex Mono",monospace;font-size:30px;font-weight:500}.m .l{color:var(--ink2);font-size:14px}
+footer{padding:40px 0 64px;color:var(--ink3);font-size:14px}
+footer a{color:var(--navy);font-weight:600;margin-right:22px;text-decoration:none;border-bottom:1px solid var(--navy);display:inline-block;margin-bottom:8px}
+footer p{max-width:80ch}
+.tip{position:fixed;pointer-events:none;background:var(--card);border:1px solid var(--rule);padding:6px 9px;font:12.5px "IBM Plex Mono",monospace;color:var(--ink);box-shadow:0 4px 14px rgba(11,37,69,.12);display:none;z-index:9}
+@media (max-width:860px){
+  .kpis{grid-template-columns:1fr 1fr}.stage,.two,.console,.verdict{grid-template-columns:1fr}
+  .stage .chart{border-right:0;border-bottom:1px solid var(--rule)}.stage .text{padding:18px 16px}
+  .method{grid-template-columns:1fr 1fr}.hero canvas{position:static;display:block;width:100%;height:150px;margin-top:28px}.kpis{margin-top:20px}
+  .tbl td:first-child{width:auto}.tbl th:nth-child(3),.tbl td:nth-child(3){display:none}.tbl td,.tbl th{padding:10px 8px;font-size:14px}
+  .console{padding:16px;gap:18px}.kv{grid-template-columns:1fr}.fig{padding:16px 14px 12px}.stage .chart{padding:14px 12px 10px}
+  section{padding:44px 0}
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --surface:#1a1a19;--panel:#222221;--ink:#f0efec;--ink2:#c3c2b7;--muted:#898781;--grid:#2c2c2a;--base:#383835;--border:rgba(255,255,255,.10);
-  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;
-  --q1:#184f95;--q2:#256abf;--q3:#3987e5;--q4:#6da7ec;--q5:#b7d3f6;--band:rgba(250,178,25,.10);color-scheme:dark;}}
-:root[data-theme="dark"]{
-  --surface:#1a1a19;--panel:#222221;--ink:#f0efec;--ink2:#c3c2b7;--muted:#898781;--grid:#2c2c2a;--base:#383835;--border:rgba(255,255,255,.10);
-  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;
-  --q1:#184f95;--q2:#256abf;--q3:#3987e5;--q4:#6da7ec;--q5:#b7d3f6;--band:rgba(250,178,25,.10);color-scheme:dark;}
-*{box-sizing:border-box}
-body{margin:0;background:var(--surface);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-main{max-width:1040px;margin:0 auto;padding:28px 16px 48px}
-h1{font-size:26px;line-height:1.25;margin:0 0 6px}
-h2{font-size:18px;margin:0 0 4px}
-p.lede{color:var(--ink2);margin:0 0 20px;max-width:760px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:22px}
-.tile{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-.tile .l{color:var(--ink2);font-size:13px}.tile .v{font-size:30px;font-weight:650;margin:2px 0}.tile .n{color:var(--muted);font-size:12.5px}
-section{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 18px 14px;margin-bottom:18px}
-.sub{color:var(--ink2);font-size:13.5px;margin:0 0 10px}
-.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--ink2);margin:6px 0 4px}
-.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
-svg{width:100%;height:auto;display:block;overflow:visible}
-svg text{fill:var(--ink2);font-size:11px}
-.axis line,.axis path{stroke:var(--base)}.gridl{stroke:var(--grid)}
-.tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 9px;font-size:12.5px;
-     color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.12);display:none;z-index:9}
-table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--grid)}
-th{color:var(--ink2);font-weight:600}td.num{text-align:right;font-variant-numeric:tabular-nums}
-.rule{display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:center;font-size:14px}
-.badge{font-size:12px;font-weight:650;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
-.pass{color:var(--good)}.fail{color:var(--crit)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
-footer{color:var(--muted);font-size:12.5px;margin-top:10px}
-.ctrls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:14px;margin:6px 0 12px}
-.ctrls label{display:flex;align-items:center;gap:8px}.ctrls input[type=range]{width:170px;max-width:52vw}
-.ctrls output{font-variant-numeric:tabular-nums;min-width:3.2em;font-weight:600}
-.ctrls button,.ctrls select{background:none;border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:4px 10px;font-size:13px}
-.scroll{overflow-x:auto}.tag{font-size:11.5px;color:var(--ink2);border:1px solid var(--border);border-radius:999px;padding:1px 8px;margin-left:6px;white-space:nowrap}
-.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:4px 0 10px}
-.kv div{border:1px solid var(--border);border-radius:8px;padding:8px 10px}.kv b{display:block;font-size:20px}.kv span{color:var(--ink2);font-size:12.5px}
-.rule span{min-width:0;overflow-wrap:anywhere}code{overflow-wrap:anywhere}
-@media(max-width:560px){
-  .rule{grid-template-columns:1fr auto;grid-auto-flow:dense}.rule span:nth-child(3n+2){grid-column:1/-1;margin:-4px 0 6px;font-size:13px}
-  #alarmtab tr:first-child{display:none}#alarmtab tr{display:block;border-bottom:1px solid var(--grid);padding:6px 0}
-  #alarmtab td{display:flex;justify-content:space-between;gap:12px;border:0;padding:2px 0;text-align:right}
-  #alarmtab td::before{content:attr(data-l);color:var(--ink2);text-align:left}
-  #psi text,#ae text,#pol text,#mob6 text{font-size:21px}
+@media (max-width:560px){
+  .at tr:first-child{display:none}.at tr{display:block;border-bottom:1px solid var(--rule);padding:6px 0}
+  .at td{display:flex;justify-content:space-between;gap:12px;border:0;padding:2px 0;text-align:right}
+  .at td::before{content:attr(data-l);color:var(--ink3);text-align:left;font-size:12.5px}
 }
-button.theme{float:right;background:none;border:1px solid var(--border);color:var(--ink2);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12.5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
-<main>
-<button class="theme" id="theme">Toggle theme</button>
-<h1>Would your credit model have survived — and would you have noticed?</h1>
-<p class="lede">A model built on LendingClub loans from 2012–13 and used from 2015 kept ranking borrowers well on every vintage with complete outcomes,
-but defaults drifted well above what it expected. Its stability alarm (PSI) never fired. Aggregates only; every number traces to <code>reports/</code> in the repository.</p>
-<div class="tiles" id="tiles"></div>
 
-<section>
-<h2>The wrong alarm: stability stayed green while defaults rose</h2>
-<p class="sub">Each point sits at the date it could first be known. Top: population stability index of the champion score (no labels needed).
-Bottom: actual ÷ expected defaults by month 12 — reference model (if live from 2015) and the realistic as-of model.</p>
-<svg id="psi" viewBox="0 0 900 170" role="img" aria-label="PSI by date"></svg>
-<div class="legend"><span><i style="background:var(--s1)"></i>reference model</span><span><i style="background:var(--s2)"></i>as-of model (data to Jun 2014)</span><span><i style="background:var(--band);height:10px"></i>first worse loans issued → first alarm</span></div>
-<svg id="ae" viewBox="0 0 900 260" role="img" aria-label="actual over expected by date"></svg>
-</section>
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow" id="heroEyebrow">Model risk case study · LendingClub</div>
+    <h1>The alarm that <span>never rang.</span></h1>
+    <p id="heroP"></p>
+    <canvas id="bg" aria-hidden="true"></canvas>
+    <div class="kpis" id="kpis"></div>
+  </div>
+</header>
 
-<section>
-<h2>What if the alarm thresholds were different?</h2>
-<p class="sub">Month-12 actual ÷ expected defaults by issue quarter; a quarter flags when A/E is strictly above the threshold, at the date it becomes
-knowable. First worse vintage: <b id="fw"></b> (≥ 1.2× the 2012–13 month-12 default rate). "Loans booked meanwhile" = 36-month loans issued from
-that vintage up to the quarter in which the alarm becomes knowable.</p>
-<div class="ctrls">
-  <label>Amber &gt; <input type="range" id="amb" min="1.00" max="1.50" step="0.01" value="1.10"><output id="ambv"></output></label>
-  <label>Red &gt; <input type="range" id="red" min="1.00" max="1.60" step="0.01" value="1.25"><output id="redv"></output></label>
-  <button id="resetT">Reset</button><span class="tag" id="prereg"></span>
-</div>
-<div class="scroll"><table id="alarmtab"></table></div>
-</section>
+<section><div class="wrap">
+  <div class="eyebrow">01 · Monitoring</div>
+  <h2>The standard alarm watched the wrong thing</h2>
+  <p class="dek">Each value is plotted on the date it could first be known. Step through what a risk team would have seen, with the model they
+  would really have had (as-of model, built only on data known at the end of 2014) and the reference model.</p>
+  <div class="stepper" id="stepper">
+    <div class="chips" id="chips" role="tablist" aria-label="Monitoring timeline steps"></div>
+    <div class="stage">
+      <div class="chart"><div class="t">Actual ÷ expected defaults by month 12 (top) and PSI (bottom)</div>
+        <div class="s">By the date each value became knowable · red markers: first alarm of each model</div>
+        <svg id="story" role="img" aria-label="Actual over expected defaults and PSI by date knowable, with first-alarm markers"></svg>
+        <div class="legend"><span><i style="background:var(--navy);height:3px"></i>as-of model (realistic)</span><span><i style="background:var(--t2)"></i>reference model</span><span><i style="background:var(--redtint);height:10px"></i>worse loans issued → realistic alarm</span></div>
+        <div class="src">Source: reports/phase1/monitoring.json · reports/phase4/asof_model.json</div></div>
+      <div class="text" role="tabpanel" aria-live="polite"><div class="d" id="sd"></div><h3 id="sh"></h3><p id="sp"></p>
+        <div class="nav"><button class="ghost" id="prev">← Back</button><button id="next">Next →</button><span class="count" id="sc"></span></div></div>
+    </div>
+  </div>
+</div></section>
 
-<div class="grid2">
-<section>
-<h2>Same score, more defaults</h2>
-<p class="sub">Share of loans defaulted by month 12, by issue quarter and score band (band 1 = riskiest; cut points fixed on 2012–13).</p>
-<svg id="bands" viewBox="0 0 440 260" role="img" aria-label="defaults by month 12 by band"></svg>
-<div class="legend" id="bandlegend"></div>
-</section>
-<section>
-<h2>Ranking power on unseen 2015 loans</h2>
-<p class="sub">Gini with 95% bootstrap interval.</p>
-<svg id="models" viewBox="0 0 440 230" role="img" aria-label="Gini by model"></svg>
-</section>
-</div>
+<section><div class="wrap">
+  <div class="eyebrow">02 · Concept drift</div>
+  <h2>Same score, more defaults, in every risk band</h2>
+  <p class="dek">Share of loans defaulted by month 12, by issue quarter and score band (bands fixed on 2012–13 loans). The applicant mix barely moved;
+  each band itself got worse. A stability index looks only at the inputs, so it cannot see this.</p>
+  <div class="fig"><div class="t">Defaulted by month 12, % of loans</div><div class="s">Darker = higher. Band 1 is the riskiest fifth at training.</div>
+    <svg id="heat" role="img" aria-label="Heatmap of month-12 default rate by score band and issue quarter"></svg>
+    <div class="src">Source: reports/phase1/vintage.md (scorecard-score quintiles; quarters observable to month 12)</div></div>
+</div></section>
 
-<div class="grid2">
-<section>
-<h2>Expected vs realised loss — 2015 loans</h2>
-<p class="sub">Undiscounted lifetime expected loss at origination vs realised net principal loss ($m). "Refit" = recalibrated on outcomes known at Dec 2014 (identified for months 1–21; later months from the reference model, so ×1.27 is a lower bound — ×1.41 with a knowable tail) — it widens the gap.</p>
-<svg id="ecl" viewBox="0 0 440 240" role="img" aria-label="expected vs realised loss"></svg>
-</section>
-<section>
-<h2>Pre-registered macro rule</h2>
-<p class="sub">Macro enters the model only if all three tests pass.</p>
-<div class="rule" id="macro"></div>
-<p class="sub" style="margin-top:12px" id="macrodec"></p>
-</section>
-</div>
+<section><div class="wrap">
+  <div class="eyebrow">03 · Expected credit loss</div>
+  <h2>Realised loss exceeded expected loss in every 2015 quarter</h2>
+  <p class="dek" id="eclDek"></p>
+  <div class="two">
+    <div class="fig"><div class="t">Expected vs realised loss, $m</div><div class="s">36-month loans issued 2015 · lifetime expected loss at origination (undiscounted) vs realised net principal loss</div>
+      <svg id="ecl" role="img" aria-label="Expected and realised loss by 2015 issue quarter"></svg>
+      <div class="legend"><span><i style="background:var(--navy);height:10px;width:10px"></i>expected loss</span><span><i style="background:var(--red);height:10px;width:10px"></i>realised loss</span></div>
+      <div class="src">Source: reports/phase2/ecl.md · reports/phase2/ecl_benchmark.json</div></div>
+    <div class="fig"><div class="t">Lifetime default, loans issued Jan–Sep 2015</div><div class="s" id="pdSub"></div>
+      <svg id="pd" role="img" aria-label="Lifetime PD with prepayment as censoring, as competing risk, and actual"></svg>
+      <div class="src">Source: reports/phase2/survival_A.md</div></div>
+  </div>
+</div></section>
 
-<section>
-<h2>Approval policy: one PD cutoff <span class="tag">exploratory</span></h2>
-<p class="sub">2015 loans, champion PD. Realised NPV uses an approximate cash timing, so dollar levels depend on that assumption — compare
-differences, not levels. Funding cost changes NPV only. Marked: the pre-registered cutoff (set on 2014 for an 11% bad rate) and the MILP cell policy.</p>
-<div class="ctrls">
-  <label>PD cutoff ≤ <input type="range" id="cut" min="0" max="1" step="1" value="0"><output id="cutv"></output></label>
-  <label>Funding cost <select id="rate"><option value="0.03">3%</option><option value="0.05" selected>5%</option><option value="0.08">8%</option></select></label>
-  <button id="resetP">Pre-registered cutoff</button>
-</div>
-<div class="kv" id="polkv"></div>
-<svg id="pol" viewBox="0 0 900 230" role="img" aria-label="realised NPV by PD cutoff"></svg>
-<p class="sub" style="margin:6px 0 0">Ex-post curve on 2015 outcomes; its best point is only knowable afterwards. The pre-registered cutoff was set on 2014.</p>
-<div class="legend"><span><i style="background:var(--s1)"></i>realised NPV, single cutoff</span><span><i style="background:var(--s2);width:10px;height:10px;border-radius:50%"></i>pre-registered cutoff</span><span><i style="background:none;border-top:2px dashed var(--muted);height:0"></i>MILP policy</span><span><i style="background:var(--ink2);width:2px;height:12px"></i>selected cutoff</span></div>
-</section>
+<section><div class="wrap">
+  <div class="eyebrow">04 · Verdict</div>
+  <h2>What survived, and what broke</h2>
+  <p class="dek">Comparisons and decision rules were written down before results were seen; ten independent reviewers then tried to break the numbers.</p>
+  <div class="verdict">
+    <table class="tbl" id="vt"></table>
+    <div class="fig"><div class="t">Ranking held</div><div class="s">Gini on unseen 2015 loans, 95% bootstrap interval</div>
+      <svg id="gini" role="img" aria-label="Gini with intervals by model"></svg>
+      <div class="src">Source: reports/phase1/metrics.json · reports/phase4/asof_model.json</div></div>
+  </div>
+</div></section>
 
-<section>
-<h2>Early warning at month 6 — confirmatory test on 60-month loans</h2>
-<p class="sub" id="mob6sub"></p>
-<svg id="mob6" viewBox="0 0 900 230" role="img" aria-label="month-6 actual over expected by quarter"></svg>
-<div class="legend"><span><i style="background:var(--s1);height:8px;width:8px;border-radius:50%"></i>truth: deteriorated</span><span><i style="background:var(--muted);height:8px;width:8px;border-radius:50%"></i>truth: not deteriorated</span></div>
-</section>
+<section><div class="wrap">
+  <div class="eyebrow">05 · Try it</div>
+  <h2>You are the risk manager</h2>
+  <p class="dek">Move the alarm lines and the approval cutoff. Each panel starts at the pre-registered setting.</p>
+  <div class="console">
+    <div>
+      <h3>When would the alarm have rung?</h3>
+      <p class="sub">A quarter flags when actual ÷ expected defaults by month 12 is strictly above the line, on the date that becomes knowable.
+        First worse vintage: <b class="mono" id="fw"></b> (at least 1.2× the 2012–13 month-12 default rate).</p>
+      <div class="eyebrow" style="margin-top:14px">Realistic (as-of) first amber alarm</div>
+      <div class="big r" id="when"></div>
+      <div id="msg" style="color:var(--ink2);font-size:14.5px"></div>
+      <div class="rowlbl"><span>Amber when A/E is above</span><b id="ambv"></b></div>
+      <input type="range" id="amb" min="1.00" max="1.50" step="0.01" value="1.10" aria-label="Amber threshold">
+      <div class="rowlbl"><span>Red when A/E is above</span><b id="redv"></b></div>
+      <input type="range" id="red" min="1.00" max="1.60" step="0.01" value="1.25" aria-label="Red threshold">
+      <div class="btns"><button class="btn ghost" id="resetT">Pre-registered lines</button><span class="tag" id="prereg"></span></div>
+    </div>
+    <div style="min-width:0">
+      <svg id="alarmc" role="img" aria-label="Actual over expected by date knowable for both models with threshold lines"></svg>
+      <div class="legend"><span><i style="background:var(--navy)"></i>as-of model</span><span><i style="background:var(--t2)"></i>reference model</span><span><i style="background:var(--red);width:8px;height:8px;border-radius:50%"></i>above the amber line</span></div>
+      <table class="at" id="alarmtab"></table>
+      <div class="src">Source: reports/phase1/monitoring.json · reports/phase4/asof_model.json · loans booked = 36-month loans issued from the first worse vintage to the alarm quarter</div>
+    </div>
+  </div>
+  <div class="console">
+    <div>
+      <h3>Where would you set the PD cutoff? <span class="tag" style="margin:0 0 0 4px;vertical-align:middle">exploratory</span></h3>
+      <p class="sub">2015 loans, champion PD. Approve when PD ≤ cutoff. Realised NPV uses an approximate cash timing: compare differences, not levels.</p>
+      <div class="rowlbl"><span>PD cutoff ≤</span><b id="cutv"></b></div>
+      <input type="range" id="cut" min="0" max="1" step="1" value="0" aria-label="PD cutoff">
+      <div class="rowlbl"><span>Funding cost</span><select id="rate" aria-label="Funding cost"><option value="0.03">3%</option><option value="0.05" selected>5%</option><option value="0.08">8%</option></select></div>
+      <div class="btns"><button class="btn ghost" id="resetP">Pre-registered cutoff</button></div>
+      <div class="kv" id="polkv"></div>
+    </div>
+    <div style="min-width:0">
+      <svg id="pol" role="img" aria-label="Realised NPV by PD cutoff"></svg>
+      <div class="legend"><span><i style="background:var(--navy)"></i>realised NPV, single cutoff</span><span><i style="background:var(--red);width:10px;height:10px;border-radius:50%"></i>pre-registered cutoff</span><span><i style="background:none;border-top:2px dashed var(--ink3);height:0"></i>MILP cell policy</span><span><i style="background:var(--ink2);width:2px;height:12px"></i>selected cutoff</span></div>
+      <p class="note" id="exPost">Ex-post curve on 2015 outcomes; its best point is only knowable afterwards. The pre-registered cutoff was set on 2014.</p>
+      <div class="src">Source: reports/phase2/policy_C.json</div>
+    </div>
+  </div>
+</div></section>
 
-<footer>Data: LendingClub via Kaggle (Nathan George); unemployment: U.S. Bureau of Labor Statistics. Raw data is not included. Claims and their
-status (pre-registered / descriptive / exploratory / illustrative): notes/05_claims_and_limitations.md.</footer>
-</main>
+<section style="border-bottom:0"><div class="wrap">
+  <div class="eyebrow">06 · How it was kept honest</div>
+  <h2>Built like a bank would audit it</h2>
+  <div class="method" id="method"></div>
+</div></section>
+
+<footer><div class="wrap">
+  <a href="#" id="articleLink">Read the full story (article: link to come)</a><a href="https://github.com/Natpaphonnn/LendingClub-Credit-Risk">Code &amp; methods</a><a href="#" id="linkedinLink">LinkedIn</a>
+  <p>Data: LendingClub, via Kaggle dataset by Nathan George (wordsforthewise). Unemployment: U.S. Bureau of Labor Statistics.
+  Aggregates only: no raw or row-level data. Every number on this page is read from <span class="mono">reports/</span> in the repository.
+  Claims and their status (pre-registered / descriptive / exploratory): notes/05_claims_and_limitations.md.</p>
+</div></footer>
 <div class="tip" id="tip"></div>
+
 <script>
 const D = /*__DATA__*/null;
-const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const NS = "http://www.w3.org/2000/svg";
-const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
-const tip = document.getElementById("tip");
-function showTip(ev, html){ tip.innerHTML = html; tip.style.display = "block"; const x = Math.min(ev.clientX + 14, innerWidth - 220); tip.style.left = x + "px"; tip.style.top = (ev.clientY + 14) + "px"; }
-function hideTip(){ tip.style.display = "none"; }
-const month = s => { const [y, m] = s.split("-").map(Number); return y * 12 + (m - 1); };
-const mlabel = v => `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][v % 12]} ${Math.floor(v / 12)}`;
+const C = {navy:"#0b2545", red:"#c8372d", ink2:"#3d5170", ink3:"#6b7a90", t2:"#a3b0c2", rule:"#d9dde3", tint:"#e9edf2", card:"#ffffff", redtint:"#f6e3e0", heroRed:"#ff8a7e"};
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const NS = "http://www.w3.org/2000/svg", MONO = "IBM Plex Mono, ui-monospace, monospace", SANS = "IBM Plex Sans, system-ui, sans-serif";
+const el = (p, t, a, x) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (x != null) e.textContent = x; p.appendChild(e); return e; };
+const tx = (p, x, y, s, o = {}) => el(p, "text", {x, y, "font-family": MONO, "font-size": 12, fill: C.ink3, ...o}, s);
+const $ = id => document.getElementById(id);
+const tip = $("tip");
+const showTip = (ev, h) => { tip.innerHTML = h; tip.style.display = "block"; tip.style.left = Math.min(ev.clientX + 14, innerWidth - 230) + "px"; tip.style.top = (ev.clientY + 14) + "px"; };
+const hideTip = () => { tip.style.display = "none"; };
+const hover = (node, h) => { node.addEventListener("mousemove", e => showTip(e, h)); node.addEventListener("mouseleave", hideTip); };
+const mi = s => { const [y, m] = s.split("-").map(Number); return y * 12 + m - 1; };
+const MN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const mlab = v => MN[v % 12] + " " + Math.floor(v / 12);
+const int = n => n.toLocaleString("en-US");
+const f1 = v => v.toFixed(1), f2 = v => v.toFixed(2);
+const qStart = q => +q.slice(0, 4) * 12 + (+q.slice(5) - 1) * 3;
+const qOf = ym => { const [y, m] = ym.split("-").map(Number); return y + "Q" + (Math.floor((m - 1) / 3) + 1); };
+function svgW(id, H){ const s = $(id); s.innerHTML = ""; const W = Math.max(260, Math.round(s.getBoundingClientRect().width)); s.setAttribute("viewBox", `0 0 ${W} ${H}`); return [s, W]; }
 
-function frame(svg, W, H, m, x0, x1, y0, y1, yticks, xticks, xfmt){
-  svg.innerHTML = "";
-  const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r), Y = v => H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b);
-  yticks.forEach(t => { el("line", {x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), class: "gridl"}, svg); el("text", {x: m.l - 6, y: Y(t) + 4, "text-anchor": "end"}, svg).textContent = t; });
-  xticks.forEach(t => { const tx = el("text", {x: X(t), y: H - m.b + 16, "text-anchor": "middle"}, svg); tx.textContent = xfmt(t); });
-  el("line", {x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, stroke: css("--base")}, svg);
-  return {X, Y};
-}
-function hline(svg, s, y, W, m, label){ el("line", {x1: m.l, x2: W - m.r, y1: s.Y(y), y2: s.Y(y), stroke: css("--muted"), "stroke-dasharray": "4 4"}, svg);
-  el("text", {x: m.l + 4, y: s.Y(y) - 4}, svg).textContent = label; }
-function series(svg, s, pts, color, fmt){
-  const path = pts.map((p, i) => `${i ? "L" : "M"}${s.X(p.xv)},${s.Y(p.y)}`).join("");
-  el("path", {d: path, fill: "none", stroke: color, "stroke-width": 2}, svg);
-  pts.forEach(p => { const c = el("circle", {cx: s.X(p.xv), cy: s.Y(p.y), r: 4, fill: color, stroke: css("--panel"), "stroke-width": 2}, svg);
-    const hit = el("circle", {cx: s.X(p.xv), cy: s.Y(p.y), r: 12, fill: "transparent"}, svg);
-    hit.addEventListener("mousemove", e => showTip(e, fmt(p))); hit.addEventListener("mouseleave", hideTip); });
-}
-
-function render(){
-  // tiles
-  document.getElementById("tiles").innerHTML = D.tiles.map(t => `<div class="tile"><div class="l">${t.label}</div><div class="v">${t.value}</div><div class="n">${t.note}</div></div>`).join("");
-  // timeline
-  const T = D.timeline, allx = [...T.psi, ...T.ae_ref, ...T.ae_asof].map(p => month(p.x));
-  const x0 = Math.min(...allx) - 2, x1 = Math.max(...allx) + 2, xt = []; for (let v = Math.ceil(x0 / 12) * 12; v <= x1; v += 12) xt.push(v);
-  const m = {l: 44, r: 16, t: 10, b: 24}, band0 = month("2015-04"), band1 = month(T.ae_ref.find(p => p.y > 1.10).x);
-  const psi = document.getElementById("psi"), s1 = frame(psi, 900, 170, m, x0, x1, 0, 0.3, [0, 0.1, 0.2, 0.3], xt, v => Math.floor(v / 12));
-  el("rect", {x: s1.X(band0), y: m.t, width: s1.X(band1) - s1.X(band0), height: 170 - m.t - m.b, fill: css("--band")}, psi);
-  hline(psi, s1, 0.10, 900, m, "0.10 amber"); hline(psi, s1, 0.25, 900, m, "0.25 red");
-  series(psi, s1, T.psi.map(p => ({...p, xv: month(p.x)})), css("--s1"), p => `<b>${p.q}</b> PSI ${p.y.toFixed(3)}<br>known ${mlabel(month(p.x))}`);
-  const ae = document.getElementById("ae"), s2 = frame(ae, 900, 260, m, x0, x1, 0.8, 1.6, [0.8, 1.0, 1.2, 1.4, 1.6], xt, v => Math.floor(v / 12));
-  el("rect", {x: s2.X(band0), y: m.t, width: s2.X(band1) - s2.X(band0), height: 260 - m.t - m.b, fill: css("--band")}, ae);
-  hline(ae, s2, 1.10, 900, m, "1.10 amber"); hline(ae, s2, 1.25, 900, m, "1.25 red");
-  series(ae, s2, T.ae_ref.map(p => ({...p, xv: month(p.x)})), css("--s1"), p => `<b>${p.q}</b> reference A/E ${p.y.toFixed(2)}<br>known ${mlabel(month(p.x))}`);
-  series(ae, s2, T.ae_asof.map(p => ({...p, xv: month(p.x)})), css("--s2"), p => `<b>${p.q}</b> as-of A/E ${p.y.toFixed(2)}<br>known ${mlabel(month(p.x))}`);
-  // bands
-  const B = D.bands, bs = document.getElementById("bands"), mb = {l: 36, r: 10, t: 10, b: 28}, n = B.quarters.length;
-  const s3 = frame(bs, 440, 260, mb, 0, n - 1, 0, 12, [0, 4, 8, 12], [0, 8, 16, n - 1].filter((v, i, a) => a.indexOf(v) === i), i => B.quarters[i]);
-  const cols = ["--q5", "--q4", "--q3", "--q2", "--q1"];
-  Object.entries(B.series).forEach(([k, v], j) => series(bs, s3, v.map((y, i) => ({xv: i, y, q: B.quarters[i]})).filter(p => p.y !== null),
-    css(cols[j]), p => `<b>${p.q}</b> band ${k.slice(1)}: ${p.y.toFixed(2)}%`));
-  document.getElementById("bandlegend").innerHTML = Object.keys(B.series).map((k, j) => `<span><i style="background:var(${cols[j]})"></i>band ${k.slice(1)}${j === 0 ? " (riskiest)" : j === 4 ? " (safest)" : ""}</span>`).join("");
-  // models
-  const M = D.models, ms = document.getElementById("models"); ms.innerHTML = "";
-  const gx0 = 31, gx1 = 38.5, X = v => 210 + (v - gx0) / (gx1 - gx0) * 210;
-  [32, 34, 36, 38].forEach(t => { el("line", {x1: X(t), x2: X(t), y1: 6, y2: 200, class: "gridl"}, ms); el("text", {x: X(t), y: 218, "text-anchor": "middle"}, ms).textContent = t; });
-  M.forEach((r, i) => { const y = 28 + i * 48, c = i === 0 ? css("--s2") : i === 3 ? css("--s1") : css("--muted");
-    el("text", {x: 0, y: y + 4}, ms).textContent = r.model;
-    el("line", {x1: X(100 * r.gini_lo), x2: X(100 * r.gini_hi), y1: y, y2: y, stroke: c, "stroke-width": 2}, ms);
-    const d = el("circle", {cx: X(100 * r.gini), cy: y, r: 6, fill: c, stroke: css("--panel"), "stroke-width": 2}, ms);
-    el("text", {x: X(100 * r.gini_hi) + 7, y: y + 4, "font-weight": 600, style: "fill:var(--ink)"}, ms).textContent = (100 * r.gini).toFixed(1);
-    const h = el("rect", {x: 0, y: y - 18, width: 440, height: 36, fill: "transparent"}, ms);
-    h.addEventListener("mousemove", e => showTip(e, `<b>${r.model}</b><br>Gini ${(100 * r.gini).toFixed(1)} [${(100 * r.gini_lo).toFixed(1)}, ${(100 * r.gini_hi).toFixed(1)}]<br>KS ${(100 * r.ks).toFixed(1)}`));
-    h.addEventListener("mouseleave", hideTip); });
-  // ecl
-  const labels = {"reference A, undiscounted LGD": "reference", "refit at 2014-12-31 as pre-registered (MOB 1–21) + reference tail, discounted LGD (k=12)": "refit at 2014-12", "default at 3rd missed instalment (≈ 60 DPD; pre-registered as '90-DPD'), discounted LGD (k=12)": "3rd missed (≈60 DPD)"};
-  const E = D.ecl.filter(e => e.pred !== null && e.pred !== undefined && labels[e.name]), es = document.getElementById("ecl"); es.innerHTML = "";
-  const ymax = 300, Yb = v => 200 - v / ymax * 180, bw = 70;
-  [0, 100, 200, 300].forEach(t => { el("line", {x1: 40, x2: 440, y1: Yb(t), y2: Yb(t), class: "gridl"}, es); el("text", {x: 34, y: Yb(t) + 4, "text-anchor": "end"}, es).textContent = t; });
-  E.forEach((e, i) => { const x = 60 + i * 120;
-    const r = el("rect", {x, y: Yb(e.pred), width: bw, height: 200 - Yb(e.pred), rx: 4, fill: css("--s1")}, es);
-    r.addEventListener("mousemove", ev => showTip(ev, `<b>${labels[e.name] || e.name}</b><br>predicted $${e.pred.toFixed(1)}m<br>realised / predicted ${e.ratio.toFixed(3)}`)); r.addEventListener("mouseleave", hideTip);
-    el("text", {x: x + bw / 2, y: 218, "text-anchor": "middle"}, es).textContent = labels[e.name] || e.name;
-    el("text", {x: x + bw / 2, y: Yb(e.pred) - 6, "text-anchor": "middle"}, es).textContent = `×${e.ratio.toFixed(2)}`; });
-  el("line", {x1: 50, x2: 430, y1: Yb(D.realised), y2: Yb(D.realised), stroke: css("--s2"), "stroke-width": 2}, es);
-  el("text", {x: 430, y: Yb(D.realised) - 6, "text-anchor": "end"}, es).textContent = `realised $${D.realised.toFixed(1)}m`;
-  // macro
-  const mc = D.macro, row = (name, detail, ok) => `<span>${name}</span><span style="color:var(--ink2)">${detail}</span><span class="badge ${ok ? "pass" : "fail"}">${ok ? "✓ PASS" : "✕ FAIL"}</span>`;
-  document.getElementById("macro").innerHTML =
-    row("(a) unemployment effect > 0", `θ = ${mc.a.theta.toFixed(3)} [${mc.a.ci[0].toFixed(3)}, ${mc.a.ci[1].toFixed(3)}]`, mc.a.pass) +
-    row("(b) out-of-time value", `${(100 * mc.b.rel_change).toFixed(1)}% calibration error`, mc.b.pass) +
-    row("(c) plausible stress", `adverse / baseline = ${mc.c.multiplier.toFixed(2)}`, mc.c.pass);
-  document.getElementById("macrodec").textContent = "Decision: macro does not enter — the 'adverse' scenario lowered PD, so the (b) pass was spurious.";
-  // mob6 60m
-  const R = D.mob6.res, q = D.mob6.quarters, v = D.mob6.ae6, tr = D.mob6.truth, ss = document.getElementById("mob6"); ss.innerHTML = "";
-  document.getElementById("mob6sub").textContent = `Pre-registered and pushed before computing. Sensitivity ${R.tp}/${R.n_truth_yes}, specificity ${R.tn}/${R.n_truth_no} (${(100 * R.specificity).toFixed(0)}% < 80%) → ${R.verdict}. Specificity not demonstrated (only ${R.n_truth_no} negative quarters).`;
-  const mm = {l: 44, r: 10, t: 10, b: 28}, Ys = y => 230 - mm.b - (y - 0.8) / (2.0 - 0.8) * (230 - mm.t - mm.b), bw2 = (900 - mm.l - mm.r) / q.length;
-  [0.8, 1.0, 1.4, 1.8].forEach(t => { el("line", {x1: mm.l, x2: 900 - mm.r, y1: Ys(t), y2: Ys(t), class: "gridl"}, ss); el("text", {x: mm.l - 6, y: Ys(t) + 4, "text-anchor": "end"}, ss).textContent = t; });
-  const cx = i => mm.l + (i + 0.5) * bw2;
-  [[1.10, "1.10 amber"], [1.25, "1.25 red"]].forEach(([y, l]) => { el("line", {x1: mm.l, x2: 900 - mm.r, y1: Ys(y), y2: Ys(y), stroke: css("--muted"), "stroke-dasharray": "4 4"}, ss);
-    el("text", {x: mm.l + 4, y: Ys(y) - 4}, ss).textContent = l; });     // left end: early quarters sit below both lines
-  el("path", {d: q.map((qq, i) => `${i ? "L" : "M"}${cx(i)},${Ys(v[i])}`).join(""), fill: "none", stroke: css("--base"), "stroke-width": 2}, ss);
-  q.forEach((qq, i) => { const c = tr[i] === "YES" ? css("--s1") : css("--muted");
-    el("circle", {cx: cx(i), cy: Ys(v[i]), r: 6, fill: c, stroke: css("--panel"), "stroke-width": 2}, ss);
-    const h = el("circle", {cx: cx(i), cy: Ys(v[i]), r: 14, fill: "transparent"}, ss);
-    h.addEventListener("mousemove", e => showTip(e, `<b>${qq}</b> A/E6 ${v[i].toFixed(2)}<br>truth: ${tr[i] === "YES" ? "deteriorated" : "not deteriorated"}`)); h.addEventListener("mouseleave", hideTip);
-    if (i % 2 === 0) el("text", {x: cx(i), y: 230 - mm.b + 16, "text-anchor": "middle"}, ss).textContent = qq; });
-}
-// ---- alarm-threshold panel
+// ---------- derived facts (all from D) ----------
 const AL = D.alarm, PRE = [1.10, 1.25];
-const qOf = ym => { const [y, m] = ym.split("-").map(Number); return `${y}Q${Math.floor((m - 1) / 3) + 1}`; };
-const qStart = q => (Number(q.slice(0, 4)) * 12) + (Number(q.slice(5)) - 1) * 3;
-function alarmRow(name, rows, thr){
-  const r = rows.find(p => p.ae > thr + 1e-12);
-  if (!r) return `<td data-l="first alarm knowable">never</td><td class="num" data-l="months after first worse vintage">–</td><td class="num" data-l="loans booked meanwhile">–</td>`;
-  const lag = month(r.known) - qStart(AL.first_worse);
+function firstAlarm(rows, thr){
+  const r = rows.find(p => p.ae > thr + 1e-12); if (!r) return null;
+  const lag = mi(r.known) - qStart(AL.first_worse);
   const booked = Object.entries(AL.n).filter(([q]) => q >= AL.first_worse && q <= qOf(r.known)).reduce((a, [, n]) => a + n, 0);
-  return `<td data-l="first alarm knowable">${mlabel(month(r.known))} <span style="color:var(--ink2)">(${r.q} vintage, A/E ${r.ae.toFixed(2)})</span></td>` +
-    `<td class="num" data-l="months after first worse vintage">${lag}</td><td class="num" data-l="loans booked meanwhile">${booked.toLocaleString("en-US")}</td>`;
+  return {...r, lag, booked};
+}
+const M = Object.fromEntries(D.models.map(m => [m.key, m]));
+const G = k => f1(100 * M[k].gini);
+const refA = firstAlarm(AL.reference, PRE[0]), asA = firstAlarm(AL.asof, PRE[0]);
+const T = D.timeline, peak = T.ae_ref.reduce((a, b) => b.y > a.y ? b : a);
+const psiAlarms = T.psi.filter(p => p.y > 0.10).length;
+const fwStart = qStart(AL.first_worse);
+
+// ---------- hero ----------
+$("heroEyebrow").textContent = `Model risk case study · LendingClub · ${f2(D.loans_total / 1e6)} million loans`;
+$("heroP").textContent = "A credit model built on 2012–13 loans kept ranking borrowers well and passed every stability check through 2018. " +
+  "Underneath, defaults ran far above its expectations. A lender relying on it would have found out about two years after the first worse loans went out.";
+$("kpis").innerHTML = [
+  ["", G("champion"), `Gini on unseen 2015 loans, above LendingClub's own grades (${G("lc")}) and a scorecard (${G("scorecard")})`],
+  ["", String(psiAlarms), `alarms from the population stability index, 2014–2018 (max ${D.psi_max.toFixed(3)} vs a 0.10 line)`],
+  ["r", f2(peak.y) + "×", `actual ÷ expected defaults by month 12 at the worst vintage (${peak.q})`],
+  ["r", asA.lag + " mo", `from the first worse loans to a realistic alarm; ${int(asA.booked)} loans booked meanwhile`]
+].map(([c, v, l]) => `<div class="kpi"><div class="v ${c}">${v}</div><div class="l">${l}</div></div>`).join("");
+
+function hero(){
+  const c = $("bg"), x = c.getContext("2d"), R = devicePixelRatio || 1; let s0 = null;
+  const pts = T.ae_ref, x0 = mi(pts[0].x), x1 = mi(pts[pts.length - 1].x);
+  function draw(p){
+    const w = c.width = c.offsetWidth * R, h = c.height = c.offsetHeight * R; x.clearRect(0, 0, w, h);
+    const X = v => w * .05 + (v - x0) / (x1 - x0) * w * .9, Y = v => h * .92 - (v - .9) / (1.5 - .9) * h * .84;
+    x.setLineDash([6 * R, 6 * R]); x.strokeStyle = "rgba(255,255,255,.28)"; x.lineWidth = R; x.beginPath(); x.moveTo(w * .02, Y(1.1)); x.lineTo(w, Y(1.1)); x.stroke(); x.setLineDash([]);
+    x.fillStyle = "rgba(255,255,255,.45)"; x.font = `${11 * R}px "IBM Plex Mono"`; x.fillText("ALARM LINE 1.10", w * .05, Y(1.1) - 7 * R);
+    const n = p * (pts.length - 1), k = Math.floor(n); x.strokeStyle = C.heroRed; x.lineWidth = 3 * R; x.lineJoin = "round"; x.beginPath();
+    for (let i = 0; i <= k; i++){ const a = [X(mi(pts[i].x)), Y(pts[i].y)]; i ? x.lineTo(...a) : x.moveTo(...a); }
+    if (k < pts.length - 1){ const f = n - k, a = [X(mi(pts[k].x)), Y(pts[k].y)], b = [X(mi(pts[k + 1].x)), Y(pts[k + 1].y)]; x.lineTo(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f); }
+    x.stroke();
+    if (p >= 1){ x.fillStyle = "rgba(255,255,255,.55)"; x.textAlign = "right"; x.fillText("ACTUAL ÷ EXPECTED, BY DATE KNOWABLE", w * .95, h * .99); x.textAlign = "left"; }
+  }
+  const frame = now => { s0 = s0 ?? now; const p = Math.min(1, (now - s0) / 2600); draw(p); if (p < 1) requestAnimationFrame(frame); };
+  if (RM) draw(1); else requestAnimationFrame(frame);
+  addEventListener("resize", () => draw(1));
+}
+
+// ---------- 01 stepper ----------
+const ST = [
+  ["JAN 2015", "Go-live", "The model goes live.", `It ranks 2015 borrowers better than a scorecard and LendingClub's own grades (Gini ${G("champion")} vs ${G("scorecard")} and ${G("lc")}). Every check is green.`, mi("2015-01")],
+  ["APR 2015", "Drift starts", "Worse loans begin.", `From ${AL.first_worse}, borrowers with the same score default more: at least 1.2× the 2012–13 month-12 rate. Their month-12 outcomes are 18 months away, so nothing can show it yet.`, mi("2015-07")],
+  ["2015–2018", "PSI silent", "The stability index stays flat.", `PSI compares who applies, not how they repay. For the champion it never went above ${D.psi_max.toFixed(3)} in any quarter to 2018, far under its 0.10 alarm line.`, mi("2016-10")],
+  [mlab(mi(asA.known)).toUpperCase(), "First alarm", "The first realistic alarm.", `The as-of model, built only on data known at the end of 2014, first crosses 1.10 here: ${asA.lag} months after the first worse loans, with ${int(asA.booked)} loans booked meanwhile. The reference model, trained on outcomes a lender could not yet have seen, would have rung in ${mlab(mi(refA.known))}.`, mi(asA.known) + 1],
+  [peak.x.slice(0, 4), "Peak", `${f2(peak.y)}× expectation.`, `At the worst vintage (${peak.q}) defaults ran ${Math.round(100 * (peak.y - 1))}% above what the model expected, while its ranking still held on every quarter with complete outcomes.`, 1e9]
+];
+let cur = 0, timer = null, SG = null;
+function storyChart(){
+  const H = 430, [S, W] = svgW("story", H), small = W < 520, L = small ? 34 : 42, R = small ? 8 : 14;
+  const all = [...T.psi, ...T.ae_ref, ...T.ae_asof].map(p => mi(p.x)), x0 = mi("2014-01"), x1 = Math.max(...all) + 2;
+  const X = v => L + (v - x0) / (x1 - x0) * (W - L - R);
+  const TP = {a: 14, b: 290, mn: .85, mx: 1.55}, BT = {a: 330, b: 400, mn: 0, mx: .12}, Y = (p, v) => p.b - (v - p.mn) / (p.mx - p.mn) * (p.b - p.a);
+  const fs = small ? 11 : 12, g = {};
+  g.band = el(S, "rect", {x: X(fwStart), y: 8, width: X(mi(asA.known)) - X(fwStart), height: BT.b - 8, fill: C.redtint, opacity: 0, style: "transition:opacity .6s"});
+  for (let y = Math.ceil(x0 / 12); y * 12 <= x1; y++){ el(S, "line", {x1: X(y * 12), x2: X(y * 12), y1: 8, y2: BT.b, stroke: C.tint}); tx(S, X(y * 12), 422, small ? "’" + String(y).slice(2) : y, {"text-anchor": "middle", "font-size": fs}); }
+  [[TP, 1.1, "ALARM 1.10"], [BT, .1, "PSI ALARM 0.10"]].forEach(([p, v, l]) => { el(S, "line", {x1: L, x2: W - R, y1: Y(p, v), y2: Y(p, v), stroke: C.ink3, "stroke-dasharray": "4 4"}); tx(S, W - R, Y(p, v) - 6, l, {"text-anchor": "end", "font-size": fs - 1}); });
+  [1, 1.2, 1.4].forEach(v => tx(S, L - 6, Y(TP, v) + 4, v.toFixed(1), {"text-anchor": "end", "font-size": fs}));
+  [0, .1].forEach(v => tx(S, L - 6, Y(BT, v) + 4, v.toFixed(1), {"text-anchor": "end", "font-size": fs}));
+  tx(S, L, BT.a - 8, "PSI (champion)", {"font-size": fs});
+  const clip = el(el(S, "defs", {}), "clipPath", {id: "rev"}); g.clip = el(clip, "rect", {x: 0, y: 0, width: 0, height: H});
+  const body = el(S, "g", {"clip-path": "url(#rev)"});
+  const path = (pts, p) => pts.map((q, i) => (i ? "L" : "M") + X(mi(q.x)).toFixed(1) + " " + Y(p, q.y).toFixed(1)).join(" ");
+  g.psi = el(body, "path", {d: path(T.psi, BT), fill: "none", stroke: C.ink2, "stroke-width": 2, style: "transition:stroke .4s,stroke-width .4s"});
+  el(body, "path", {d: path(T.ae_ref, TP), fill: "none", stroke: C.t2, "stroke-width": 2.5, "stroke-linejoin": "round"});
+  el(body, "path", {d: path(T.ae_asof, TP), fill: "none", stroke: C.navy, "stroke-width": 3, "stroke-linejoin": "round"});
+  const lastA = T.ae_asof[T.ae_asof.length - 1], lastR = T.ae_ref[T.ae_ref.length - 1];
+  if (!small){ tx(body, X(mi(lastA.x)) - 4, Y(TP, lastA.y) + 18, "as-of", {"text-anchor": "end", fill: C.navy, "font-weight": 600}); tx(body, X(mi(lastR.x)) + 4, Y(TP, lastR.y) - 10, "reference", {"text-anchor": "end", fill: C.ink3}); }
+  [...T.ae_ref.map(p => [p, "reference"]), ...T.ae_asof.map(p => [p, "as-of"])].forEach(([p, nm]) => { const h = el(body, "circle", {cx: X(mi(p.x)), cy: Y(TP, p.y), r: 9, fill: "transparent"}); hover(h, `<b>${p.q}</b> ${nm} A/E ${f2(p.y)}<br>knowable ${mlab(mi(p.x))}`); });
+  T.psi.forEach(p => { const h = el(body, "circle", {cx: X(mi(p.x)), cy: Y(BT, p.y), r: 8, fill: "transparent"}); hover(h, `<b>${p.q}</b> PSI ${p.y.toFixed(3)}<br>knowable ${mlab(mi(p.x))}`); });
+  // first-worse marker
+  g.fw = el(S, "g", {opacity: 0, style: "transition:opacity .5s"});
+  tx(g.fw, X(fwStart) + 5, 24, small ? "APR 2015" : "APR 2015 · WORSE LOANS BEGIN", {fill: C.red, "font-size": fs, "font-weight": 500});
+  // alarm markers
+  g.al = el(S, "g", {opacity: 0, style: "transition:opacity .5s"});
+  const ax = X(mi(asA.known)), rx = X(mi(refA.known));
+  el(g.al, "line", {x1: ax, x2: ax, y1: 8, y2: BT.b, stroke: C.red, "stroke-width": 2});
+  el(g.al, "circle", {cx: rx, cy: Y(TP, refA.ae), r: 6, fill: C.card, stroke: C.red, "stroke-width": 2.5});
+  tx(g.al, rx - 9, Y(TP, refA.ae) - 10, `REF · ${mlab(mi(refA.known)).toUpperCase()}`, {"text-anchor": "end", fill: C.red, "font-size": fs - 1});
+  el(g.al, "circle", {cx: ax, cy: Y(TP, asA.ae), r: 6.5, fill: C.red, stroke: C.card, "stroke-width": 2});
+  el(g.al, "text", {x: ax + 8, y: Y(TP, .95), fill: C.red, "font-size": small ? 12 : 13, "font-weight": 600, "font-family": SANS}, "Realistic first alarm");
+  tx(g.al, ax + 8, Y(TP, .95) + 16, `${mlab(mi(asA.known)).toUpperCase()} · +${asA.lag} MO`, {fill: C.red, "font-size": fs});
+  // peak
+  g.pk = el(S, "g", {opacity: 0, style: "transition:opacity .5s"});
+  el(g.pk, "circle", {cx: X(mi(peak.x)), cy: Y(TP, peak.y), r: 6, fill: C.red, stroke: C.card, "stroke-width": 2});
+  tx(g.pk, X(mi(peak.x)), Y(TP, peak.y) - 13, f2(peak.y) + "×", {"text-anchor": "middle", fill: C.red, "font-size": small ? 13 : 15, "font-weight": 600});
+  g.X = X; g.W = W; g.R = R; SG = g;
+}
+let revealNow = 0, anim = null;
+function reveal(to){
+  const g = SG, target = Math.min(g.W, to >= 1e8 ? g.W : g.X(to));
+  cancelAnimationFrame(anim);
+  if (RM){ revealNow = target; g.clip.setAttribute("width", target); return; }
+  const from = revealNow, t0 = performance.now();
+  const step = now => { const p = Math.min(1, (now - t0) / 900), e = 1 - Math.pow(1 - p, 3); revealNow = from + (target - from) * e; g.clip.setAttribute("width", revealNow); if (p < 1) anim = requestAnimationFrame(step); };
+  anim = requestAnimationFrame(step);
+}
+function stage(s, instant){
+  const g = SG; g.band.setAttribute("opacity", s >= 1 ? 1 : 0); g.fw.setAttribute("opacity", s >= 1 ? 1 : 0);
+  g.psi.setAttribute("stroke", s === 2 ? C.red : C.ink2); g.psi.setAttribute("stroke-width", s === 2 ? 3.5 : 2);
+  g.al.setAttribute("opacity", s >= 3 ? 1 : 0); g.pk.setAttribute("opacity", s >= 4 ? 1 : 0);
+  if (instant){ revealNow = Math.min(g.W, ST[s][4] >= 1e8 ? g.W : g.X(ST[s][4])); g.clip.setAttribute("width", revealNow); } else reveal(ST[s][4]);
+}
+const chips = $("chips");
+ST.forEach((x, i) => { const b = document.createElement("button"); b.className = "chip"; b.setAttribute("role", "tab"); b.innerHTML = x[0] + "<b>" + x[1] + "</b>"; b.onclick = () => { stop(); go(i); }; chips.appendChild(b); });
+function go(i, instant){
+  cur = Math.max(0, Math.min(ST.length - 1, i)); const x = ST[cur];
+  $("sd").textContent = x[0]; $("sh").textContent = x[2]; $("sp").textContent = x[3]; $("sc").textContent = (cur + 1) + " / " + ST.length;
+  [...chips.children].forEach((c, k) => { c.classList.toggle("on", k === cur); c.setAttribute("aria-selected", k === cur); });
+  $("next").textContent = cur === ST.length - 1 ? "Replay ↺" : "Next →"; $("prev").disabled = cur === 0; stage(cur, instant);
+}
+function stop(){ clearInterval(timer); timer = null; }
+$("next").onclick = () => { stop(); go(cur === ST.length - 1 ? 0 : cur + 1); };
+$("prev").onclick = () => { stop(); go(cur - 1); };
+
+// ---------- 02 heatmap ----------
+function heat(){
+  const B = D.bands, q = B.quarters, rows = B.series, vmax = Math.max(...rows.flat());
+  const col = v => `rgba(11,37,69,${(0.05 + 0.95 * Math.min(1, v / vmax)).toFixed(3)})`, ink = v => v / vmax > .45 ? "#fff" : C.navy;
+  const bandName = r => r === 0 ? "Band 1 (risky)" : r === 4 ? "Band 5 (safe)" : "Band " + (r + 1);
+  const qi = q.indexOf(AL.first_worse), s0 = $("heat"), Wc = Math.round(s0.getBoundingClientRect().width);
+  if (Wc >= 720){            // quarters across
+    const L = 100, ch = 46, H = 5 * ch + 56, [S, W] = svgW("heat", H), cw = (W - L - 4) / q.length;
+    rows.forEach((row, r) => { tx(S, L - 10, 10 + r * ch + ch / 2 + 4, bandName(r), {"text-anchor": "end", "font-family": SANS, "font-size": 13, fill: C.ink2});
+      row.forEach((v, i) => { const c = el(S, "rect", {x: L + i * cw + 1, y: 10 + r * ch + 1, width: cw - 2, height: ch - 2, fill: col(v)}); hover(c, `<b>${q[i]}</b> band ${r + 1}: ${v.toFixed(2)}%`);
+        tx(S, L + i * cw + cw / 2, 10 + r * ch + ch / 2 + 4, v.toFixed(1), {"text-anchor": "middle", "font-size": 11, fill: ink(v), "pointer-events": "none"}); }); });
+    q.forEach((s, i) => { if (i % 2 === 0) tx(S, L + i * cw + cw / 2, 10 + 5 * ch + 18, s, {"text-anchor": "middle", "font-size": 11}); });
+    const x0 = L + qi * cw; el(S, "line", {x1: x0, x2: x0, y1: 4, y2: 10 + 5 * ch + 4, stroke: C.red, "stroke-width": 2.5});
+    tx(S, x0 + 6, 10 + 5 * ch + 40, "APR 2015 · FIRST WORSE VINTAGE", {fill: C.red, "font-weight": 500});
+  } else {                   // phone: quarters down
+    const L = 58, ch = 24, top = 40, H = top + q.length * ch + 8, [S, W] = svgW("heat", H), cw = (W - L - 2) / 5;
+    rows.forEach((row, r) => { tx(S, L + r * cw + cw / 2, top - 22, "B" + (r + 1), {"text-anchor": "middle", "font-size": 12, fill: C.ink2, "font-weight": 600});
+      tx(S, L + r * cw + cw / 2, top - 8, r === 0 ? "risky" : r === 4 ? "safe" : "", {"text-anchor": "middle", "font-size": 10});
+      row.forEach((v, i) => { el(S, "rect", {x: L + r * cw + 1, y: top + i * ch + 1, width: cw - 2, height: ch - 2, fill: col(v)});
+        tx(S, L + r * cw + cw / 2, top + i * ch + ch / 2 + 4, v.toFixed(1), {"text-anchor": "middle", "font-size": 11, fill: ink(v)}); }); });
+    q.forEach((s, i) => tx(S, L - 6, top + i * ch + ch / 2 + 4, s, {"text-anchor": "end", "font-size": 11, fill: i >= qi ? C.navy : C.ink3}));
+    const y0 = top + qi * ch; el(S, "line", {x1: 0, x2: W, y1: y0, y2: y0, stroke: C.red, "stroke-width": 2.5});
+    el(S, "rect", {x: W - 120, y: y0 - 17, width: 120, height: 15, fill: C.card});
+    tx(S, W - 2, y0 - 5, "APR 2015 · WORSE ↓", {"text-anchor": "end", fill: C.red, "font-size": 11, "font-weight": 500});
+  }
+}
+
+// ---------- 03 expected loss ----------
+const ER = D.ecl_ratio, LF = D.life;
+$("eclDek").textContent = `Overall, realised loss was ${f2(ER.a)}× expected. Refitting on what was knowable at the reporting date made the gap wider: ` +
+  `${f2(ER.c)}× (a lower bound), or ${f2(ER.c2)}× with a knowable long tail. Expected loss here is a model estimate, not a booked allowance.`;
+$("pdSub").textContent = `${int(LF.n)} loans, observable to month 36. Treating prepayment as censoring overstates lifetime PD; the competing-risk model lands near the actual rate.`;
+function ecl(){
+  const H = 300, [S, W] = svgW("ecl", H), L = 40, B = 266, top = 30, Q = D.ecl_q, mx = Math.ceil(Math.max(...Q.map(d => d.real)) / 25) * 25;
+  const Yv = v => B - v / mx * (B - top), gw = (W - L) / Q.length, bw = Math.min(40, gw * .34);
+  for (let v = 0; v <= mx; v += 25){ el(S, "line", {x1: L, x2: W, y1: Yv(v), y2: Yv(v), stroke: v ? C.tint : C.rule}); tx(S, L - 6, Yv(v) + 4, v, {"text-anchor": "end"}); }
+  Q.forEach((d, i) => { const cx = L + i * gw + gw / 2, r = d.real / d.pred;
+    const a = el(S, "rect", {x: cx - bw - 1, y: Yv(d.pred), width: bw, height: B - Yv(d.pred), fill: C.navy}); hover(a, `<b>${d.q}</b> expected $${f1(d.pred)}m`);
+    const b = el(S, "rect", {x: cx + 1, y: Yv(d.real), width: bw, height: B - Yv(d.real), fill: C.red}); hover(b, `<b>${d.q}</b> realised $${f1(d.real)}m<br>${f2(r)}× expected`);
+    tx(S, cx + 1 + bw / 2, Yv(d.real) - 7, "×" + f2(r), {"text-anchor": "middle", fill: C.red, "font-weight": 600});
+    tx(S, cx, B + 20, d.q, {"text-anchor": "middle"}); });
+}
+function lifePD(){
+  const items = [["Prepayment as censoring", LF.cens, C.t2, C.ink2], ["Competing-risk model", LF.cr, C.navy, C.navy], ["Actual by month 36", LF.act, C.red, C.red]];
+  const H = 270, [S, W] = svgW("pd", H), mx = Math.ceil(Math.max(...items.map(d => d[1])) / 5) * 5, wmax = W - 70;
+  items.forEach(([l, v, c, t], i) => { const y = 26 + i * 82, w = v / mx * wmax;
+    el(S, "text", {x: 0, y, "font-size": 14, fill: C.ink2, "font-family": SANS}, l);
+    el(S, "rect", {x: 0, y: y + 10, width: w, height: 34, fill: c});
+    tx(S, w + 8, y + 33, f1(v) + "%", {"font-size": 18, "font-weight": 600, fill: t}); });
+  const xa = LF.act / mx * wmax; el(S, "line", {x1: xa, x2: xa, y1: 30, y2: 26 + 2 * 82 + 44, stroke: C.red, "stroke-dasharray": "3 3"});
+}
+
+// ---------- 04 verdict ----------
+function gini(){
+  const rows = D.models, wide = $("gini").getBoundingClientRect().width >= 640, rh = wide ? 40 : 50, H = 30 + rows.length * rh;
+  const [S, W] = svgW("gini", H), lo = 31, hi = 39, L = wide ? 300 : 8, R = 46, X = v => L + (v - lo) / (hi - lo) * (W - L - R);
+  [32, 34, 36, 38].forEach(t => { el(S, "line", {x1: X(t), x2: X(t), y1: 4, y2: H - 22, stroke: C.tint}); tx(S, X(t), H - 6, t, {"text-anchor": "middle"}); });
+  rows.forEach((r, i) => { const y = (wide ? 20 : 32) + i * rh, c = r.key === "champion" ? C.navy : r.key === "asof" ? C.ink2 : C.t2;
+    el(S, "text", wide ? {x: 0, y: y + 5, "font-size": 14, fill: C.ink2, "font-family": SANS, "font-weight": r.key === "champion" ? 600 : 400}
+                       : {x: L, y: y - 12, "font-size": 13, fill: C.ink2, "font-family": SANS, "font-weight": r.key === "champion" ? 600 : 400}, r.model);
+    el(S, "line", {x1: X(100 * r.gini_lo), x2: X(100 * r.gini_hi), y1: y, y2: y, stroke: c, "stroke-width": 3});
+    const d = el(S, "circle", {cx: X(100 * r.gini), cy: y, r: 6.5, fill: c, stroke: C.card, "stroke-width": 2});
+    hover(d, `<b>${r.model}</b><br>Gini ${f1(100 * r.gini)} [${f1(100 * r.gini_lo)}, ${f1(100 * r.gini_hi)}]<br>KS ${f1(100 * r.ks)}`);
+    tx(S, X(100 * r.gini_hi) + 8, y + 4, f1(100 * r.gini), {fill: C.navy, "font-weight": 600, "font-size": 13}); });
+}
+const PD_ = D.policy_diff, MB = D.macro, R6 = D.mob6, minus = s => String(s).replace(/-/g, "−");
+const VT = [
+  ["Ranking", "Beats a WoE scorecard and LendingClub's grades on unseen 2015 loans", `Gini ${G("champion")} vs ${G("scorecard")} / ${G("lc")}`, 1],
+  ["Lifetime PD", "Prepayment modelled as a competing risk", `${f1(LF.cr)}% vs ${f1(LF.cens)}% (actual ${f1(LF.act)}%)`, 1],
+  ["Macro rule", "Pre-written rule rejected a spurious pass", `stress ×${f2(MB.mult)} · θ ${minus(MB.theta.toFixed(3))}`, 1],
+  ["Approval policy", "A plain PD cutoff was as good as an optimised cell policy", `MILP − cutoff ${minus(PD_.point.toFixed(2))} $m ${minus(PD_.ci)}`, 1],
+  ["Calibration", "Defaults drifted above expectation", `A/E peak ${f2(peak.y)}`, 0],
+  ["Monitoring", "PSI silent; realistic alarm late", `PSI ≤ ${D.psi_max.toFixed(3)} · ${mlab(mi(asA.known))}`, 0],
+  ["Early warning", "Month-6 signal failed its pre-registered test", `specificity ${R6.tn}/${R6.n_truth_no} (${Math.round(100 * R6.specificity)}%)`, 0],
+  ["Expected loss", "Under-predicted; refit made it worse", `${f2(ER.a)}× → ${f2(ER.c)}× (lower bound)`, 0]];
+$("vt").innerHTML = "<tr><th>Area</th><th>Result</th><th>Evidence</th><th>Status</th></tr>" +
+  VT.map(([a, r, e, ok]) => `<tr><td>${a}</td><td>${r}</td><td class="num">${e}</td><td><span class="pill ${ok ? "ok" : "ko"}">${ok ? "HELD" : "BROKE"}</span></td></tr>`).join("");
+
+// ---------- 05a alarm console ----------
+$("fw").textContent = AL.first_worse;
+function alarmChart(a, r){
+  const H = 270, [S, W] = svgW("alarmc", H), L = 36, R = 8, top = 12, B = 240;
+  const all = [...AL.reference, ...AL.asof].map(p => mi(p.known)), x0 = Math.min(...all) - 2, x1 = Math.max(...all) + 2;
+  const X = v => L + (v - x0) / (x1 - x0) * (W - L - R), Y = v => B - (v - .85) / (1.6 - .85) * (B - top);
+  [1, 1.2, 1.4].forEach(v => { el(S, "line", {x1: L, x2: W - R, y1: Y(v), y2: Y(v), stroke: C.tint}); tx(S, L - 6, Y(v) + 4, v.toFixed(1), {"text-anchor": "end"}); });
+  for (let y = Math.ceil(x0 / 12); y * 12 <= x1; y++) tx(S, X(y * 12), B + 20, y, {"text-anchor": "middle"});
+  [[a, "AMBER"], [r, "RED"]].forEach(([v, l]) => { const yy = Math.max(top, Math.min(B, Y(v))); el(S, "line", {x1: L, x2: W - R, y1: yy, y2: yy, stroke: l === "RED" ? C.red : C.ink2, "stroke-dasharray": "6 4", "stroke-width": 1.5});
+    tx(S, L + 4, yy - 5, `${l} ${v.toFixed(2)}`, {fill: l === "RED" ? C.red : C.ink2, "font-size": 11}); });
+  [[AL.reference, C.t2, "reference"], [AL.asof, C.navy, "as-of"]].forEach(([rows, c, nm]) => {
+    el(S, "path", {d: rows.map((p, i) => (i ? "L" : "M") + X(mi(p.known)) + " " + Y(p.ae)).join(" "), fill: "none", stroke: c, "stroke-width": nm === "as-of" ? 2.5 : 2});
+    rows.forEach(p => { const on = p.ae > a + 1e-12, d = el(S, "circle", {cx: X(mi(p.known)), cy: Y(p.ae), r: 4.5, fill: on ? C.red : c, stroke: C.card, "stroke-width": 1.5});
+      hover(d, `<b>${p.q}</b> ${nm} A/E ${f2(p.ae)}<br>knowable ${mlab(mi(p.known))}`); }); });
 }
 function renderAlarm(){
-  const a = +document.getElementById("amb").value, r = +document.getElementById("red").value;
-  document.getElementById("ambv").textContent = a.toFixed(2); document.getElementById("redv").textContent = r.toFixed(2);
-  document.getElementById("fw").textContent = AL.first_worse;
-  document.getElementById("prereg").textContent = (a === PRE[0] && r === PRE[1]) ? "pre-registered thresholds" : "not the pre-registered thresholds (1.10 / 1.25)";
-  const hdr = `<tr><th>model</th><th>level</th><th>first alarm knowable</th><th class="num">months after first worse vintage</th><th class="num">loans booked meanwhile</th></tr>`;
-  const body = [["reference model (if live from 2015)", AL.reference], ["as-of model (data to Jun 2014)", AL.asof]].flatMap(([nm, rows]) =>
-    [["amber", a], ["red", r]].map(([lv, t]) => `<tr><td data-l="model"><b>${nm}</b></td><td data-l="level">${lv} &gt; ${t.toFixed(2)}</td>${alarmRow(nm, rows, t)}</tr>`)).join("");
-  document.getElementById("alarmtab").innerHTML = hdr + body;
+  const a = +$("amb").value, r = +$("red").value;
+  $("ambv").textContent = a.toFixed(2); $("redv").textContent = r.toFixed(2);
+  const pre = a === PRE[0] && r === PRE[1]; $("prereg").textContent = pre ? "pre-registered thresholds" : "not the pre-registered thresholds (1.10 / 1.25)"; $("prereg").classList.toggle("off", !pre);
+  const fa = firstAlarm(AL.asof, a);
+  $("when").textContent = fa ? mlab(mi(fa.known)) : "Never";
+  $("msg").innerHTML = fa ? (fa.lag > 0 ? `<b class="mono">${fa.lag} months</b> after the first worse loans; <b class="mono">${int(fa.booked)}</b> loans booked meanwhile.` : `Rings early, but it also flags quarters before the drift.`) : "The line sits above every observable quarter.";
+  const cell = (rows, t) => { const f = firstAlarm(rows, t);
+    return f ? `<td data-l="first alarm knowable">${mlab(mi(f.known))} <span style="color:var(--ink3)">(${f.q}, A/E ${f2(f.ae)})</span></td><td class="num" data-l="months after first worse">${f.lag}</td><td class="num" data-l="loans booked meanwhile">${int(f.booked)}</td>`
+             : `<td data-l="first alarm knowable">never</td><td class="num" data-l="months after first worse">–</td><td class="num" data-l="loans booked meanwhile">–</td>`; };
+  $("alarmtab").innerHTML = `<tr><th>model · line</th><th>first alarm knowable</th><th class="num">months</th><th class="num">loans booked</th></tr>` +
+    [["as-of", AL.asof], ["reference", AL.reference]].flatMap(([nm, rows]) => [["amber", a], ["red", r]].map(([lv, t]) =>
+      `<tr><td data-l="model · line"><b>${nm}</b> · ${lv} &gt; ${t.toFixed(2)}</td>${cell(rows, t)}</tr>`)).join("");
+  alarmChart(a, r);
 }
-["amb", "red"].forEach(id => document.getElementById(id).addEventListener("input", renderAlarm));
-document.getElementById("resetT").addEventListener("click", () => { document.getElementById("amb").value = PRE[0]; document.getElementById("red").value = PRE[1]; renderAlarm(); });
-// ---- policy panel
-const PO = D.policy, cutEl = document.getElementById("cut"), rateEl = document.getElementById("rate");
-const C0 = PO["0.05"].curve, preCut = PO["0.05"].marks["pre-registered cutoff"].cutoff;
+["amb", "red"].forEach(id => $(id).addEventListener("input", renderAlarm));
+$("resetT").addEventListener("click", () => { $("amb").value = PRE[0]; $("red").value = PRE[1]; renderAlarm(); });
+
+// ---------- 05b policy console ----------
+const PO = D.policy, cutEl = $("cut"), rateEl = $("rate"), C0 = PO["0.05"].curve, preCut = PO["0.05"].marks["pre-registered cutoff"].cutoff;
 cutEl.max = C0.cutoff.length - 1;
 const nearest = c => C0.cutoff.reduce((b, v, i) => Math.abs(v - c) < Math.abs(C0.cutoff[b] - c) ? i : b, 0);   // exact: the curve includes the pre-registered cutoff
 cutEl.value = nearest(preCut);
 function renderPolicy(){
-  const P = PO[rateEl.value], C = P.curve, i = +cutEl.value, mk = P.marks, pre = mk["pre-registered cutoff"], mi = mk.MILP;
-  document.getElementById("cutv").textContent = C.cutoff[i].toFixed(4);
+  const P = PO[rateEl.value], Cv = P.curve, i = +cutEl.value, mk = P.marks, pre = mk["pre-registered cutoff"], ml = mk.MILP, y = Cv["realised NPV $m"];
+  $("cutv").textContent = Cv.cutoff[i].toFixed(4);
   const box = (lab, v, sub) => `<div><span>${lab}</span><b>${v}</b><span>${sub}</span></div>`;
-  document.getElementById("polkv").innerHTML =
-    box("approval", `${C["approval %"][i].toFixed(1)}%`, `pre-registered ${pre["approval %"].toFixed(1)}% · MILP ${mi["approval %"].toFixed(1)}%`) +
-    box("approved bad rate (realised)", `${C["approved bad %"][i].toFixed(2)}%`, `pre-registered ${pre["approved bad %"].toFixed(2)}% · MILP ${mi["approved bad %"].toFixed(2)}%`) +
-    box(`realised NPV at ${Math.round(100 * rateEl.value)}%`, `$${C["realised NPV $m"][i].toFixed(1)}m`, `pre-registered $${pre["realised NPV $m"].toFixed(1)}m · MILP $${mi["realised NPV $m"].toFixed(1)}m`);
-  const sv = document.getElementById("pol"), m = {l: 52, r: 16, t: 12, b: 28}, y = C["realised NPV $m"];
-  const lo = Math.min(...y, mi["realised NPV $m"]), hi = Math.max(...y, mi["realised NPV $m"]), pad = (hi - lo) * 0.08;
-  const step = Math.pow(10, Math.floor(Math.log10((hi - lo) / 3))), yt = []; for (let t = Math.ceil((lo - pad) / step) * step; t <= hi + pad; t += step) yt.push(+t.toFixed(6));
-  const yts = yt.length > 6 ? yt.filter((_, k) => k % 2 === 0) : yt;
-  const s = frame(sv, 900, 230, m, C.cutoff[0], C.cutoff[C.cutoff.length - 1], lo - pad, hi + pad, yts, [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4], v => v.toFixed(2));
-  el("path", {d: C.cutoff.map((c, k) => `${k ? "L" : "M"}${s.X(c)},${s.Y(y[k])}`).join(""), fill: "none", stroke: css("--s1"), "stroke-width": 2}, sv);
-  el("line", {x1: m.l, x2: 900 - m.r, y1: s.Y(mi["realised NPV $m"]), y2: s.Y(mi["realised NPV $m"]), stroke: css("--muted"), "stroke-dasharray": "5 4"}, sv);
-  el("text", {x: m.l + 4, y: s.Y(mi["realised NPV $m"]) - 5}, sv).textContent = `MILP $${mi["realised NPV $m"].toFixed(1)}m`;
-  el("circle", {cx: s.X(pre.cutoff), cy: s.Y(pre["realised NPV $m"]), r: 6, fill: css("--s2"), stroke: css("--panel"), "stroke-width": 2}, sv);
-  el("line", {x1: s.X(C.cutoff[i]), x2: s.X(C.cutoff[i]), y1: m.t, y2: 230 - m.b, stroke: css("--ink2"), "stroke-width": 1}, sv);
-  el("circle", {cx: s.X(C.cutoff[i]), cy: s.Y(y[i]), r: 5, fill: css("--s1"), stroke: css("--panel"), "stroke-width": 2}, sv);
+  $("polkv").innerHTML =
+    box("approval", `${f1(Cv["approval %"][i])}%`, `pre-registered ${f1(pre["approval %"])}% · MILP ${f1(ml["approval %"])}%`) +
+    box("approved bad rate (realised)", `${f2(Cv["approved bad %"][i])}%`, `pre-registered ${f2(pre["approved bad %"])}% · MILP ${f2(ml["approved bad %"])}%`) +
+    box(`realised NPV at ${Math.round(100 * rateEl.value)}% funding cost`, `$${f1(y[i])}m`, `pre-registered $${f1(pre["realised NPV $m"])}m · MILP $${f1(ml["realised NPV $m"])}m`);
+  const H = 310, [S, W] = svgW("pol", H), L = 44, R = 14, top = 14, B = 260;
+  const lo = Math.min(...y, ml["realised NPV $m"]), hi = Math.max(...y, ml["realised NPV $m"]), pad = (hi - lo) * .08;
+  const X = v => L + (v - Cv.cutoff[0]) / (Cv.cutoff[Cv.cutoff.length - 1] - Cv.cutoff[0]) * (W - L - R), Y = v => B - (v - (lo - pad)) / (hi - lo + 2 * pad) * (B - top);
+  const stp = Math.pow(10, Math.floor(Math.log10((hi - lo) / 3))) * ((hi - lo) / Math.pow(10, Math.floor(Math.log10((hi - lo) / 3))) > 12 ? 5 : 2);
+  for (let t = Math.ceil((lo - pad) / stp) * stp; t <= hi + pad; t += stp){ el(S, "line", {x1: L, x2: W - R, y1: Y(t), y2: Y(t), stroke: C.tint}); tx(S, L - 6, Y(t) + 4, +t.toFixed(4), {"text-anchor": "end"}); }
+  [0.1, 0.2, 0.3, 0.4].forEach(t => tx(S, X(t), B + 20, t.toFixed(1), {"text-anchor": "middle"}));
+  tx(S, (L + W - R) / 2, B + 40, "PD cutoff (approve when PD ≤ cutoff)", {"text-anchor": "middle", "font-size": 11});
+  tx(S, L, top - 2, "$m", {"font-size": 11});
+  el(S, "line", {x1: L, x2: W - R, y1: Y(ml["realised NPV $m"]), y2: Y(ml["realised NPV $m"]), stroke: C.ink3, "stroke-dasharray": "5 4", "stroke-width": 1.5});
+  tx(S, W - R, Y(ml["realised NPV $m"]) + 15, `MILP $${f1(ml["realised NPV $m"])}m`, {"text-anchor": "end", fill: C.ink2});
+  el(S, "path", {d: Cv.cutoff.map((c, k) => (k ? "L" : "M") + X(c).toFixed(1) + " " + Y(y[k]).toFixed(1)).join(" "), fill: "none", stroke: C.navy, "stroke-width": 2.5});
+  el(S, "line", {x1: X(Cv.cutoff[i]), x2: X(Cv.cutoff[i]), y1: top, y2: B, stroke: C.ink2, "stroke-width": 1});
+  el(S, "circle", {cx: X(pre.cutoff), cy: Y(pre["realised NPV $m"]), r: 7, fill: C.red, stroke: C.card, "stroke-width": 2});
+  tx(S, X(pre.cutoff) + 10, Y(pre["realised NPV $m"]) - 10, `pre-registered ${pre.cutoff.toFixed(4)}`, {fill: C.red, "font-size": 11});
+  el(S, "circle", {cx: X(Cv.cutoff[i]), cy: Y(y[i]), r: 4.5, fill: C.navy, stroke: C.card, "stroke-width": 2});
+  const hit = el(S, "rect", {x: L, y: top, width: W - L - R, height: B - top, fill: "transparent"});
+  hit.addEventListener("mousemove", e => { const bb = S.getBoundingClientRect(), xv = (e.clientX - bb.left) * W / bb.width, c = Cv.cutoff[0] + (xv - L) / (W - L - R) * (Cv.cutoff[Cv.cutoff.length - 1] - Cv.cutoff[0]);
+    const k = Cv.cutoff.reduce((b, v, j) => Math.abs(v - c) < Math.abs(Cv.cutoff[b] - c) ? j : b, 0);
+    showTip(e, `cutoff ${Cv.cutoff[k].toFixed(4)}<br>approval ${f1(Cv["approval %"][k])}%<br>NPV $${f1(y[k])}m`); });
+  hit.addEventListener("mouseleave", hideTip);
 }
 cutEl.addEventListener("input", renderPolicy); rateEl.addEventListener("change", renderPolicy);
-document.getElementById("resetP").addEventListener("click", () => { cutEl.value = nearest(preCut); renderPolicy(); });
-document.getElementById("theme").addEventListener("click", () => {
-  const r = document.documentElement, dark = r.getAttribute("data-theme") ? r.getAttribute("data-theme") === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  r.setAttribute("data-theme", dark ? "light" : "dark"); render(); renderPolicy(); });
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { render(); renderPolicy(); });
-render(); renderAlarm(); renderPolicy();
+$("resetP").addEventListener("click", () => { cutEl.value = nearest(preCut); renderPolicy(); });
+
+// ---------- 06 method ----------
+$("method").innerHTML = [["Ex ante", "model comparisons and decision rules written down and pushed before results"], ["0", "random splits: train, tune and test by time"],
+  ["62", "automated tests, incl. leakage and information-set checks"], [`${D.manifest_n}/${D.manifest_n}`, "report outputs byte-identical on a fresh rebuild from raw"],
+  ["10", "independent reviewers; failed results reported, withdrawn claims stated"]].map(([n, l]) => `<div class="m"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+
+// ---------- render + responsive ----------
+function renderAll(){ storyChart(); go(cur, true); heat(); ecl(); lifePD(); gini(); renderAlarm(); renderPolicy(); }
+let lastW = innerWidth; addEventListener("resize", () => { if (Math.abs(innerWidth - lastW) < 2) return; lastW = innerWidth; clearTimeout(window._rt); window._rt = setTimeout(renderAll, 120); });
+renderAll(); go(0, true);
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(hero);
+if (!RM){ const ob = new IntersectionObserver(es => { if (es[0].isIntersecting){ ob.disconnect(); if (timer === null && cur === 0) timer = setInterval(() => { if (cur >= ST.length - 1) return stop(); go(cur + 1); }, 3400); } }, {threshold: .45}); ob.observe($("stepper")); }
 </script>
 </body>
 </html>

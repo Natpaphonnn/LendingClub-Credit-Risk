@@ -1,0 +1,549 @@
+JAN 2015 | The model goes live. | It ranks 2015 borrowers better than a scorecard and LendingClub's own grades (Gini 36.7 vs 33.7 and 35.7). Every check is green.
+APR 2015 | Worse loans begin. | From 2015Q2, borrowers with the same score default more: at least 1.2× the 2012–13 month-12 rate. Their month-12 outcomes are 18 months away, so nothing can show it yet.
+2015–2018 | The stability index stays flat. | PSI compares who applies, not how they repay. For the champion it never went above 0.057 in any quarter to 2018, far under its 0.10 alarm line.
+JUN 2017 | The first realistic alarm. | The as-of model, built only on data known at the end of 2014, first crosses 1.10 here: 26 months after the first worse loans, with 687,800 loans booked meanwhile. The reference model, trained on outcomes a lender could not yet have seen, would have rung in Dec 2016.
+2018 | 1.46× expectation. | At the worst vintage (2016Q3) defaults ran 46% above what the model expected, while its ranking still held on every quarter with complete outcomes.
+MODEL RISK CASE STUDY · LENDINGCLUB · 2.26 MILLION LOANS
+The alarm that never rang.
+
+A credit model built on 2012–13 loans kept ranking borrowers well and passed every stability check through 2018. Underneath, defaults ran far above its expectations. A lender relying on it would have found out about two years after the first worse loans went out.
+
+36.7
+Gini on unseen 2015 loans, above LendingClub's own grades (35.7) and a scorecard (33.7)
+0
+alarms from the population stability index, 2014–2018 (max 0.057 vs a 0.10 line)
+1.46×
+actual ÷ expected defaults by month 12 at the worst vintage (2016Q3)
+26 mo
+from the first worse loans to a realistic alarm; 687,800 loans booked meanwhile
+01 · MONITORING
+The standard alarm watched the wrong thing
+
+Each value is plotted on the date it could first be known. Step through what a risk team would have seen, with the model they would really have had (as-of model, built only on data known at the end of 2014) and the reference model.
+
+JAN 2015
+Go-live
+APR 2015
+Drift starts
+2015–2018
+PSI silent
+JUN 2017
+First alarm
+2018
+Peak
+Actual ÷ expected defaults by month 12 (top) and PSI (bottom)
+By the date each value became knowable · red markers: first alarm of each model
+2014
+2015
+2016
+2017
+2018
+2019
+ALARM 1.10
+PSI ALARM 0.10
+1.0
+1.2
+1.4
+0.0
+0.1
+PSI (champion)
+as-of
+reference
+APR 2015 · WORSE LOANS BEGIN
+REF · DEC 2016
+Realistic first alarm
+JUN 2017 · +26 MO
+1.46×
+as-of model (realistic)
+reference model
+worse loans issued → realistic alarm
+Source: reports/phase1/monitoring.json · reports/phase4/asof_model.json
+2018
+1.46× expectation.
+
+At the worst vintage (2016Q3) defaults ran 46% above what the model expected, while its ranking still held on every quarter with complete outcomes.
+
+← Back
+Replay ↺
+5 / 5
+02 · CONCEPT DRIFT
+Same score, more defaults, in every risk band
+
+Share of loans defaulted by month 12, by issue quarter and score band (bands fixed on 2012–13 loans). The applicant mix barely moved; each band itself got worse. A stability index looks only at the inputs, so it cannot see this.
+
+Defaulted by month 12, % of loans
+Darker = higher. Band 1 is the riskiest fifth at training.
+Band 1 (risky)
+8.6
+8.5
+7.3
+8.1
+7.7
+7.0
+6.9
+7.3
+7.7
+8.2
+8.2
+8.6
+8.8
+9.4
+10.2
+10.5
+10.8
+9.7
+9.9
+10.3
+10.2
+Band 2
+5.6
+4.5
+5.1
+5.2
+4.5
+4.4
+4.5
+4.3
+5.0
+5.2
+5.1
+5.6
+5.5
+6.0
+6.7
+6.8
+6.8
+7.2
+6.3
+7.2
+7.0
+Band 3
+3.0
+3.7
+3.5
+3.0
+3.5
+3.2
+3.2
+3.7
+3.5
+3.6
+3.5
+4.1
+4.1
+4.4
+5.0
+5.4
+5.6
+5.6
+5.1
+5.5
+5.2
+Band 4
+3.3
+2.6
+2.1
+2.4
+2.4
+2.3
+2.1
+3.0
+3.0
+2.6
+2.5
+2.8
+2.7
+3.3
+3.7
+4.1
+4.1
+4.2
+3.6
+3.8
+3.9
+Band 5 (safe)
+1.1
+1.7
+1.2
+1.4
+1.1
+1.1
+1.4
+1.1
+1.4
+1.2
+1.5
+1.3
+1.4
+1.6
+1.7
+2.1
+2.3
+2.2
+1.8
+1.9
+2.0
+2012Q3
+2013Q1
+2013Q3
+2014Q1
+2014Q3
+2015Q1
+2015Q3
+2016Q1
+2016Q3
+2017Q1
+2017Q3
+APR 2015 · FIRST WORSE VINTAGE
+Source: reports/phase1/vintage.md (scorecard-score quintiles; quarters observable to month 12)
+03 · EXPECTED CREDIT LOSS
+Realised loss exceeded expected loss in every 2015 quarter
+
+Overall, realised loss was 1.18× expected. Refitting on what was knowable at the reporting date made the gap wider: 1.27× (a lower bound), or 1.41× with a knowable long tail. Expected loss here is a model estimate, not a booked allowance.
+
+Expected vs realised loss, $m
+36-month loans issued 2015 · lifetime expected loss at origination (undiscounted) vs realised net principal loss
+0
+25
+50
+75
+100
+×1.10
+2015Q1
+×1.19
+2015Q2
+×1.16
+2015Q3
+×1.23
+2015Q4
+expected loss
+realised loss
+Source: reports/phase2/ecl.md · reports/phase2/ecl_benchmark.json
+Lifetime default, loans issued Jan–Sep 2015
+194,363 loans, observable to month 36. Treating prepayment as censoring overstates lifetime PD; the competing-risk model lands near the actual rate.
+Prepayment as censoring
+18.2%
+Competing-risk model
+13.6%
+Actual by month 36
+14.7%
+Source: reports/phase2/survival_A.md
+04 · VERDICT
+What survived, and what broke
+
+Comparisons and decision rules were written down before results were seen; ten independent reviewers then tried to break the numbers.
+
+AREA	RESULT	EVIDENCE	STATUS
+Ranking	Beats a WoE scorecard and LendingClub's grades on unseen 2015 loans	Gini 36.7 vs 33.7 / 35.7	HELD
+Lifetime PD	Prepayment modelled as a competing risk	13.6% vs 18.2% (actual 14.7%)	HELD
+Macro rule	Pre-written rule rejected a spurious pass	stress ×0.89 · θ −0.045	HELD
+Approval policy	A plain PD cutoff was as good as an optimised cell policy	MILP − cutoff −1.74 $m [−2.66, −0.82]	HELD
+Calibration	Defaults drifted above expectation	A/E peak 1.46	BROKE
+Monitoring	PSI silent; realistic alarm late	PSI ≤ 0.057 · Jun 2017	BROKE
+Early warning	Month-6 signal failed its pre-registered test	specificity 4/6 (67%)	BROKE
+Expected loss	Under-predicted; refit made it worse	1.18× → 1.27× (lower bound)	BROKE
+Ranking held
+Gini on unseen 2015 loans, 95% bootstrap interval
+32
+34
+36
+38
+Monotone LightGBM (champion)
+36.7
+LendingClub sub-grade
+35.7
+WoE scorecard
+33.7
+As-of model (data known at end-2014)
+33.0
+Source: reports/phase1/metrics.json · reports/phase4/asof_model.json
+05 · TRY IT
+You are the risk manager
+
+Move the alarm lines and the approval cutoff. Each panel starts at the pre-registered setting.
+
+When would the alarm have rung?
+
+A quarter flags when actual ÷ expected defaults by month 12 is strictly above the line, on the date that becomes knowable. First worse vintage: 2015Q2 (at least 1.2× the 2012–13 month-12 default rate).
+
+REALISTIC (AS-OF) FIRST AMBER ALARM
+Jun 2017
+26 months after the first worse loans; 687,800 loans booked meanwhile.
+Amber when A/E is above
+1.10
+Red when A/E is above
+1.25
+Pre-registered lines
+pre-registered thresholds
+1.0
+1.2
+1.4
+2016
+2017
+2018
+2019
+AMBER 1.10
+RED 1.25
+as-of model
+reference model
+above the amber line
+MODEL · LINE	FIRST ALARM KNOWABLE	MONTHS	LOANS BOOKED
+as-of · amber > 1.10	Jun 2017 (2015Q4, A/E 1.16)	26	687,800
+as-of · red > 1.25	Sep 2017 (2016Q1, A/E 1.30)	29	768,328
+reference · amber > 1.10	Dec 2016 (2015Q2, A/E 1.13)	20	544,642
+reference · red > 1.25	Sep 2017 (2016Q1, A/E 1.34)	29	768,328
+Source: reports/phase1/monitoring.json · reports/phase4/asof_model.json · loans booked = 36-month loans issued from the first worse vintage to the alarm quarter
+Where would you set the PD cutoff? exploratory
+
+2015 loans, champion PD. Approve when PD ≤ cutoff. Realised NPV uses an approximate cash timing: compare differences, not levels.
+
+PD cutoff ≤
+0.1994
+Funding cost
+3%
+5%
+8%
+Pre-registered cutoff
+approval
+81.6%
+pre-registered 81.6% · MILP 86.3%
+approved bad rate (realised)
+11.88%
+pre-registered 11.88% · MILP 12.58%
+realised NPV at 5% funding cost
+$47.5m
+pre-registered $47.5m · MILP $45.8m
+20
+40
+0.1
+0.2
+0.3
+0.4
+PD cutoff (approve when PD ≤ cutoff)
+$m
+MILP $45.8m
+pre-registered 0.1994
+realised NPV, single cutoff
+pre-registered cutoff
+MILP cell policy
+selected cutoff
+
+Ex-post curve on 2015 outcomes; its best point is only knowable afterwards. The pre-registered cutoff was set on 2014.
+
+Source: reports/phase2/policy_C.json
+06 · HOW IT WAS KEPT HONEST
+Built like a bank would audit it
+Ex ante
+model comparisons and decision rules written down and pushed before results
+0
+random splits: train, tune and test by time
+62
+automated tests, incl. leakage and information-set checks
+60/60
+report outputs byte-identical on a fresh rebuild from raw
+10
+independent reviewers; failed results reported, withdrawn claims stated
+Read the full story (article: link to come)Code & methodsLinkedIn
+
+Data: LendingClub, via Kaggle dataset by Nathan George (wordsforthewise). Unemployment: U.S. Bureau of Labor Statistics. Aggregates only: no raw or row-level data. Every number on this page is read from reports/ in the repository. Claims and their status (pre-registered / descriptive / exploratory): notes/05_claims_and_limitations.md.
+2014
+2015
+2016
+2017
+2018
+2019
+ALARM 1.10
+PSI ALARM 0.10
+1.0
+1.2
+1.4
+0.0
+0.1
+PSI (champion)
+as-of
+reference
+APR 2015 · WORSE LOANS BEGIN
+REF · DEC 2016
+Realistic first alarm
+JUN 2017 · +26 MO
+1.46×
+Band 1 (risky)
+8.6
+8.5
+7.3
+8.1
+7.7
+7.0
+6.9
+7.3
+7.7
+8.2
+8.2
+8.6
+8.8
+9.4
+10.2
+10.5
+10.8
+9.7
+9.9
+10.3
+10.2
+Band 2
+5.6
+4.5
+5.1
+5.2
+4.5
+4.4
+4.5
+4.3
+5.0
+5.2
+5.1
+5.6
+5.5
+6.0
+6.7
+6.8
+6.8
+7.2
+6.3
+7.2
+7.0
+Band 3
+3.0
+3.7
+3.5
+3.0
+3.5
+3.2
+3.2
+3.7
+3.5
+3.6
+3.5
+4.1
+4.1
+4.4
+5.0
+5.4
+5.6
+5.6
+5.1
+5.5
+5.2
+Band 4
+3.3
+2.6
+2.1
+2.4
+2.4
+2.3
+2.1
+3.0
+3.0
+2.6
+2.5
+2.8
+2.7
+3.3
+3.7
+4.1
+4.1
+4.2
+3.6
+3.8
+3.9
+Band 5 (safe)
+1.1
+1.7
+1.2
+1.4
+1.1
+1.1
+1.4
+1.1
+1.4
+1.2
+1.5
+1.3
+1.4
+1.6
+1.7
+2.1
+2.3
+2.2
+1.8
+1.9
+2.0
+2012Q3
+2013Q1
+2013Q3
+2014Q1
+2014Q3
+2015Q1
+2015Q3
+2016Q1
+2016Q3
+2017Q1
+2017Q3
+APR 2015 · FIRST WORSE VINTAGE
+0
+25
+50
+75
+100
+×1.10
+2015Q1
+×1.19
+2015Q2
+×1.16
+2015Q3
+×1.23
+2015Q4
+Prepayment as censoring
+18.2%
+Competing-risk model
+13.6%
+Actual by month 36
+14.7%
+32
+34
+36
+38
+Monotone LightGBM (champion)
+36.7
+LendingClub sub-grade
+35.7
+WoE scorecard
+33.7
+As-of model (data known at end-2014)
+33.0
+1.0
+1.2
+1.4
+2016
+2017
+2018
+2019
+AMBER 1.10
+RED 1.25
+20
+40
+0.1
+0.2
+0.3
+0.4
+PD cutoff (approve when PD ≤ cutoff)
+$m
+MILP $45.8m
+pre-registered 0.1994
+36.7
+Gini on unseen 2015 loans, above LendingClub's own grades (35.7) and a scorecard (33.7)
+0
+alarms from the population stability index, 2014–2018 (max 0.057 vs a 0.10 line)
+1.46×
+actual ÷ expected defaults by month 12 at the worst vintage (2016Q3)
+26 mo
+from the first worse loans to a realistic alarm; 687,800 loans booked meanwhile

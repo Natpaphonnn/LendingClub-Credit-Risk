@@ -1,4 +1,4 @@
-"""Number provenance for hand-written notes: every number in notes/02–05 must be traceable to a generated report.
+"""Number provenance for hand-written notes and the rendered demo page: every number must be traceable to a generated report.
 
 For each numeric token in the notes, search all values in reports/**/*.md|json (excluding reports/quality) for one that
 rounds to it at the token's precision under a scale in {1, 100, 0.01, 1e-6, 1e-3}. Unmatched tokens are listed for manual
@@ -14,7 +14,8 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 NOTES = ["01_data_audit.md", "02_phase1_results.md", "03_phase2_results.md", "04_story.md", "05_claims_and_limitations.md", "06_quality_report.md", "07_article_draft.md",
-         "10_extensions_results.md", "11_executive_summary_TH.md", "STATUS.md", "../README.md"]
+         "10_extensions_results.md", "11_executive_summary_TH.md", "STATUS.md", "../README.md",
+         "../reports/demo_screens/demo_text.txt"]  # all rendered demo text (written by src/report/check_demo.py)
 NUM = re.compile(r"(?<![\w.])([−\-+]?\$?\d{1,3}(?:,\d{3})+(?:\.\d+)?|[−\-+]?\$?\d+(?:\.\d+)?)(?![\w])")
 
 
@@ -98,7 +99,10 @@ def recomputed_counts():
     dnm = duckdb.connect().execute(f"SELECT count(*) FROM '{acc}' WHERE loan_status LIKE 'Does not meet%'").fetchone()[0]
     return {"1,485,240": len(b), "1,364,557": int((pd.to_datetime(b.issue_dt) >= "2014-01-01").sum()),
             "1,433,835": len(p2), "473": int(sc.score_m1.min()), "620": int(sc.score_m1.max()),
-            "544,642": int(((b.issue_q >= "2015Q2") & (b.issue_q <= "2016Q4")).sum()), "2,749": int(dnm)}
+            "544,642": int(((b.issue_q >= "2015Q2") & (b.issue_q <= "2016Q4")).sum()), "2,749": int(dnm),
+            # demo alarm panel: loans booked from the first worse vintage to the as-of amber (2017Q2) / red (2017Q3) alarm quarter
+            "687,800": int(((b.issue_q >= "2015Q2") & (b.issue_q <= "2017Q2")).sum()),
+            "768,328": int(((b.issue_q >= "2015Q2") & (b.issue_q <= "2017Q3")).sum())}
 
 
 KNOWN = recomputed_counts()
