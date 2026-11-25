@@ -21,6 +21,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "reports" / "figures" / "article_th"
 BG, INK, RED, OK, SEC, GRID = "#EEF1F4", "#14213D", "#D7263D", "#2E9E6A", "#5B6577", "#D3D8DF"
+AMBER = "#E0A100"
 DPI, SIDE, MIN_PX = 100, 1080, 26
 SOURCE = "ข้อมูล: LendingClub (Kaggle) ไม่ใช่ธนาคารไทย"
 TH_MON = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
@@ -118,6 +119,7 @@ def finish(fig, name, allowed):
         assert bb.x0 >= 0 and bb.x1 <= SIDE and bb.y0 >= 0 and bb.y1 <= SIDE, f"{name}: text outside canvas {s[:40]!r}"
         size_px = t.get_fontsize() * DPI / 72
         assert size_px >= MIN_PX - 1e-6, f"{name}: {size_px:.1f}px < {MIN_PX}px: {s[:40]!r}"
+        assert "·" not in s, f"{name}: middle dot in {s[:40]!r}"
         caps = [w for w in re.findall(r"[A-Za-z]{2,}", s) if w.isupper() and w not in ACRONYMS]
         assert not caps, f"{name}: all-caps word(s) {caps} in {s[:40]!r}"
         if not is_tick:
@@ -201,16 +203,18 @@ def render_th(mj, mon, band_mob12):
     ax.plot(x, 100 * t5[1], color=RED, linewidth=4.5)
     ax.plot(x, 100 * t5[5], color=INK, linewidth=4.5)
     for k, col in ((1, RED), (5, INK)):
-        for q, off, ha in ((a, (0, 16) if k == 5 else (10, -14), "center" if k == 5 else "left"), (b, (0, 16), "center")):
+        for q, off, ha in ((a, (0, 16) if k == 5 else (10, -14), "center" if k == 5 else "left"),
+                           (b, (0, -16) if k == 5 else (0, 16), "center")):
             xq = qstart([q])[0]
             ax.plot([xq], [100 * t5.loc[q, k]], "o", color=col, markersize=13, markeredgecolor=BG, markeredgewidth=2.5, zorder=5)
             ax.annotate(f"{v[k, q]}%", (xq, 100 * t5.loc[q, k]), xytext=off, textcoords="offset points", ha=ha,
                         va="top" if off[1] < 0 else "baseline",
                         fontsize=px(32), fontweight="bold", color=col)
     ax.text(x[0], 100 * t5[1].iloc[0] + 1.3, "กลุ่มเสี่ยงสุด 20%", color=RED, fontsize=px(28), fontweight="bold")
-    ax.text(x[0], 100 * t5[5].iloc[0] - 1.6, "กลุ่มเสี่ยงต่ำสุด 20%", color=INK, fontsize=px(28), fontweight="bold", va="top")
+    ax.text(x[-1], 100 * t5[5].loc[b:].max() + 0.3, "กลุ่มเสี่ยงต่ำสุด 20%", color=INK, fontsize=px(28), fontweight="bold",
+            ha="right", va="bottom")
     ax.text(pd.Timestamp("2016-10-01"), 5.6, "อีก 3 กลุ่ม", color=SEC, fontsize=px(26), alpha=0.9)
-    ax.set_ylim(-1.5, 13.5)
+    ax.set_ylim(-0.4, 13.2)
     ax.set_yticks([0, 4, 8, 12])
     ax.yaxis.set_major_formatter(lambda y, _: f"{y:.0f}%")
     year_axis(ax, "2012-08-01", "2017-11-01")
@@ -236,7 +240,7 @@ def render_th(mj, mon, band_mob12):
     assert f"PSI ≤ {psi_max:.3f} all quarters 2014Q1–2018Q4 (amber 0.10)" in claims and psi_max < 0.06         # C10
     fig, top = canvas("สัญญาณเตือนดังช้าไป 26 เดือน",
                       f"ระหว่างนั้นปล่อยกู้ไปแล้ว {n_booked:,} สัญญา\n"
-                      "โมเดล as-of (ใช้ข้อมูลถึง 31 ธ.ค. 2014) · จุดวางตามวันที่รู้ผลได้จริง")
+                      "โมเดล as-of (ใช้ข้อมูลถึง 31 ธ.ค. 2014) วางจุดตามวันที่รู้ผลได้จริง")
     ax1, ax2 = stack(fig, top, [0.66, 0.34])
     lo, hi = "2014-01-01", "2019-06-01"
     for ax in (ax1, ax2):
@@ -247,16 +251,15 @@ def render_th(mj, mon, band_mob12):
     for _, rr in am.iterrows():
         f = rr["A/E flag"]
         ax1.plot([rr.k], [rr["A/E12"]], "o", markersize=14 if f != "green" else 11, zorder=4,
-                 color=OK if f == "green" else (BG if f == "AMBER" else RED),
-                 markeredgecolor=OK if f == "green" else RED, markeredgewidth=3.5)
+                 color={"green": OK, "AMBER": AMBER}.get(f, RED), markeredgecolor=BG, markeredgewidth=2.5)
     ax1.axhline(1.0, color=SEC, linewidth=1.2)
     hline(ax1, 1.10, "1.10 เตือนเหลือง", pd.Timestamp(lo))
     hline(ax1, 1.25, "1.25 เตือนแดง", pd.Timestamp(hi), va="top", ha="right")
     ax1.set_ylim(0.85, 1.55)
     ax1.set_yticks([1.0, 1.2, 1.4])
     ax1.annotate(f"เหลือง {th_month(t_amb)}", (t_amb, fa["A/E12"]), xytext=(26, -38), textcoords="offset points",
-                 va="top", fontsize=px(28), fontweight="bold", color=RED,
-                 arrowprops={"arrowstyle": "-", "color": RED, "linewidth": 1.5, "shrinkA": 0, "shrinkB": 9})
+                 va="top", fontsize=px(28), fontweight="bold", color=AMBER,
+                 arrowprops={"arrowstyle": "-", "color": AMBER, "linewidth": 1.5, "shrinkA": 0, "shrinkB": 9})
     ax1.annotate(f"แดง {th_month(t_red)}", (t_red, fr["A/E12"]), xytext=(-20, 0), textcoords="offset points",
                  ha="right", va="center", fontsize=px(28), fontweight="bold", color=RED)
     ax1.text(t_bad - pd.DateOffset(months=1), 1.53, f"{th_month(t_bad)}\nเริ่มปล่อย\nกลุ่มที่แย่ลง",
@@ -299,5 +302,5 @@ def render_th(mj, mon, band_mob12):
     ax.set_ylim(0, q["realised $m"].max() * 1.12)
     ax.grid(axis="x", visible=False)
     ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2, handlelength=1.2, columnspacing=1.5, borderaxespad=0.3)
-    fig.text(L, 0.105, f"รวมทั้งปี: คาด \\${pred}m · จริง \\${real}m", fontsize=px(28), fontweight="bold", color=INK, va="bottom")
+    fig.text(L, 0.105, f"รวมทั้งปี: คาด \\${pred}m เทียบกับจริง \\${real}m", fontsize=px(28), fontweight="bold", color=INK, va="bottom")
     finish(fig, "fig4_th.png", {ratio, pred, real, "2015", *rq, "1", "2", "3", "4"})

@@ -142,3 +142,4 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
   article เขียนใหม่ (สิ่งที่รอดก่อน แล้วสิ่งที่ fail)
 - 2026-11-25: close-out check after force quit (clean tree, no .git locks); demo rebuilt from build_demo.py (no diff); STATUS = DONE.
 - 2026-11-25: Thai social figures fig1–4_th (see Done — published).
+- 2026-11-25: Thai figures revised (amber #E0A100 for the first as-of alarm, safest-band label above its line, no middle dots); numbers unchanged; still Thonburi (IBM Plex Sans Thai not installed).
