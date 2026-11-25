@@ -2,6 +2,10 @@
 
 Usage: nice -n 19 .venv/bin/python -I src/report/article_figures.py
 Output: reports/figures/article/fig{1..8}_*.png
+
+Thai social versions (1080×1080, same data and calculations as fig3/fig7/fig6/fig8; English figures untouched):
+       nice -n 19 .venv/bin/python -I src/report/article_figures.py --th
+Output: reports/figures/article_th/fig{1..4}_th.png
 """
 import json
 import pickle
@@ -83,8 +87,26 @@ def thresh(ax, y, label, x_text=None, va="bottom"):
     ax.text(xt, y, f" {label}", color=INK2, fontsize=9, va=va, ha="left")
 
 
+def band_mob12():
+    """Default by month 12 by issue quarter × scorecard band (cut points fixed on training). Used by fig7 and fig2_th."""
+    b1 = load_base(["issue_dt", "issue_q", "default_mob"]).join(pd.read_parquet(ART / "scores_m1.parquet", columns=["score_m1"]))
+    cuts = np.quantile(b1.loc[split_mask(b1, TRAIN), "score_m1"], [0.2, 0.4, 0.6, 0.8])
+    b1["band"] = 1 + np.searchsorted(cuts, b1.score_m1.to_numpy(), side="right")
+    b1["d12"] = default_by_mob(b1.default_mob, 12)
+    b1["ql"] = b1.issue_dt.dt.to_period("Q").dt.end_time.dt.to_period("M").dt.to_timestamp()
+    obs = b1[b1.ql + pd.DateOffset(months=12) <= pd.Timestamp("2018-09-01")]
+    t5 = obs.groupby(["issue_q", "band"]).d12.mean().unstack()
+    return t5[t5.index >= "2012Q4"]
+
+
 mj = json.loads((REP1 / "metrics.json").read_text())
 mon = pd.DataFrame(json.loads((REP1 / "monitoring.json").read_text()))
+
+if "--th" in sys.argv:
+    sys.path.insert(0, str(ROOT / "src" / "report"))
+    from article_figures_th import render_th  # noqa: E402
+    render_th(mj, mon, band_mob12)
+    sys.exit(0)
 
 # ------------------------------------------------------------------ Fig 1: data traps
 con = duckdb.connect()
@@ -201,14 +223,7 @@ finish(fig, "Population stability is the wrong alarm: it never fired",
        "fig6_alarm_timeline.png")
 
 # ------------------------------------------------------------------ Fig 7: default at MOB 12 by risk band
-b1 = load_base(["issue_dt", "issue_q", "default_mob"]).join(pd.read_parquet(ART / "scores_m1.parquet", columns=["score_m1"]))
-cuts = np.quantile(b1.loc[split_mask(b1, TRAIN), "score_m1"], [0.2, 0.4, 0.6, 0.8])
-b1["band"] = 1 + np.searchsorted(cuts, b1.score_m1.to_numpy(), side="right")
-b1["d12"] = default_by_mob(b1.default_mob, 12)
-b1["ql"] = b1.issue_dt.dt.to_period("Q").dt.end_time.dt.to_period("M").dt.to_timestamp()
-obs = b1[b1.ql + pd.DateOffset(months=12) <= pd.Timestamp("2018-09-01")]
-t5 = obs.groupby(["issue_q", "band"]).d12.mean().unstack()
-t5 = t5[t5.index >= "2012Q4"]
+t5 = band_mob12()
 fig, ax = plt.subplots(figsize=(10, 4.8))
 x = np.arange(len(t5))
 labels = {1: "band 1 (riskiest 20% at training)", 2: "band 2", 3: "band 3", 4: "band 4", 5: "band 5 (safest 20%)"}

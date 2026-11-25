@@ -110,6 +110,12 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 - **LinkedIn post** (2026-11-23): short screen-recorded video of the demo; article, demo and repo links in the first comment.
 - Article link + LinkedIn link in the demo footer and README; notes/07 header records the published URL.
 
+- **Thai social figures** (2026-11-25, for Facebook/LinkedIn posts): reports/figures/article_th/fig{1..4}_th.png, 1080×1080, font Thonburi
+  (IBM Plex Sans Thai not installed). Built by `article_figures.py --th` (src/report/article_figures_th.py) from the same aggregates as
+  fig3/fig7/fig6/fig8; fig3_th uses the as-of model (reports/phase4/asof_model.json), its PSI panel is the champion's PSI (C10; as-of PSI max 0.075);
+  fig4_th drops the illustrative overlay. Gates: every printed number whitelisted and asserted against claims C8/C10/C13/C21/C29 and
+  check_note_numbers; text ≥ 26 px, inside canvas, no overlaps. English figures unchanged (reports_manifest.sha256 OK).
+
 ### Published vs private
 - **Published:** code, notes, aggregate reports (reports/**/*.md|json), figures, demo page, article, demo GIFs, screenshots.
 - **Private / never published:** raw LendingClub files and everything in data/ (raw, interim parquet, model files), row-level scores;
@@ -135,3 +141,4 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
   reports/quality/rederive_ecl_policy.md), scorecard bin-stability table, shared scoring helper (src/lib/scoring.py), test ของ as-of information set;
   article เขียนใหม่ (สิ่งที่รอดก่อน แล้วสิ่งที่ fail)
 - 2026-11-25: close-out check after force quit (clean tree, no .git locks); demo rebuilt from build_demo.py (no diff); STATUS = DONE.
+- 2026-11-25: Thai social figures fig1–4_th (see Done — published).
