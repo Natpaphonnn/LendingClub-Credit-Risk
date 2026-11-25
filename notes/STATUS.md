@@ -1,4 +1,10 @@
-# STATUS — 2026-11-23 (project closed; no further work unless Nat asks)
+# STATUS — DONE (2026-11-25; project closed; no further work unless Nat asks)
+
+**Published:** repo public (https://github.com/Natpaphonnn/LendingClub-Credit-Risk) · GitHub Pages demo
+(https://natpaphonnn.github.io/LendingClub-Credit-Risk/) · Medium article
+(https://medium.com/@natpaphon.nukhunthod/the-alarm-that-never-rang-043d13f0ee20) · LinkedIn post with demo video.
+Article link is in README and in the demo footer (src/report/demo_template.html → build_demo.py; rebuild 2026-11-25 byte-identical).
+No raw or row-level data published; history not rewritten. Details: "Done — published" below.
 
 ## Decisions (Nat, 2026-11-19)
 1. **Story pivot accepted:** "Lender in 2014 — does the model survive the 2015–16 vintages, and would monitoring notice in time?"
@@ -128,3 +134,4 @@ In Phase 2, B goes ahead **only if all three hold**. If any one fails → switch
 - ปิด minor ที่ค้างแล้ว (2026-11-20, ตามที่ Nat สั่ง): independent re-derivation ของทุก ECL/policy claim ใน article จาก raw (31/31 ตรง —
   reports/quality/rederive_ecl_policy.md), scorecard bin-stability table, shared scoring helper (src/lib/scoring.py), test ของ as-of information set;
   article เขียนใหม่ (สิ่งที่รอดก่อน แล้วสิ่งที่ fail)
+- 2026-11-25: close-out check after force quit (clean tree, no .git locks); demo rebuilt from build_demo.py (no diff); STATUS = DONE.
